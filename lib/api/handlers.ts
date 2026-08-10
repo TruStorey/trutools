@@ -1,4 +1,4 @@
-import { clientIp } from "./client-ip";
+import { clientIp, describeClientIp, ipDebugEnabled } from "./client-ip";
 import { ToolInputError, type ToolResult } from "@/lib/tools/result";
 
 import { formatJson } from "@/lib/tools/impl/json-format";
@@ -103,7 +103,14 @@ function run(compute: () => ToolResult): ToolResult {
 export const HANDLERS: Record<string, ToolHandler> = {
   // `text` rather than `lines`, so JSON yields "1.2.3.4" and not ["1.2.3.4"],
   // while the plain-text rendering stays byte-identical to icanhazip.
-  ip: ({ request }) => ({ kind: "text", text: clientIp(request.headers) }),
+  ip: ({ request, params }) => {
+    // ?debug shows how the answer was reached — which headers arrived, and
+    // which entries counted as public. Off in production unless IP_DEBUG=1.
+    if (params.has("debug") && ipDebugEnabled()) {
+      return { kind: "fields", fields: describeClientIp(request.headers) };
+    }
+    return { kind: "text", text: clientIp(request.headers) };
+  },
 
   "password-generator": ({ params }) =>
     run(() =>

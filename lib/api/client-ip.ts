@@ -138,3 +138,85 @@ export function clientIp(headers: Headers): string {
 export function rateLimitKey(headers: Headers): string {
   return clientIp(headers);
 }
+
+// ---------------------------------------------------------------- diagnosis
+
+/** Headers a proxy might use to carry the caller's address. */
+const FORWARDING_HEADERS = [
+  "x-forwarded-for",
+  "x-real-ip",
+  "forwarded",
+  "cf-connecting-ip",
+  "true-client-ip",
+  "x-client-ip",
+  "x-cluster-client-ip",
+  "fastly-client-ip",
+  "x-forwarded-host",
+  "x-forwarded-proto",
+];
+
+/**
+ * Enabled outside production, or with IP_DEBUG=1.
+ *
+ * The chain contains the addresses of your own infrastructure hops, so this
+ * stays off in production by default rather than handing them to anyone who
+ * asks.
+ */
+export function ipDebugEnabled(): boolean {
+  return process.env.NODE_ENV !== "production" || process.env.IP_DEBUG === "1";
+}
+
+/**
+ * Why the answer is what it is: every forwarding header that arrived, each
+ * chain entry marked public or private, and which one was chosen.
+ *
+ * This distinguishes the two ways the reported address goes wrong — the chain
+ * never carrying the caller at all, versus an infrastructure hop being in a
+ * range that is not actually private.
+ */
+export function describeClientIp(headers: Headers): { label: string; value: string }[] {
+  const fields: { label: string; value: string }[] = [
+    { label: "Resolved", value: clientIp(headers) },
+  ];
+
+  const chain = forwardedChain(headers);
+  if (chain.length === 0) {
+    fields.push({
+      label: "X-Forwarded-For",
+      value: "absent — nothing upstream is forwarding the caller's address",
+    });
+  } else {
+    chain.forEach((entry, index) => {
+      const position =
+        index === 0 ? "leftmost, caller-supplied" : index === chain.length - 1 ? "nearest hop" : "hop";
+      fields.push({
+        label: `XFF[${index}]`,
+        value: `${entry}  (${isPublicAddress(entry) ? "public" : "private"}, ${position})`,
+      });
+    });
+  }
+
+  for (const name of FORWARDING_HEADERS) {
+    if (name === "x-forwarded-for") continue;
+    const value = headers.get(name);
+    if (value) fields.push({ label: name, value });
+  }
+
+  fields.push({
+    label: "CLIENT_IP_HEADER",
+    value: TRUSTED_HEADER ? TRUSTED_HEADER : "unset",
+  });
+
+  const anyPublic = chain.some((entry) => isPublicAddress(entry));
+  fields.push({
+    label: "Diagnosis",
+    value: anyPublic
+      ? "A publicly routable address is present and was used."
+      : chain.length === 0
+        ? "No forwarded address arrived. The proxy in front needs to set X-Forwarded-For."
+        : "Every entry is private, so the caller's address is being dropped upstream. " +
+          "If one of these IS meant to be the caller, its range is treated as private.",
+  });
+
+  return fields;
+}
