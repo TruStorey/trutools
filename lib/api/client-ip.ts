@@ -240,6 +240,19 @@ export function describeClientIp(headers: Headers): { label: string; value: stri
     });
   }
 
+  // Every header, not just the ones we know to look for. If the caller's
+  // address is arriving under some name this file has never heard of, a
+  // curated list would hide exactly the thing being hunted for.
+  const redacted = new Set(["cookie", "authorization", "proxy-authorization"]);
+  const seen = [...headers.entries()].sort(([a], [b]) => a.localeCompare(b));
+
+  fields.push({
+    label: "All headers",
+    value: seen
+      .map(([name, value]) => `${name}: ${redacted.has(name) ? "[redacted]" : value}`)
+      .join("\n"),
+  });
+
   const anyPublic = chain.some((entry) => isPublicAddress(entry));
   fields.push({
     label: "Diagnosis",
@@ -247,8 +260,12 @@ export function describeClientIp(headers: Headers): { label: string; value: stri
       ? "A publicly routable address is present and was used."
       : chain.length === 0
         ? "No forwarded address arrived. The proxy in front needs to set X-Forwarded-For."
-        : "Every entry is private, so the caller's address is being dropped upstream. " +
-          "If one of these IS meant to be the caller, its range is treated as private.",
+        : cdnHeader
+          ? "Every chain entry is private, but a CDN header holds the caller — see Fix above."
+          : "Every entry is private and no CDN header arrived either, so the caller's " +
+            "address is not reaching this app at all. Check the header list above for " +
+            "anything carrying it; if there is nothing, the hop that saw the caller is " +
+            "not passing it on (an L4 passthrough cannot, without PROXY protocol).",
   });
 
   return fields;
