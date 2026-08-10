@@ -5,6 +5,7 @@ import "./globals.css";
 import { IslandProvider } from "@/components/island/island-provider";
 import { SiteNavbar } from "@/components/site-navbar";
 import { ThemeProvider } from "@/components/theme-provider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 // globals.css maps --color-* onto --font-sans / --font-geist-mono, so the CSS
 // variable names here have to match what @theme inline expects.
@@ -47,10 +48,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="flex min-h-full flex-col">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
-          <IslandProvider>
-            <SiteNavbar />
-            <main className="flex-1">{children}</main>
-          </IslandProvider>
+          {/* delay so the tooltip does not flash when the cursor merely
+              crosses the island on its way somewhere else. */}
+          <TooltipProvider delay={250}>
+            <IslandProvider>
+              <SiteNavbar />
+              <main className="flex-1">{children}</main>
+            </IslandProvider>
+          </TooltipProvider>
         </ThemeProvider>
       </body>
     </html>

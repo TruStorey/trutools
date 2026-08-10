@@ -3,6 +3,8 @@
 import { CircleAlert, CircleCheck, Info, LoaderCircle } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
+import { GlassTooltipContent } from "@/components/ui/glasscn/glass-tooltip";
+import { Tooltip, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import { useIsland, type IslandVariant } from "./island-provider";
@@ -33,11 +35,26 @@ const VARIANT_STYLES: Record<IslandVariant, { icon: typeof Info; tint: string }>
   loading: { icon: LoaderCircle, tint: "text-amber-400" },
 };
 
-const HEALTH_DOT: Record<ApiHealth, { className: string; label: string }> = {
-  checking: { className: "bg-white/40", label: "Checking API status" },
-  up: { className: "bg-emerald-400", label: "API is up" },
+const HEALTH_DOT: Record<
+  ApiHealth,
+  { className: string; label: string; detail: string }
+> = {
+  checking: {
+    className: "bg-white/40",
+    label: "Checking API status",
+    detail: "Asking /api/health…",
+  },
+  up: {
+    className: "bg-emerald-400",
+    label: "API is up",
+    detail: "All endpoints reachable",
+  },
   // Pulsing so an outage is noticeable without the island having to expand.
-  down: { className: "bg-rose-500 animate-pulse motion-reduce:animate-none", label: "API is down" },
+  down: {
+    className: "bg-rose-500 animate-pulse motion-reduce:animate-none",
+    label: "API is down",
+    detail: "/api/health is not responding",
+  },
 };
 
 function IdlePill({ health }: { health: ApiHealth }) {
@@ -45,11 +62,30 @@ function IdlePill({ health }: { health: ApiHealth }) {
 
   return (
     <div className="flex items-center gap-2 px-4 py-1.5">
-      <span className={cn("size-1.5 shrink-0 rounded-full", dot.className)} title={dot.label} />
+      {/* No `title` here — the native tooltip would race the glass one. */}
+      <span className={cn("size-1.5 shrink-0 rounded-full", dot.className)} aria-hidden />
       <span className="font-mono text-xs tracking-[0.2em] text-white/70 select-none">
         TRUTOOLS
       </span>
       <span className="sr-only">{dot.label}</span>
+    </div>
+  );
+}
+
+/** What the glass tooltip shows on hover: the same status, spelled out. */
+function HealthTooltip({ health }: { health: ApiHealth }) {
+  const dot = HEALTH_DOT[health];
+
+  return (
+    <div className="flex items-start gap-2">
+      <span className={cn("mt-1 size-1.5 shrink-0 rounded-full", dot.className)} aria-hidden />
+      <div className="space-y-0.5">
+        <p className="font-medium">{dot.label}</p>
+        <p className="text-muted-foreground">{dot.detail}</p>
+        <p className="pt-0.5 font-mono text-[0.65rem] text-muted-foreground/70">
+          checked every 30s
+        </p>
+      </div>
     </div>
   );
 }
@@ -71,81 +107,102 @@ export function DynamicIsland({ className }: { className?: string }) {
   const Icon = current ? VARIANT_STYLES[current.variant].icon : null;
 
   return (
-    <motion.div
-      layout
-      className={cn(
-        "mx-auto w-fit min-w-[132px] cursor-default overflow-hidden bg-black shadow-lg",
-        "ring-1 ring-white/10",
-        current && "cursor-pointer",
-        className,
-      )}
-      style={{ borderRadius: 32 }}
-      transition={spring}
-      onClick={current ? () => dismiss(current.id) : undefined}
-      role={current ? "button" : undefined}
-      tabIndex={current ? 0 : undefined}
-      onKeyDown={
-        current
-          ? (event) => {
-              if (event.key === "Enter" || event.key === " ") {
-                event.preventDefault();
-                dismiss(current.id);
-              }
-            }
-          : undefined
-      }
-      aria-label={current ? "Dismiss notification" : undefined}
-    >
-      {/* aria-live so toasts are announced; the island is a status surface,
-          not something the user is expected to go looking for. */}
-      <div aria-live="polite" aria-atomic="true">
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={view}
-            initial={
-              shouldReduceMotion
-                ? { opacity: 0 }
-                : { opacity: 0, scale: 0.92, filter: "blur(5px)" }
-            }
-            animate={
-              shouldReduceMotion
-                ? { opacity: 1 }
-                : {
-                    opacity: 1,
-                    scale: 1,
-                    filter: "blur(0px)",
-                    transition: { delay: 0.05 },
+    <Tooltip>
+      {/*
+        The trigger renders as a plain div wrapping the island rather than
+        Base UI's default button — the island already becomes a button when a
+        toast is showing, and nesting one inside another is invalid.
+      */}
+      <TooltipTrigger
+        render={<div className="mx-auto w-fit" />}
+        aria-label={HEALTH_DOT[health].label}
+      >
+        <motion.div
+          layout
+          className={cn(
+            "w-fit min-w-[132px] cursor-default overflow-hidden bg-black shadow-lg",
+            "ring-1 ring-white/10",
+            current && "cursor-pointer",
+            className,
+          )}
+          style={{ borderRadius: 32 }}
+          transition={spring}
+          onClick={current ? () => dismiss(current.id) : undefined}
+          role={current ? "button" : undefined}
+          tabIndex={current ? 0 : undefined}
+          onKeyDown={
+            current
+              ? (event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    dismiss(current.id);
                   }
-            }
-            exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.95, filter: "blur(4px)" }}
-            transition={spring}
-          >
-            {current && Icon ? (
-              <div className="flex max-w-[min(20rem,60vw)] items-center gap-2.5 px-4 py-2">
-                <Icon
-                  className={cn(
-                    "size-4 shrink-0",
-                    VARIANT_STYLES[current.variant].tint,
-                    current.variant === "loading" && "animate-spin motion-reduce:animate-none",
-                  )}
-                />
-                <div className="min-w-0">
-                  <p className="truncate text-sm leading-tight font-medium text-white">
-                    {current.title}
-                  </p>
-                  {current.description ? (
-                    <p className="truncate text-xs leading-tight text-white/60">
-                      {current.description}
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-            ) : (
-              <IdlePill health={health} />
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-    </motion.div>
+                }
+              : undefined
+          }
+          aria-label={current ? "Dismiss notification" : undefined}
+        >
+          {/* aria-live so toasts are announced; the island is a status surface,
+              not something the user is expected to go looking for. */}
+          <div aria-live="polite" aria-atomic="true">
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={view}
+                initial={
+                  shouldReduceMotion
+                    ? { opacity: 0 }
+                    : { opacity: 0, scale: 0.92, filter: "blur(5px)" }
+                }
+                animate={
+                  shouldReduceMotion
+                    ? { opacity: 1 }
+                    : {
+                        opacity: 1,
+                        scale: 1,
+                        filter: "blur(0px)",
+                        transition: { delay: 0.05 },
+                      }
+                }
+                exit={
+                  shouldReduceMotion
+                    ? { opacity: 0 }
+                    : { opacity: 0, scale: 0.95, filter: "blur(4px)" }
+                }
+                transition={spring}
+              >
+                {current && Icon ? (
+                  <div className="flex max-w-[min(20rem,60vw)] items-center gap-2.5 px-4 py-2">
+                    <Icon
+                      className={cn(
+                        "size-4 shrink-0",
+                        VARIANT_STYLES[current.variant].tint,
+                        current.variant === "loading" &&
+                          "animate-spin motion-reduce:animate-none",
+                      )}
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm leading-tight font-medium text-white">
+                        {current.title}
+                      </p>
+                      {current.description ? (
+                        <p className="truncate text-xs leading-tight text-white/60">
+                          {current.description}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+                ) : (
+                  <IdlePill health={health} />
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </motion.div>
+      </TooltipTrigger>
+
+      <GlassTooltipContent side="bottom" sideOffset={10}>
+        <HealthTooltip health={health} />
+      </GlassTooltipContent>
+    </Tooltip>
   );
 }
