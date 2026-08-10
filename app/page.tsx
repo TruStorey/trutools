@@ -1,5 +1,6 @@
 import { ToolGrid } from "@/components/tools/tool-grid";
 import { SECTIONS, TOOLS } from "@/lib/tools/registry";
+import { SITE_HOST } from "@/lib/site";
 
 export default function Home() {
   return (
@@ -12,7 +13,7 @@ export default function Home() {
           Generate a key, work out a subnet, make some JSON readable. Every tool is
           also a plain-text endpoint, so you can skip the browser entirely —{" "}
           <code className="rounded bg-foreground/8 px-1.5 py-0.5 font-mono text-[0.85em]">
-            curl trutools.truvibe.dev/api/v1/ip
+            curl {SITE_HOST}/api/v1/ip
           </code>
         </p>
       </div>

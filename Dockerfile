@@ -18,6 +18,13 @@ RUN corepack enable
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Next inlines NEXT_PUBLIC_* into the client bundle at build time, so the public
+# origin has to be known here — setting it only at runtime leaves the generated
+# snippets pointing at the default. In Coolify this must be marked as a build
+# variable, not just a runtime one.
+ARG NEXT_PUBLIC_SITE_URL=https://tools.truvibe.dev
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
+
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm build
 

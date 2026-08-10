@@ -4,6 +4,7 @@ import { rateLimit } from "@/lib/api/ratelimit";
 import { failure, preflight, result, tooManyRequests } from "@/lib/api/respond";
 import { resolveFormat } from "@/lib/tools/format";
 import { getTool } from "@/lib/tools/registry";
+import { SITE_URL } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +29,7 @@ async function handle(request: Request, context: RouteContext): Promise<Response
   const tool = getTool(id);
   if (!tool) {
     return failure(
-      `No tool named "${id}". See https://trutools.truvibe.dev/api/v1 for the list of endpoints.`,
+      `No tool named "${id}". See ${SITE_URL}/api/v1 for the list of endpoints.`,
       404,
       format,
       rate,
@@ -38,7 +39,7 @@ async function handle(request: Request, context: RouteContext): Promise<Response
   const handler = HANDLERS[id];
   if (!handler) {
     return failure(
-      `"${tool.name}" is not wired up yet. See https://trutools.truvibe.dev/api/v1 for endpoints that are.`,
+      `"${tool.name}" is not wired up yet. See ${SITE_URL}/api/v1 for endpoints that are.`,
       501,
       format,
       rate,

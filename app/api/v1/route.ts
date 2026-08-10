@@ -3,6 +3,7 @@ import { rateLimit } from "@/lib/api/ratelimit";
 import { preflight, text, tooManyRequests } from "@/lib/api/respond";
 import { SECTIONS, TOOLS, toolsInSection } from "@/lib/tools/registry";
 import { curlExample } from "@/lib/tools/snippets";
+import { SITE_URL } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,7 @@ export const dynamic = "force-dynamic";
 function buildIndex(): string {
   const lines: string[] = [
     "trutools API v1",
-    "https://trutools.truvibe.dev",
+    SITE_URL,
     "",
     "Plain text by default. Add ?format=json or ?format=xml for a machine-readable",
     "response, or send an Accept header of application/json or application/xml.",

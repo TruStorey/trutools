@@ -6,6 +6,7 @@ import { IslandProvider } from "@/components/island/island-provider";
 import { SiteNavbar } from "@/components/site-navbar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { SITE_URL } from "@/lib/site";
 
 // globals.css maps --color-* onto --font-sans / --font-geist-mono, so the CSS
 // variable names here have to match what @theme inline expects.
@@ -20,7 +21,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://trutools.truvibe.dev"),
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "trutools — simple IT tools",
     template: "%s · trutools",
@@ -31,7 +32,7 @@ export const metadata: Metadata = {
     title: "trutools — simple IT tools",
     description:
       "Simple IT tools with a public, rate-limited plain-text API you can curl.",
-    url: "https://trutools.truvibe.dev",
+    url: SITE_URL,
     siteName: "trutools",
     type: "website",
   },

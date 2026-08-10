@@ -1,13 +1,13 @@
 # trutools
 
-Simple IT tools, at [trutools.truvibe.dev](https://trutools.truvibe.dev).
+Simple IT tools, at [tools.truvibe.dev](https://tools.truvibe.dev).
 
 Two front doors onto the same set of tools:
 
 - **A web UI** — a filterable card grid, sections for Crypto / Networking / Data
   Format / Text, and a Dynamic-Island-style pill in the navbar that doubles as
   the toast surface.
-- **A public plain-text API** — `curl trutools.truvibe.dev/api/v1/ip`. Plain text
+- **A public plain-text API** — `curl tools.truvibe.dev/api/v1/ip`. Plain text
   in, plain text out, rate limited per IP. Modelled on icanhazip.
 
 ## Status
@@ -88,7 +88,7 @@ send an `Accept` header of `application/json` / `application/xml`, for something
 a script can parse — errors come back in the same format you asked for.
 
 ```
-$ curl 'trutools.truvibe.dev/api/v1/subnet-calculator?cidr=10.0.0.0/22&format=json'
+$ curl 'tools.truvibe.dev/api/v1/subnet-calculator?cidr=10.0.0.0/22&format=json'
 { "tool": "subnet-calculator", "result": { "network": "10.0.0.0/22", ... } }
 ```
 
@@ -144,4 +144,16 @@ Coolify builds the `Dockerfile` directly — a multi-stage build on
 `node:24-alpine` producing a `output: "standalone"` runner on port 3000, running
 as non-root, with `/api/health` as the healthcheck.
 
-Set `REDIS_URL` in the Coolify environment and point it at a Redis resource.
+Set these in the Coolify environment:
+
+| | |
+|---|---|
+| `NEXT_PUBLIC_SITE_URL` | `https://tools.truvibe.dev` |
+| `REDIS_URL` | point at a Redis resource |
+| `RATE_LIMIT_MAX` / `RATE_LIMIT_WINDOW_SEC` | optional, default 60 per 60s |
+
+`NEXT_PUBLIC_SITE_URL` is the only place the domain is written down — it feeds
+`lib/site.ts`, which the metadata, the `/api/v1` index, the "see the docs" error
+messages and every generated snippet read from. Next inlines `NEXT_PUBLIC_*` at
+build time, so it has to be set as a **build** variable in Coolify, not just a
+runtime one, or the snippets will show the default.

@@ -1,7 +1,8 @@
+import { API_BASE } from "../site";
 import type { ApiFormat } from "./format";
 import type { Tool } from "./registry";
 
-export const API_BASE = "https://trutools.truvibe.dev/api/v1";
+export { API_BASE };
 
 export const SNIPPET_LANGUAGES = [
   "curl",

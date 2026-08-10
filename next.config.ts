@@ -5,9 +5,10 @@ const nextConfig: NextConfig = {
   // Dockerfile runner stage ships to Coolify.
   output: "standalone",
 
-  // The dev server binds 0.0.0.0 and is reached through this hostname, so it
-  // has to be allowed explicitly or Next rejects the cross-origin dev requests.
-  allowedDevOrigins: ["dev3000.truvibe.dev"],
+  // The dev server binds 0.0.0.0 and is reached through these hostnames, so
+  // they have to be allowed explicitly or Next rejects the cross-origin dev
+  // requests. Production is unaffected by this list.
+  allowedDevOrigins: ["dev3000.truvibe.dev", "tools.truvibe.dev"],
 };
 
 export default nextConfig;
