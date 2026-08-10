@@ -96,10 +96,20 @@ Field labels become snake_case keys in JSON and element names in XML; XML keeps
 the human label as an attribute so nothing is lost.
 
 Each tool's API tab in the UI generates a ready-to-paste snippet for curl,
-PowerShell, Python, JavaScript and Go. Only curl gets the format picker — the
-other four request JSON and decode it into a native structure (a `[]string`, a
-PowerShell hashtable, a Python `dict`), which is the reason to use them over
-curl in the first place.
+PowerShell, Python, JavaScript and Go, with a second picker for what the
+snippet leaves you holding. For curl those are the wire formats; for every
+other language they are native shapes:
+
+| | |
+|---|---|
+| PowerShell | text, array, hashtable, PSCustomObject |
+| Python | text, list, tuple, set, dict, items |
+| JavaScript | text, array, Set, object, Map, entries |
+| Go | text, `[]string`, `map[string]string` |
+
+Which shapes appear depends on what the tool returns — a list of UUIDs has no
+sensible hashtable form, and a set of subnet readings has no sensible tuple
+form, so `outputsFor()` in `lib/tools/snippets.ts` filters by result kind.
 
 Rate limiting is a sliding-window log in Redis, evaluated atomically in one Lua
 round trip. Defaults to 60 requests per 60 seconds per IP, tunable with

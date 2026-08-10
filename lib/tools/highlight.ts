@@ -32,8 +32,22 @@ const KEYWORDS: Record<SnippetLanguage, string[]> = {
     "Get-Content",
     "Sort-Object",
   ],
-  python: ["import", "with", "open", "as", "requests"],
-  javascript: ["const", "await", "new", "fetch", "method", "headers", "body"],
+  python: ["import", "with", "open", "as", "requests", "tuple", "set", "list", "for", "in", "print"],
+  javascript: [
+    "const",
+    "await",
+    "new",
+    "fetch",
+    "method",
+    "headers",
+    "body",
+    "for",
+    "of",
+    "Object",
+    "Map",
+    "Set",
+    "console",
+  ],
   go: [
     "import",
     "var",
@@ -50,6 +64,8 @@ const KEYWORDS: Record<SnippetLanguage, string[]> = {
     "http",
     "os",
     "bytes",
+    "io",
+    "fmt",
   ],
 };
 

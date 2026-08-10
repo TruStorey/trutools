@@ -51,6 +51,11 @@ export type Tool = {
     bodyFile?: string;
     /** For body tools: a short inline sample, for languages that inline it. */
     bodySample?: string;
+    /**
+     * A representative key from a `fields` result, so snippets can show real
+     * field access rather than a placeholder.
+     */
+    sampleKey?: string;
   };
 };
 
@@ -191,6 +196,7 @@ export const TOOLS: Tool[] = [
       ],
       resultKind: "fields",
       query: { type: "ed25519", comment: "laptop" },
+      sampleKey: "public_key",
     },
   },
   {
@@ -215,6 +221,7 @@ export const TOOLS: Tool[] = [
       ],
       resultKind: "fields",
       bodyFile: "cert.pem",
+      sampleKey: "subject",
       bodySample: "-----BEGIN CERTIFICATE-----\nMIIC...\n-----END CERTIFICATE-----",
     },
   },
@@ -250,6 +257,7 @@ export const TOOLS: Tool[] = [
       ],
       resultKind: "fields",
       query: { cidr: "10.0.0.0/22" },
+      sampleKey: "network",
     },
   },
   {
@@ -291,6 +299,7 @@ export const TOOLS: Tool[] = [
       ],
       resultKind: "fields",
       query: { value: "1754870400", tz: "Europe/London" },
+      sampleKey: "epoch_seconds",
     },
   },
   {

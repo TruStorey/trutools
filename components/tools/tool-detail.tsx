@@ -11,14 +11,15 @@ import { LanguageIcon } from "@/components/tools/language-icon";
 import { ToolPanelFor } from "@/components/tools/panels";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glasscn/glass-card";
-import type { ApiFormat } from "@/lib/tools/format";
 import type { Tool } from "@/lib/tools/registry";
 import {
+  defaultOutput,
+  isOutputAvailable,
   LANGUAGE_LABELS,
-  resultHint,
+  outputsFor,
   SNIPPET_LANGUAGES,
   snippetFor,
-  supportsFormatChoice,
+  type OutputShape,
   type SnippetLanguage,
 } from "@/lib/tools/snippets";
 import { cn } from "@/lib/utils";
@@ -67,13 +68,21 @@ function ApiTab({ tool }: { tool: Tool }) {
   const { notify } = useIsland();
   const [copied, setCopied] = useState(false);
   const [language, setLanguage] = useState<SnippetLanguage>("curl");
-  const [format, setFormat] = useState<ApiFormat>("text");
+  const [output, setOutput] = useState<OutputShape>("text");
 
-  // Only curl offers a format choice; everything else parses JSON into a native
-  // structure, so the picker would be meaningless there.
-  const canChooseFormat = supportsFormatChoice(language);
-  const effectiveFormat = canChooseFormat ? format : "json";
-  const snippet = snippetFor(tool, language, effectiveFormat);
+  const kind = tool.api.resultKind;
+  const outputs = outputsFor(language, kind);
+  const snippet = snippetFor(tool, language, output);
+
+  function changeLanguage(next: SnippetLanguage) {
+    setLanguage(next);
+    // Shapes are language-specific — a PowerShell hashtable has no Python
+    // equivalent — so fall back to the new language's default when the
+    // current choice does not carry over.
+    if (!isOutputAvailable(next, kind, output)) {
+      setOutput(defaultOutput(next, kind));
+    }
+  }
 
   async function copy() {
     try {
@@ -97,7 +106,7 @@ function ApiTab({ tool }: { tool: Tool }) {
           <PillGroup
             label="Language"
             value={language}
-            onChange={setLanguage}
+            onChange={changeLanguage}
             options={SNIPPET_LANGUAGES.map((id) => ({
               value: id,
               label: LANGUAGE_LABELS[id],
@@ -110,26 +119,17 @@ function ApiTab({ tool }: { tool: Tool }) {
           </Button>
         </div>
 
-        {canChooseFormat ? (
-          <div className="flex flex-wrap items-center gap-2 pt-0.5">
-            <span className="text-[0.7rem] text-muted-foreground/70">Response</span>
-            <PillGroup
-              label="Response format"
-              value={format}
-              onChange={setFormat}
-              options={[
-                { value: "text", label: "text" },
-                { value: "json", label: "json" },
-                { value: "xml", label: "xml" },
-              ]}
-            />
-          </div>
-        ) : (
-          <p className="pt-0.5 text-[0.7rem] text-muted-foreground/70">
-            Requests <code className="font-mono">format=json</code> and decodes it to{" "}
-            <code className="font-mono">{resultHint(tool, language)}</code>.
-          </p>
-        )}
+        <div className="flex flex-wrap items-center gap-2 pt-0.5">
+          <span className="text-[0.7rem] text-muted-foreground/70">
+            {language === "curl" ? "Response" : "Returns"}
+          </span>
+          <PillGroup
+            label={language === "curl" ? "Response format" : "Output shape"}
+            value={output}
+            onChange={setOutput}
+            options={outputs}
+          />
+        </div>
 
         <CodeBlock code={snippet} language={language} />
 

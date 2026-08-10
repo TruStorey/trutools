@@ -22,12 +22,127 @@ export const LANGUAGE_LABELS: Record<SnippetLanguage, string> = {
 };
 
 /**
- * Only curl gets a format picker. Every other language here parses JSON into a
- * native structure, which is the whole reason you would use them over curl —
- * offering them XML or plain text would just mean handing back a string.
+ * What the snippet leaves you holding.
+ *
+ * For curl these are wire formats, because that is all curl can meaningfully
+ * vary. For every other language they are native shapes — the point of using
+ * PowerShell over curl is getting a hashtable, not a string.
  */
-export function supportsFormatChoice(language: SnippetLanguage): boolean {
-  return language === "curl";
+export type OutputShape =
+  | "text"
+  | "json"
+  | "xml"
+  | "array"
+  | "set"
+  | "list"
+  | "tuple"
+  | "pyset"
+  | "dict"
+  | "items"
+  | "hashtable"
+  | "pscustomobject"
+  | "object"
+  | "map"
+  | "entries"
+  | "typed";
+
+export type OutputOption = { value: OutputShape; label: string };
+
+type ResultKind = Tool["api"]["resultKind"];
+
+/**
+ * The shapes on offer depend on both the language and what the tool returns —
+ * a list of UUIDs has no sensible hashtable form, and a set of subnet readings
+ * has no sensible tuple form.
+ */
+export function outputsFor(language: SnippetLanguage, kind: ResultKind): OutputOption[] {
+  if (language === "curl") {
+    return [
+      { value: "text", label: "text" },
+      { value: "json", label: "json" },
+      { value: "xml", label: "xml" },
+    ];
+  }
+
+  const plain: OutputOption = { value: "text", label: "text" };
+
+  switch (language) {
+    case "powershell":
+      if (kind === "lines") {
+        return [plain, { value: "array", label: "array" }];
+      }
+      if (kind === "fields") {
+        return [
+          plain,
+          { value: "hashtable", label: "hashtable" },
+          { value: "pscustomobject", label: "PSCustomObject" },
+        ];
+      }
+      return [plain, { value: "typed", label: "string" }];
+
+    case "python":
+      if (kind === "lines") {
+        return [
+          plain,
+          { value: "list", label: "list" },
+          { value: "tuple", label: "tuple" },
+          { value: "pyset", label: "set" },
+        ];
+      }
+      if (kind === "fields") {
+        return [
+          plain,
+          { value: "dict", label: "dict" },
+          { value: "items", label: "items" },
+        ];
+      }
+      return [plain, { value: "typed", label: "str" }];
+
+    case "javascript":
+      if (kind === "lines") {
+        return [plain, { value: "array", label: "array" }, { value: "set", label: "Set" }];
+      }
+      if (kind === "fields") {
+        return [
+          plain,
+          { value: "object", label: "object" },
+          { value: "map", label: "Map" },
+          { value: "entries", label: "entries" },
+        ];
+      }
+      return [plain, { value: "typed", label: "string" }];
+
+    case "go":
+      if (kind === "lines") {
+        return [plain, { value: "typed", label: "[]string" }];
+      }
+      if (kind === "fields") {
+        return [plain, { value: "typed", label: "map[string]string" }];
+      }
+      return [plain, { value: "typed", label: "string" }];
+  }
+}
+
+/** The shape a language opens on: its native one, or text for curl. */
+export function defaultOutput(language: SnippetLanguage, kind: ResultKind): OutputShape {
+  const options = outputsFor(language, kind);
+  return language === "curl" ? "text" : (options[1]?.value ?? "text");
+}
+
+/** Whether a chosen shape is still on offer after switching language. */
+export function isOutputAvailable(
+  language: SnippetLanguage,
+  kind: ResultKind,
+  shape: OutputShape,
+): boolean {
+  return outputsFor(language, kind).some((option) => option.value === shape);
+}
+
+/** Which wire format a shape needs. Only "text" avoids JSON. */
+function wireFormat(shape: OutputShape): ApiFormat {
+  if (shape === "text") return "text";
+  if (shape === "xml") return "xml";
+  return "json";
 }
 
 function queryString(tool: Tool, format: ApiFormat): string {
@@ -43,42 +158,18 @@ function queryString(tool: Tool, format: ApiFormat): string {
   return encoded ? `?${encoded}` : "";
 }
 
-function url(tool: Tool, format: ApiFormat): string {
-  return `${API_BASE}/${tool.id}${queryString(tool, format)}`;
+function url(tool: Tool, shape: OutputShape): string {
+  return `${API_BASE}/${tool.id}${queryString(tool, wireFormat(shape))}`;
 }
 
-/** How the decoded result reads in each language, per the tool's result shape. */
-const TYPE_HINTS: Record<
-  Tool["api"]["resultKind"],
-  Record<SnippetLanguage, string>
-> = {
-  lines: {
-    curl: "one value per line",
-    powershell: "string[]",
-    python: "list[str]",
-    javascript: "string[]",
-    go: "[]string",
-  },
-  fields: {
-    curl: "aligned label / value pairs",
-    powershell: "hashtable",
-    python: "dict[str, str]",
-    javascript: "Record<string, string>",
-    go: "map[string]string",
-  },
-  text: {
-    curl: "a single value",
-    powershell: "string",
-    python: "str",
-    javascript: "string",
-    go: "string",
-  },
-};
+function sampleKey(tool: Tool): string {
+  return tool.api.sampleKey ?? "result";
+}
 
 // -------------------------------------------------------------------- curl
 
-function curlSnippet(tool: Tool, format: ApiFormat): string {
-  const target = url(tool, format);
+function curlSnippet(tool: Tool, shape: OutputShape): string {
+  const target = url(tool, shape);
 
   if (tool.api.bodyFile) {
     return `curl --data-binary @${tool.api.bodyFile} \\\n  '${target}'`;
@@ -88,112 +179,146 @@ function curlSnippet(tool: Tool, format: ApiFormat): string {
 
 // -------------------------------------------------------------- powershell
 
-function powershellSnippet(tool: Tool): string {
-  const target = url(tool, "json");
-  const kind = tool.api.resultKind;
+function powershellSnippet(tool: Tool, shape: OutputShape): string {
+  const target = url(tool, shape);
 
-  const decode =
-    kind === "fields"
-      ? // -AsHashtable needs the raw text, so this goes through Invoke-WebRequest
-        // rather than Invoke-RestMethod's automatic PSCustomObject.
-        `$response = Invoke-WebRequest -Uri '${target}'\n` +
-        `$data = $response.Content | ConvertFrom-Json -AsHashtable\n\n` +
-        `$data.result        # hashtable\n` +
-        `$data.result.Keys | Sort-Object`
-      : kind === "lines"
-        ? `$data = Invoke-RestMethod -Uri '${target}'\n\n` +
-          `$data.result       # string[]\n` +
-          `$data.result[0]`
-        : `$data = Invoke-RestMethod -Uri '${target}'\n\n` + `$data.result       # string`;
+  const fetchLine = tool.api.bodyFile
+    ? `$body = Get-Content -Raw '${tool.api.bodyFile}'\n` +
+      `$response = Invoke-RestMethod -Uri '${target}' -Method Post \`\n` +
+      `  -Body $body -ContentType 'text/plain'`
+    : `$response = Invoke-RestMethod -Uri '${target}'`;
 
-  if (tool.api.bodyFile) {
+  if (shape === "text") {
+    return `${fetchLine}\n\n$response`;
+  }
+
+  if (shape === "hashtable") {
+    // -AsHashtable only exists on ConvertFrom-Json, so this has to go through
+    // Invoke-WebRequest and convert the raw body itself.
+    const raw = tool.api.bodyFile
+      ? `$body = Get-Content -Raw '${tool.api.bodyFile}'\n` +
+        `$response = Invoke-WebRequest -Uri '${target}' -Method Post \`\n` +
+        `  -Body $body -ContentType 'text/plain'`
+      : `$response = Invoke-WebRequest -Uri '${target}'`;
+
     return (
-      `$body = Get-Content -Raw '${tool.api.bodyFile}'\n` +
-      `$data = Invoke-RestMethod -Uri '${target}' -Method Post \`\n` +
-      `  -Body $body -ContentType 'text/plain'\n\n` +
-      `$data.result       # ${TYPE_HINTS[kind].powershell}`
+      `${raw}\n` +
+      `$fields = ($response.Content | ConvertFrom-Json -AsHashtable).result\n\n` +
+      `$fields['${sampleKey(tool)}']\n` +
+      `$fields.Keys | Sort-Object`
     );
   }
 
-  return decode;
+  if (shape === "pscustomobject") {
+    return `${fetchLine}\n$fields = $response.result\n\n$fields.${sampleKey(tool)}`;
+  }
+
+  if (shape === "array") {
+    return `${fetchLine}\n$items = $response.result\n\n$items[0]\n$items.Count`;
+  }
+
+  return `${fetchLine}\n$value = $response.result\n\n$value`;
 }
 
 // ------------------------------------------------------------------ python
 
-function pythonSnippet(tool: Tool): string {
-  const params = { ...(tool.api.query ?? {}), format: "json" };
-  const hint = TYPE_HINTS[tool.api.resultKind].python;
+function pythonSnippet(tool: Tool, shape: OutputShape): string {
+  const format = wireFormat(shape);
+  const params: Record<string, string> = { ...(tool.api.query ?? {}) };
+  if (format !== "text") params.format = format;
 
-  // The POST form nests one level deeper inside `with open(...)`, so the
-  // dict entries need a matching indent or the snippet reads as broken Python.
   const entries = (indent: string) =>
     Object.entries(params)
       .map(([key, value]) => `${indent}${JSON.stringify(key)}: ${JSON.stringify(value)},`)
       .join("\n");
 
-  if (tool.api.bodyFile) {
-    return (
-      `import requests\n\n` +
-      `with open(${JSON.stringify(tool.api.bodyFile)}) as handle:\n` +
+  const call = tool.api.bodyFile
+    ? `with open(${JSON.stringify(tool.api.bodyFile)}) as handle:\n` +
       `    response = requests.post(\n` +
       `        "${API_BASE}/${tool.id}",\n` +
       `        params={\n${entries("            ")}\n        },\n` +
       `        data=handle.read(),\n` +
-      `    )\n\n` +
-      `response.raise_for_status()\n` +
-      `result = response.json()["result"]  # ${hint}`
-    );
-  }
+      `    )`
+    : `response = requests.get(\n` +
+      `    "${API_BASE}/${tool.id}",\n` +
+      `    params={\n${entries("        ")}\n    },\n` +
+      `)`;
 
-  return (
-    `import requests\n\n` +
-    `response = requests.get(\n` +
-    `    "${API_BASE}/${tool.id}",\n` +
-    `    params={\n${entries("        ")}\n    },\n` +
-    `)\n\n` +
-    `response.raise_for_status()\n` +
-    `result = response.json()["result"]  # ${hint}`
-  );
+  const head = `import requests\n\n${call}\n\nresponse.raise_for_status()\n`;
+
+  switch (shape) {
+    case "text":
+      return `${head}result = response.text`;
+    case "list":
+      return `${head}result = response.json()["result"]\n\nresult[0]`;
+    case "tuple":
+      return `${head}result = tuple(response.json()["result"])`;
+    case "pyset":
+      return `${head}result = set(response.json()["result"])`;
+    case "dict":
+      return `${head}result = response.json()["result"]\n\nresult["${sampleKey(tool)}"]`;
+    case "items":
+      return `${head}result = list(response.json()["result"].items())\n\nfor key, value in result:\n    print(key, value)`;
+    default:
+      return `${head}result = response.json()["result"]`;
+  }
 }
 
 // -------------------------------------------------------------- javascript
 
-function javascriptSnippet(tool: Tool): string {
-  const params = { ...(tool.api.query ?? {}), format: "json" };
+function javascriptSnippet(tool: Tool, shape: OutputShape): string {
+  const format = wireFormat(shape);
+  const params: Record<string, string> = { ...(tool.api.query ?? {}) };
+  if (format !== "text") params.format = format;
+
   const entries = Object.entries(params)
     .map(([key, value]) => `  ${JSON.stringify(key)}: ${JSON.stringify(value)},`)
     .join("\n");
 
-  const hint = TYPE_HINTS[tool.api.resultKind].javascript;
+  const paramsBlock = entries
+    ? `const params = new URLSearchParams({\n${entries}\n});\n\n`
+    : `const params = new URLSearchParams();\n\n`;
 
+  let call: string;
   if (tool.api.bodyFile) {
     // A template literal keeps a multi-line sample readable; JSON.stringify
     // would collapse it into one line of escape sequences.
     const sample = (tool.api.bodySample ?? "").replace(/`/g, "\\`").replace(/\$/g, "\\$");
-
-    return (
-      `const params = new URLSearchParams({\n${entries}\n});\n\n` +
+    call =
       `const body = \`${sample}\`;\n\n` +
       `const response = await fetch(\`${API_BASE}/${tool.id}?\${params}\`, {\n` +
       `  method: "POST",\n` +
       `  headers: { "Content-Type": "text/plain" },\n` +
       `  body,\n` +
-      `});\n\n` +
-      `const { result } = await response.json(); // ${hint}`
-    );
+      `});`;
+  } else {
+    call = `const response = await fetch(\`${API_BASE}/${tool.id}?\${params}\`);`;
   }
 
-  return (
-    `const params = new URLSearchParams({\n${entries}\n});\n\n` +
-    `const response = await fetch(\`${API_BASE}/${tool.id}?\${params}\`);\n` +
-    `const { result } = await response.json(); // ${hint}`
-  );
+  const head = `${paramsBlock}${call}\n\n`;
+
+  switch (shape) {
+    case "text":
+      return `${head}const result = await response.text();`;
+    case "array":
+      return `${head}const { result } = await response.json();\n\nresult[0];`;
+    case "set":
+      return `${head}const { result } = await response.json();\nconst unique = new Set(result);`;
+    case "object":
+      return `${head}const { result } = await response.json();\n\nresult["${sampleKey(tool)}"];`;
+    case "map":
+      return `${head}const { result } = await response.json();\nconst fields = new Map(Object.entries(result));\n\nfields.get("${sampleKey(tool)}");`;
+    case "entries":
+      return `${head}const { result } = await response.json();\nconst entries = Object.entries(result);\n\nfor (const [key, value] of entries) {\n  console.log(key, value);\n}`;
+    default:
+      return `${head}const { result } = await response.json();`;
+  }
 }
 
 // ---------------------------------------------------------------------- go
 
-function goSnippet(tool: Tool): string {
-  const target = url(tool, "json");
+function goSnippet(tool: Tool, shape: OutputShape): string {
+  const target = url(tool, shape);
   const kind = tool.api.resultKind;
 
   const goType =
@@ -205,9 +330,28 @@ function goSnippet(tool: Tool): string {
       `resp, err := http.Post("${target}", "text/plain", bytes.NewReader(body))`
     : `resp, err := http.Get("${target}")`;
 
-  const imports = tool.api.bodyFile
-    ? `import (\n\t"bytes"\n\t"encoding/json"\n\t"log"\n\t"net/http"\n\t"os"\n)`
-    : `import (\n\t"encoding/json"\n\t"log"\n\t"net/http"\n)`;
+  // gofmt orders imports alphabetically within the block, so build the list
+  // and sort rather than hand-writing a block per combination.
+  const importBlock = (extra: string[]) => {
+    const names = ["log", "net/http", ...extra];
+    if (tool.api.bodyFile) names.push("bytes", "os");
+    const sorted = [...new Set(names)].sort();
+    return `import (\n${sorted.map((name) => `\t"${name}"`).join("\n")}\n)`;
+  };
+
+  if (shape === "text") {
+    return (
+      `${importBlock(["fmt", "io"])}\n\n` +
+      `${request}\n` +
+      `if err != nil {\n\tlog.Fatal(err)\n}\n` +
+      `defer resp.Body.Close()\n\n` +
+      `result, err := io.ReadAll(resp.Body)\n` +
+      `if err != nil {\n\tlog.Fatal(err)\n}\n\n` +
+      `fmt.Println(string(result))`
+    );
+  }
+
+  const imports = importBlock(["encoding/json"]);
 
   return (
     `${imports}\n\n` +
@@ -215,8 +359,7 @@ function goSnippet(tool: Tool): string {
     `${request}\n` +
     `if err != nil {\n\tlog.Fatal(err)\n}\n` +
     `defer resp.Body.Close()\n\n` +
-    `if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {\n\tlog.Fatal(err)\n}\n\n` +
-    `// payload.Result is a ${goType}`
+    `if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {\n\tlog.Fatal(err)\n}`
   );
 }
 
@@ -225,27 +368,23 @@ function goSnippet(tool: Tool): string {
 export function snippetFor(
   tool: Tool,
   language: SnippetLanguage,
-  format: ApiFormat = "text",
+  shape: OutputShape,
 ): string {
   switch (language) {
     case "powershell":
-      return powershellSnippet(tool);
+      return powershellSnippet(tool, shape);
     case "python":
-      return pythonSnippet(tool);
+      return pythonSnippet(tool, shape);
     case "javascript":
-      return javascriptSnippet(tool);
+      return javascriptSnippet(tool, shape);
     case "go":
-      return goSnippet(tool);
+      return goSnippet(tool, shape);
     default:
-      return curlSnippet(tool, format);
+      return curlSnippet(tool, shape);
   }
 }
 
 /** The one-line curl used in the /api/v1 index and anywhere a short example fits. */
 export function curlExample(tool: Tool): string {
   return curlSnippet(tool, "text").replace(/ \\\n\s+/g, " ");
-}
-
-export function resultHint(tool: Tool, language: SnippetLanguage): string {
-  return TYPE_HINTS[tool.api.resultKind][language];
 }
