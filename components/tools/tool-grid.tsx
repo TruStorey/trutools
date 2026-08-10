@@ -79,7 +79,7 @@ function SectionGrid({
                   {/* Inner wrapper carries the spacing: animating height on a
                       box that also has margin makes the collapse jump. */}
                   <div className="pt-1 pb-1">
-                    <ToolDetail tool={openTool} onClose={() => onToggle(openTool.id)} />
+                    <ToolDetail tool={openTool} />
                   </div>
                 </motion.div>
               ) : null}

@@ -1,6 +1,7 @@
 "use client";
 
-import { Check, Copy, SlidersHorizontal, Terminal, X } from "lucide-react";
+import { Check, Copy, SlidersHorizontal, Terminal } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState } from "react";
 
 import { useIsland } from "@/components/island/island-provider";
@@ -8,7 +9,6 @@ import { ToolIcon } from "@/components/tools/icon-map";
 import { ToolPanelFor } from "@/components/tools/panels";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glasscn/glass-card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Tool } from "@/lib/tools/registry";
 
 /** The API reference tab: the curl line, the parameters, and how to pipe it. */
@@ -78,7 +78,11 @@ function ApiTab({ tool }: { tool: Tool }) {
   );
 }
 
-export function ToolDetail({ tool, onClose }: { tool: Tool; onClose: () => void }) {
+export function ToolDetail({ tool }: { tool: Tool }) {
+  const [view, setView] = useState<"tool" | "api">("tool");
+  const shouldReduceMotion = useReducedMotion();
+  const showingTool = view === "tool";
+
   return (
     // Same pure-CSS `liquid` glass as the cards, so the panel reads as part of
     // the same surface rather than a plain box that opened underneath them.
@@ -93,41 +97,46 @@ export function ToolDetail({ tool, onClose }: { tool: Tool; onClose: () => void 
           <p className="mt-0.5 text-sm text-muted-foreground">{tool.description}</p>
         </div>
 
-        <Button variant="ghost" size="icon-sm" onClick={onClose} aria-label={`Close ${tool.name}`}>
-          <X />
-        </Button>
+        {/*
+          One button, showing the view you are *not* looking at. It sits where
+          the close button used to; the card's own chevron still collapses the
+          panel, so nothing is lost by dropping the X.
+        */}
+        <button
+          type="button"
+          onClick={() => setView(showingTool ? "api" : "tool")}
+          aria-label={
+            showingTool
+              ? `Show the API reference for ${tool.name}`
+              : `Show the ${tool.name} tool`
+          }
+          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-white/15 bg-white/10 px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors outline-none hover:bg-white/20 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 dark:bg-black/20 dark:hover:bg-black/30"
+        >
+          {showingTool ? (
+            <>
+              <Terminal className="size-3.5" />
+              API
+            </>
+          ) : (
+            <>
+              <SlidersHorizontal className="size-3.5" />
+              Tool
+            </>
+          )}
+        </button>
       </div>
 
-      <Tabs defaultValue="tool">
-        {/* The default TabsList is an opaque bg-muted bar, which punches a
-            solid rectangle through the glass. */}
-        <TabsList className="border border-white/15 bg-white/10 dark:bg-black/20">
-          {/* The active trigger defaults to an opaque bg-background for the
-              same reason — translucent keeps the glass reading through. */}
-          <TabsTrigger
-            value="tool"
-            className="data-active:bg-white/25 dark:data-active:bg-white/10"
-          >
-            <SlidersHorizontal className="size-3.5" />
-            Tool
-          </TabsTrigger>
-          <TabsTrigger
-            value="api"
-            className="data-active:bg-white/25 dark:data-active:bg-white/10"
-          >
-            <Terminal className="size-3.5" />
-            API
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="tool" className="pt-3">
-          <ToolPanelFor id={tool.id} />
-        </TabsContent>
-
-        <TabsContent value="api" className="pt-3">
-          <ApiTab tool={tool} />
-        </TabsContent>
-      </Tabs>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={view}
+          initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 4 }}
+          animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+        >
+          {showingTool ? <ToolPanelFor id={tool.id} /> : <ApiTab tool={tool} />}
+        </motion.div>
+      </AnimatePresence>
     </GlassCard>
   );
 }
