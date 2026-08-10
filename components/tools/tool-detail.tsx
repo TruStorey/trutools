@@ -2,26 +2,89 @@
 
 import { Check, Copy, SlidersHorizontal, Terminal } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { useIsland } from "@/components/island/island-provider";
+import { CodeBlock } from "@/components/tools/code-block";
 import { ToolIcon } from "@/components/tools/icon-map";
+import { LanguageIcon } from "@/components/tools/language-icon";
 import { ToolPanelFor } from "@/components/tools/panels";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glasscn/glass-card";
+import type { ApiFormat } from "@/lib/tools/format";
 import type { Tool } from "@/lib/tools/registry";
+import {
+  LANGUAGE_LABELS,
+  resultHint,
+  SNIPPET_LANGUAGES,
+  snippetFor,
+  supportsFormatChoice,
+  type SnippetLanguage,
+} from "@/lib/tools/snippets";
+import { cn } from "@/lib/utils";
 
-/** The API reference tab: the curl line, the parameters, and how to pipe it. */
+/** A row of small pills used for both the language and the format choice. */
+function PillGroup<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: { value: T; label: string; icon?: ReactNode }[];
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-1">
+      {options.map((option) => {
+        const selected = option.value === value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            role="radio"
+            aria-checked={selected}
+            onClick={() => onChange(option.value)}
+            className={cn(
+              "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+              selected
+                ? "bg-foreground/90 text-background"
+                : "border border-white/15 bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground dark:bg-black/20 dark:hover:bg-black/30",
+            )}
+          >
+            {option.icon}
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** The API reference tab: a snippet in your language, the parameters, the caveats. */
 function ApiTab({ tool }: { tool: Tool }) {
   const { notify } = useIsland();
   const [copied, setCopied] = useState(false);
+  const [language, setLanguage] = useState<SnippetLanguage>("curl");
+  const [format, setFormat] = useState<ApiFormat>("text");
+
+  // Only curl offers a format choice; everything else parses JSON into a native
+  // structure, so the picker would be meaningless there.
+  const canChooseFormat = supportsFormatChoice(language);
+  const effectiveFormat = canChooseFormat ? format : "json";
+  const snippet = snippetFor(tool, language, effectiveFormat);
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(tool.api.example);
+      await navigator.clipboard.writeText(snippet);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
-      notify({ variant: "success", title: "Copied curl command", description: tool.name });
+      notify({
+        variant: "success",
+        title: `Copied ${LANGUAGE_LABELS[language]} snippet`,
+        description: tool.name,
+      });
     } catch {
       notify({ variant: "error", title: "Could not copy" });
     }
@@ -30,19 +93,49 @@ function ApiTab({ tool }: { tool: Tool }) {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <div className="flex items-center justify-between gap-3">
-          <span className="font-mono text-xs text-muted-foreground">
-            {tool.api.method} /api/v1/{tool.id}
-          </span>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <PillGroup
+            label="Language"
+            value={language}
+            onChange={setLanguage}
+            options={SNIPPET_LANGUAGES.map((id) => ({
+              value: id,
+              label: LANGUAGE_LABELS[id],
+              icon: <LanguageIcon language={id} className="size-3.5" />,
+            }))}
+          />
           <Button variant="ghost" size="xs" onClick={copy}>
             {copied ? <Check /> : <Copy />}
             {copied ? "Copied" : "Copy"}
           </Button>
         </div>
 
-        <pre className="overflow-x-auto rounded-lg border border-white/10 bg-black/15 p-3 font-mono text-xs leading-relaxed backdrop-blur-sm dark:bg-black/25">
-          <code>{tool.api.example}</code>
-        </pre>
+        {canChooseFormat ? (
+          <div className="flex flex-wrap items-center gap-2 pt-0.5">
+            <span className="text-[0.7rem] text-muted-foreground/70">Response</span>
+            <PillGroup
+              label="Response format"
+              value={format}
+              onChange={setFormat}
+              options={[
+                { value: "text", label: "text" },
+                { value: "json", label: "json" },
+                { value: "xml", label: "xml" },
+              ]}
+            />
+          </div>
+        ) : (
+          <p className="pt-0.5 text-[0.7rem] text-muted-foreground/70">
+            Requests <code className="font-mono">format=json</code> and decodes it to{" "}
+            <code className="font-mono">{resultHint(tool, language)}</code>.
+          </p>
+        )}
+
+        <CodeBlock code={snippet} language={language} />
+
+        <p className="font-mono text-[0.7rem] text-muted-foreground/70">
+          {tool.api.method} /api/v1/{tool.id}
+        </p>
       </div>
 
       {tool.api.params.length > 0 ? (
@@ -69,8 +162,12 @@ function ApiTab({ tool }: { tool: Tool }) {
       <p className="flex items-start gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-muted-foreground">
         <Terminal className="mt-0.5 size-3.5 shrink-0" aria-hidden />
         <span>
-          Responses are <code className="font-mono">text/plain</code> and rate limited per IP.
-          Check <code className="font-mono">X-RateLimit-Remaining</code>, and{" "}
+          Responses default to <code className="font-mono">text/plain</code>; add{" "}
+          <code className="font-mono">?format=json</code> or{" "}
+          <code className="font-mono">xml</code> (or an{" "}
+          <code className="font-mono">Accept</code> header) for a parseable one. Errors come
+          back in whichever format you asked for. Rate limited per IP — check{" "}
+          <code className="font-mono">X-RateLimit-Remaining</code>, and{" "}
           <code className="font-mono">Retry-After</code> on a 429.
         </span>
       </p>

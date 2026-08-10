@@ -83,6 +83,24 @@ GET  /api/health                      liveness, not rate limited
 `GET /api/v1` lists all of this with every parameter, so the API documents
 itself the way icanhazip does.
 
+Responses are `text/plain` by default. Add `?format=json` or `?format=xml`, or
+send an `Accept` header of `application/json` / `application/xml`, for something
+a script can parse — errors come back in the same format you asked for.
+
+```
+$ curl 'trutools.truvibe.dev/api/v1/subnet-calculator?cidr=10.0.0.0/22&format=json'
+{ "tool": "subnet-calculator", "result": { "network": "10.0.0.0/22", ... } }
+```
+
+Field labels become snake_case keys in JSON and element names in XML; XML keeps
+the human label as an attribute so nothing is lost.
+
+Each tool's API tab in the UI generates a ready-to-paste snippet for curl,
+PowerShell, Python, JavaScript and Go. Only curl gets the format picker — the
+other four request JSON and decode it into a native structure (a `[]string`, a
+PowerShell hashtable, a Python `dict`), which is the reason to use them over
+curl in the first place.
+
 Rate limiting is a sliding-window log in Redis, evaluated atomically in one Lua
 round trip. Defaults to 60 requests per 60 seconds per IP, tunable with
 `RATE_LIMIT_MAX` and `RATE_LIMIT_WINDOW_SEC`. Every response carries

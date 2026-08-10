@@ -1,5 +1,5 @@
 import { reportedIp } from "./client-ip";
-import { renderText, ToolInputError, type ToolResult } from "@/lib/tools/result";
+import { ToolInputError, type ToolResult } from "@/lib/tools/result";
 
 import { formatJson } from "@/lib/tools/impl/json-format";
 import { generatePassword, PASSWORD_DEFAULTS } from "@/lib/tools/impl/password";
@@ -19,7 +19,12 @@ export type HandlerContext = {
   body: string | null;
 };
 
-export type ToolHandler = (ctx: HandlerContext) => string | Promise<string>;
+/**
+ * Handlers return the structured ToolResult, not rendered text — the route
+ * decides whether that becomes plain text, JSON or XML. Flattening here would
+ * throw away the field labels that the machine formats need.
+ */
+export type ToolHandler = (ctx: HandlerContext) => ToolResult | Promise<ToolResult>;
 
 /** Throw from a handler to return a 400 with a plain-text reason. */
 export class BadRequestError extends Error {}
@@ -75,10 +80,10 @@ function requireBody(ctx: HandlerContext, hint: string): string {
   return value;
 }
 
-/** Runs a tool and flattens its result, converting input errors to 400s. */
-function run(compute: () => ToolResult): string {
+/** Runs a tool, converting its input errors into 400s. */
+function run(compute: () => ToolResult): ToolResult {
   try {
-    return renderText(compute());
+    return compute();
   } catch (error) {
     if (error instanceof ToolInputError) throw new BadRequestError(error.message);
     throw error;
@@ -95,7 +100,9 @@ function run(compute: () => ToolResult): string {
  * served as a 501 by app/api/v1/[tool]/route.ts.
  */
 export const HANDLERS: Record<string, ToolHandler> = {
-  ip: ({ request }) => reportedIp(request.headers),
+  // `text` rather than `lines`, so JSON yields "1.2.3.4" and not ["1.2.3.4"],
+  // while the plain-text rendering stays byte-identical to icanhazip.
+  ip: ({ request }) => ({ kind: "text", text: reportedIp(request.headers) }),
 
   "password-generator": ({ params }) =>
     run(() =>

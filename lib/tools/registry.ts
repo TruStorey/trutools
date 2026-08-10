@@ -40,8 +40,17 @@ export type Tool = {
     status: ToolStatus;
     method: "GET" | "POST";
     params: ApiParam[];
-    /** Shown on the card's API tab and in the /api/v1 index. */
-    example: string;
+    /**
+     * The shape this tool returns, used to type the generated code snippets
+     * (a list in PowerShell, a dict in Python, and so on).
+     */
+    resultKind: "lines" | "fields" | "text";
+    /** Example query arguments. Snippets in every language are built from these. */
+    query?: Record<string, string>;
+    /** For body tools: the filename the example reads from. */
+    bodyFile?: string;
+    /** For body tools: a short inline sample, for languages that inline it. */
+    bodySample?: string;
   };
 };
 
@@ -74,8 +83,6 @@ export const SECTIONS: Section[] = [
   },
 ];
 
-const BASE = "https://trutools.truvibe.dev/api/v1";
-
 export const TOOLS: Tool[] = [
   // ---------------------------------------------------------------- crypto
   {
@@ -102,7 +109,8 @@ export const TOOLS: Tool[] = [
           description: "Drop easily confused characters like O, 0, l and 1. Default false.",
         },
       ],
-      example: `curl '${BASE}/password-generator?length=32&count=3'`,
+      resultKind: "lines",
+      query: { length: "32", count: "3" },
     },
   },
   {
@@ -122,7 +130,8 @@ export const TOOLS: Tool[] = [
         { name: "uppercase", required: false, description: "Return uppercase hex. Default false." },
         { name: "hyphens", required: false, description: "Include hyphens. Default true." },
       ],
-      example: `curl '${BASE}/uuid-generator?version=7&count=5'`,
+      resultKind: "lines",
+      query: { version: "7", count: "5" },
     },
   },
   {
@@ -146,7 +155,8 @@ export const TOOLS: Tool[] = [
         { name: "prefix", required: false, description: "Prepended with an underscore, e.g. sk_live." },
         { name: "count", required: false, description: "1 to 100. Default 1." },
       ],
-      example: `curl '${BASE}/token-generator?bytes=32&prefix=sk_live'`,
+      resultKind: "lines",
+      query: { bytes: "32", prefix: "sk_live" },
     },
   },
   {
@@ -179,7 +189,8 @@ export const TOOLS: Tool[] = [
         },
         { name: "comment", required: false, description: "Trailing comment on the public key." },
       ],
-      example: `curl '${BASE}/ssh-keypair-generator?type=ed25519&comment=laptop'`,
+      resultKind: "fields",
+      query: { type: "ed25519", comment: "laptop" },
     },
   },
   {
@@ -202,7 +213,9 @@ export const TOOLS: Tool[] = [
           description: "The PEM certificate, POSTed as the raw request body.",
         },
       ],
-      example: `curl --data-binary @cert.pem ${BASE}/cert-reader`,
+      resultKind: "fields",
+      bodyFile: "cert.pem",
+      bodySample: "-----BEGIN CERTIFICATE-----\nMIIC...\n-----END CERTIFICATE-----",
     },
   },
 
@@ -235,7 +248,8 @@ export const TOOLS: Tool[] = [
           description: "The network in CIDR form, IPv4 or IPv6, e.g. 10.0.0.0/22.",
         },
       ],
-      example: `curl '${BASE}/subnet-calculator?cidr=10.0.0.0/22'`,
+      resultKind: "fields",
+      query: { cidr: "10.0.0.0/22" },
     },
   },
   {
@@ -251,7 +265,7 @@ export const TOOLS: Tool[] = [
       status: "live",
       method: "GET",
       params: [],
-      example: `curl ${BASE}/ip`,
+      resultKind: "text",
     },
   },
 
@@ -275,7 +289,8 @@ export const TOOLS: Tool[] = [
         },
         { name: "tz", required: false, description: "IANA timezone for the readable line. Default UTC." },
       ],
-      example: `curl '${BASE}/timestamp-converter?value=1754870400&tz=Europe/London'`,
+      resultKind: "fields",
+      query: { value: "1754870400", tz: "Europe/London" },
     },
   },
   {
@@ -295,7 +310,10 @@ export const TOOLS: Tool[] = [
         { name: "indent", required: false, description: "Spaces per level, 0 to 8. 0 minifies. Default 2." },
         { name: "sort", required: false, description: "Sort object keys alphabetically. Default false." },
       ],
-      example: `curl --data-binary @data.json '${BASE}/json-beautify?indent=2'`,
+      resultKind: "text",
+      query: { indent: "2" },
+      bodyFile: "data.json",
+      bodySample: '{"b":2,"a":1}',
     },
   },
 
@@ -326,7 +344,10 @@ export const TOOLS: Tool[] = [
         },
         { name: "drop-empty", required: false, description: "Drop blank lines first. Default true." },
       ],
-      example: `curl --data-binary @hosts.txt '${BASE}/text-tool?op=join&sep=,'`,
+      resultKind: "text",
+      query: { op: "join", sep: "," },
+      bodyFile: "hosts.txt",
+      bodySample: "web-01\nweb-02\ndb-01",
     },
   },
 ];

@@ -1,7 +1,8 @@
 import { BadRequestError, HANDLERS } from "@/lib/api/handlers";
 import { rateLimitKey } from "@/lib/api/client-ip";
 import { rateLimit } from "@/lib/api/ratelimit";
-import { preflight, text, tooManyRequests } from "@/lib/api/respond";
+import { failure, preflight, result, tooManyRequests } from "@/lib/api/respond";
+import { resolveFormat } from "@/lib/tools/format";
 import { getTool } from "@/lib/tools/registry";
 
 export const dynamic = "force-dynamic";
@@ -13,41 +14,48 @@ type RouteContext = {
 
 async function handle(request: Request, context: RouteContext): Promise<Response> {
   const { tool: id } = await context.params;
+  const url = new URL(request.url);
+
+  // Resolved before anything else can fail, so even a 429 or a 404 comes back
+  // in the format the caller asked for.
+  const format = resolveFormat(url.searchParams, request.headers);
 
   // Rate limit before dispatch, so unimplemented endpoints are limited too and
   // cannot be used as a free way to probe the service.
   const rate = await rateLimit(rateLimitKey(request.headers));
-  if (!rate.ok) return tooManyRequests(rate);
+  if (!rate.ok) return tooManyRequests(rate, format);
 
   const tool = getTool(id);
   if (!tool) {
-    return text(
-      `404 Not Found\nNo tool named "${id}".\nSee https://trutools.truvibe.dev/api/v1 for the list of endpoints.`,
-      { status: 404, rate },
+    return failure(
+      `No tool named "${id}". See https://trutools.truvibe.dev/api/v1 for the list of endpoints.`,
+      404,
+      format,
+      rate,
     );
   }
 
   const handler = HANDLERS[id];
   if (!handler) {
-    return text(
-      `501 Not Implemented\n"${tool.name}" is not wired up yet.\n` +
-        `See https://trutools.truvibe.dev/api/v1 for endpoints that are.`,
-      { status: 501, rate },
+    return failure(
+      `"${tool.name}" is not wired up yet. See https://trutools.truvibe.dev/api/v1 for endpoints that are.`,
+      501,
+      format,
+      rate,
     );
   }
 
-  const url = new URL(request.url);
-  const body = request.method === "POST" ? await request.text() : null;
+  const requestBody = request.method === "POST" ? await request.text() : null;
 
   try {
-    const result = await handler({ request, params: url.searchParams, body });
-    return text(result, { rate });
+    const value = await handler({ request, params: url.searchParams, body: requestBody });
+    return result(id, value, format, rate);
   } catch (error) {
     if (error instanceof BadRequestError) {
-      return text(`400 Bad Request\n${error.message}`, { status: 400, rate });
+      return failure(error.message, 400, format, rate);
     }
     console.error(`[trutools] handler "${id}" failed:`, error);
-    return text("500 Internal Server Error", { status: 500, rate });
+    return failure("Internal Server Error", 500, format, rate);
   }
 }
 

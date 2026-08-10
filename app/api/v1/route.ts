@@ -2,6 +2,7 @@ import { rateLimitKey } from "@/lib/api/client-ip";
 import { rateLimit } from "@/lib/api/ratelimit";
 import { preflight, text, tooManyRequests } from "@/lib/api/respond";
 import { SECTIONS, TOOLS, toolsInSection } from "@/lib/tools/registry";
+import { curlExample } from "@/lib/tools/snippets";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +12,10 @@ function buildIndex(): string {
     "trutools API v1",
     "https://trutools.truvibe.dev",
     "",
-    "Plain text in, plain text out. Every response is text/plain and ends in a newline.",
+    "Plain text by default. Add ?format=json or ?format=xml for a machine-readable",
+    "response, or send an Accept header of application/json or application/xml.",
+    "Errors come back in the same format you asked for.",
+    "",
     "Rate limited per IP; check X-RateLimit-Remaining and Retry-After.",
     "",
   ];
@@ -32,7 +36,7 @@ function buildIndex(): string {
         lines.push(`    - ${param.name} (${flag}): ${param.description}`);
       }
 
-      lines.push(`    $ ${tool.api.example}`);
+      lines.push(`    $ ${curlExample(tool)}`);
       lines.push("");
     }
   }
