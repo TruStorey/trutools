@@ -7,6 +7,9 @@ const TOOL_IDS = new Set(TOOLS.map((tool) => tool.id));
 /**
  * Serves the short `/<tool>` form by rewriting it onto the versioned route.
  *
+ * This is Next 16's `proxy` convention — the old `middleware.ts` name is
+ * deprecated; same execution model, different file and export name.
+ *
  * Deliberately a rewrite here rather than an `app/[tool]/route.ts` catch-all.
  * A root-level dynamic route would swallow *every* unmatched path on the site,
  * so a mistyped URL in a browser would get a plain-text "No tool named ..."
@@ -16,7 +19,7 @@ const TOOL_IDS = new Set(TOOLS.map((tool) => tool.id));
  * Matching against the known ids first means anything that is not a tool falls
  * through untouched and Next answers it exactly as it did before.
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const segment = request.nextUrl.pathname.slice(1);
 
   if (!TOOL_IDS.has(segment)) return NextResponse.next();
@@ -30,6 +33,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   // Only single-segment paths can be a tool, and the framework's own routes
-  // never should be — skipping them keeps middleware off the asset path.
+  // never should be — skipping them keeps this off the asset path entirely.
   matcher: ["/((?!api/|_next/|icon\\.svg|favicon\\.ico).*)"],
 };

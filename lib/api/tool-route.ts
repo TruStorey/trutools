@@ -11,7 +11,7 @@ import { failure, result, tooManyRequests } from "./respond";
  * The tool dispatch, shared by both routes that expose it:
  *
  *   /<tool>          the short form the snippets promote, rewritten onto the
- *                    route below by middleware.ts
+ *                    route below by proxy.ts
  *   /api/v1/<tool>   the versioned form, kept so a future /v2 has somewhere to
  *                    live and the old shape never breaks
  *

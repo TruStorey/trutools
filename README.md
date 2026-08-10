@@ -85,8 +85,8 @@ POST /text-tool                 ?op=join&sep=,
 GET  /api/health                liveness, not rate limited
 ```
 
-The short form is a rewrite in `middleware.ts`, matched against the known tool
-ids. It is deliberately not a root `[tool]` route: a root catch-all would
+The short form is a rewrite in `proxy.ts` (Next 16's replacement for
+`middleware.ts`), matched against the known tool ids. It is deliberately not a root `[tool]` route: a root catch-all would
 swallow every mistyped URL on the site and answer it with a plain-text API
 error instead of the 404 page.
 
