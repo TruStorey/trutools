@@ -19,7 +19,14 @@ export type ApiParam = {
 };
 
 export type Tool = {
-  /** Also the /api/v1/<id> path segment. */
+  /**
+   * The path segment, served at both /<id> and /api/v1/<id>.
+   *
+   * Because ids are root-level URLs, they share a namespace with any page the
+   * site might add. Next resolves static segments before dynamic ones, so a
+   * page at /search would silently shadow a tool with that id — pick ids that
+   * are unlikely to collide.
+   */
   id: string;
   name: string;
   description: string;

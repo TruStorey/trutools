@@ -7,7 +7,7 @@ Two front doors onto the same set of tools:
 - **A web UI** — a filterable card grid, sections for Crypto / Networking / Data
   Format / Text, and a Dynamic-Island-style pill in the navbar that doubles as
   the toast surface.
-- **A public plain-text API** — `curl tools.truvibe.dev/api/v1/ip`. Plain text
+- **A public plain-text API** — `curl tools.truvibe.dev/ip`. Plain text
   in, plain text out, rate limited per IP. Modelled on icanhazip.
 
 ## Status
@@ -65,20 +65,34 @@ produces a key `ssh-keygen` will actually load.
 
 ## API
 
+Every tool answers on a short root path **and** on the versioned one —
+`/uuid-generator` and `/api/v1/uuid-generator` are the same endpoint. The short
+form is what the snippets promote; the versioned form is kept so a future `/v2`
+can land without breaking anything.
+
 ```
-GET  /api/v1                          plain-text index of every endpoint
-GET  /api/v1/ip                       the caller's public IP
-GET  /api/v1/password-generator       ?length=32&count=3&symbols=false
-GET  /api/v1/uuid-generator           ?version=7&count=5
-GET  /api/v1/token-generator          ?bytes=32&encoding=hex&prefix=sk_live
-GET  /api/v1/ssh-keypair-generator    ?type=ed25519&comment=laptop
-GET  /api/v1/subnet-calculator        ?cidr=10.0.0.0/22
-GET  /api/v1/timestamp-converter      ?value=1754870400&tz=Europe/London
-POST /api/v1/cert-reader              PEM certificate as the body
-POST /api/v1/json-beautify            ?indent=2&sort=true
-POST /api/v1/text-tool                ?op=join&sep=,
-GET  /api/health                      liveness, not rate limited
+GET  /api/v1                    plain-text index of every endpoint
+GET  /ip                        the caller's public IP
+GET  /password-generator        ?length=32&count=3&symbols=false
+GET  /uuid-generator            ?version=7&count=5
+GET  /token-generator           ?bytes=32&encoding=hex&prefix=sk_live
+GET  /ssh-keypair-generator     ?type=ed25519&comment=laptop
+GET  /subnet-calculator         ?cidr=10.0.0.0/22
+GET  /timestamp-converter       ?value=1754870400&tz=Europe/London
+POST /cert-reader               PEM certificate as the body
+POST /json-beautify             ?indent=2&sort=true
+POST /text-tool                 ?op=join&sep=,
+GET  /api/health                liveness, not rate limited
 ```
+
+The short form is a rewrite in `middleware.ts`, matched against the known tool
+ids. It is deliberately not a root `[tool]` route: a root catch-all would
+swallow every mistyped URL on the site and answer it with a plain-text API
+error instead of the 404 page.
+
+Because tool ids are now root URLs, they share a namespace with any page the
+site adds. Next resolves static segments before dynamic ones, so a page at
+`/search` would silently shadow a tool with that id.
 
 `GET /api/v1` lists all of this with every parameter, so the API documents
 itself the way icanhazip does.
@@ -88,7 +102,7 @@ send an `Accept` header of `application/json` / `application/xml`, for something
 a script can parse — errors come back in the same format you asked for.
 
 ```
-$ curl 'tools.truvibe.dev/api/v1/subnet-calculator?cidr=10.0.0.0/22&format=json'
+$ curl 'tools.truvibe.dev/subnet-calculator?cidr=10.0.0.0/22&format=json'
 { "tool": "subnet-calculator", "result": { "network": "10.0.0.0/22", ... } }
 ```
 

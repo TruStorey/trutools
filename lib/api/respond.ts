@@ -46,6 +46,10 @@ export function body(content: string, options: BodyOptions = {}): Response {
     headers: {
       "Content-Type": CONTENT_TYPES[format],
       "Cache-Control": "no-store",
+      // The tools answer on root-level paths now, which are exactly the sort
+      // of URL a crawler will happily index. Nothing here is worth a search
+      // result, and a stale indexed password would be a bad look.
+      "X-Robots-Tag": "noindex, nofollow",
       ...CORS_HEADERS,
       ...rateHeaders(rate),
       ...headers,

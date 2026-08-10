@@ -13,6 +13,10 @@ function buildIndex(): string {
     "trutools API v1",
     SITE_URL,
     "",
+    "Every tool answers on a short path — /<tool> — and on the versioned",
+    "/api/v1/<tool>. Both are the same endpoint; the versioned form is kept so a",
+    "future /v2 can land without breaking anything.",
+    "",
     "Plain text by default. Add ?format=json or ?format=xml for a machine-readable",
     "response, or send an Accept header of application/json or application/xml.",
     "Errors come back in the same format you asked for.",
@@ -29,7 +33,7 @@ function buildIndex(): string {
 
     for (const tool of tools) {
       const marker = tool.api.status === "live" ? "" : "  [not implemented yet]";
-      lines.push(`  ${tool.api.method} /api/v1/${tool.id}${marker}`);
+      lines.push(`  ${tool.api.method} /${tool.id}${marker}`);
       lines.push(`    ${tool.name} — ${tool.description}`);
 
       for (const param of tool.api.params) {

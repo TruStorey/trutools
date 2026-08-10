@@ -134,7 +134,7 @@ function ApiTab({ tool }: { tool: Tool }) {
         <CodeBlock code={snippet} language={language} />
 
         <p className="font-mono text-[0.7rem] text-muted-foreground/70">
-          {tool.api.method} /api/v1/{tool.id}
+          {tool.api.method} /{tool.id}
         </p>
       </div>
 

@@ -16,4 +16,11 @@ export const SITE_URL = (
 /** The same thing without the scheme, for prose and inline examples. */
 export const SITE_HOST = SITE_URL.replace(/^https?:\/\//, "");
 
-export const API_BASE = `${SITE_URL}/api/v1`;
+/**
+ * The short form the snippets promote: https://host/<tool>.
+ * Tool ids therefore double as root-level URLs — see lib/tools/registry.ts.
+ */
+export const API_BASE = SITE_URL;
+
+/** The versioned form, still served, and where a future /v2 would sit. */
+export const API_V1_BASE = `${SITE_URL}/api/v1`;
