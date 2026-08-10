@@ -1,18 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="trutools">
   <title>trutools</title>
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#6366f1" />
-      <stop offset="1" stop-color="#06b6d4" />
-    </linearGradient>
-  </defs>
 
-  <rect width="32" height="32" rx="7" fill="url(#bg)" />
+  <rect width="32" height="32" rx="7" fill="#000000" />
 
   <!--
-    lucide "pocket-knife", 24x24 at stroke-width 2, scaled to 22px with a 5px
-    margin. Stroke bumped to 2.5 so it survives being drawn at 16px in a tab —
-    at the icon's native weight the blade all but disappears.
+    lucide "terminal", the same mark as the navbar wordmark. 24x24 at stroke
+    width 2, scaled to 22px with a 5px margin. Stroke bumped to 2.5 so the
+    prompt still reads when the icon is drawn at 16px in a tab.
   -->
   <g
     transform="translate(5 5) scale(0.9166667)"
@@ -22,10 +16,7 @@
     stroke-linecap="round"
     stroke-linejoin="round"
   >
-    <path d="M3 2v1c0 1 2 1 2 2S3 6 3 7s2 1 2 2-2 1-2 2 2 1 2 2" />
-    <path d="M18 6h.01" />
-    <path d="M6 18h.01" />
-    <path d="M20.83 8.83a4 4 0 0 0-5.66-5.66l-12 12a4 4 0 1 0 5.66 5.66Z" />
-    <path d="M18 11.66V22a4 4 0 0 0 4-4V6" />
+    <path d="m4 17 6-6-6-6" />
+    <path d="M12 19h8" />
   </g>
 </svg>
