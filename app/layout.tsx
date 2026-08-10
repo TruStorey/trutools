@@ -23,15 +23,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "trutools — simple IT tools",
+    default: "trutools — simple tools, in the browser or over an API",
     template: "%s · trutools",
   },
   description:
-    "Simple IT tools for crypto, networking, data formats and text — with a public, rate-limited plain-text API you can curl.",
+    "Passwords, keys, subnets, timestamps and text. Use them in the browser, or curl the same tool on a URL of its own.",
   openGraph: {
-    title: "trutools — simple IT tools",
+    title: "trutools — simple tools, in the browser or over an API",
     description:
-      "Simple IT tools with a public, rate-limited plain-text API you can curl.",
+      "Passwords, keys, subnets, timestamps and text. Use them in the browser, or curl the same tool on a URL of its own.",
     url: SITE_URL,
     siteName: "trutools",
     type: "website",

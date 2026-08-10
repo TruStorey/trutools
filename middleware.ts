@@ -31,5 +31,5 @@ export function middleware(request: NextRequest) {
 export const config = {
   // Only single-segment paths can be a tool, and the framework's own routes
   // never should be — skipping them keeps middleware off the asset path.
-  matcher: ["/((?!api/|_next/|favicon\\.ico).*)"],
+  matcher: ["/((?!api/|_next/|icon\\.svg|favicon\\.ico).*)"],
 };

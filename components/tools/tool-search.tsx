@@ -39,7 +39,7 @@ export function ToolSearch({ value, onChange, resultCount, totalCount }: ToolSea
   }, []);
 
   return (
-    <div className="w-full max-w-xl">
+    <div className="mx-auto w-full max-w-xl">
       <div className="relative">
         <Search
           className="pointer-events-none absolute top-1/2 left-3.5 z-10 size-4 -translate-y-1/2 text-muted-foreground"
@@ -83,7 +83,7 @@ export function ToolSearch({ value, onChange, resultCount, totalCount }: ToolSea
       </div>
 
       {/* Announced so keyboard and screen-reader users learn the filter worked. */}
-      <p aria-live="polite" className="mt-2 h-4 text-xs text-muted-foreground">
+      <p aria-live="polite" className="mt-2 h-4 text-center text-xs text-muted-foreground">
         {value ? `${resultCount} of ${totalCount} tools` : ""}
       </p>
     </div>
