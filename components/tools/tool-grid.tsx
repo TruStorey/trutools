@@ -43,7 +43,9 @@ function SectionGrid({
   return (
     <div
       ref={gridRef}
-      className="grid grid-cols-1 items-start gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+      // Default `stretch` alignment, so cards in a row share a height even when
+      // one description wraps to two lines and another does not.
+      className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
     >
       {rows.map((row, rowIndex) => {
         const openTool = row.find((tool) => tool.id === expandedId);

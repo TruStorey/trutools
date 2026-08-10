@@ -127,7 +127,7 @@ export const TOOLS: Tool[] = [
   },
   {
     id: "token-generator",
-    name: "Token / API Key Generator",
+    name: "Token Generator",
     description:
       "Cryptographically random tokens with an optional prefix, so a leaked key is obvious in a log.",
     section: "crypto",

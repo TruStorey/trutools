@@ -37,23 +37,32 @@ export function ToolCard({ tool, expanded, onToggle }: ToolCardProps) {
         onClick={onToggle}
         aria-expanded={expanded}
         aria-controls={`tool-detail-${tool.id}`}
-        className="flex h-full w-full flex-col items-start gap-2.5 rounded-2xl p-4 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset"
+        className="flex h-full w-full flex-col items-start gap-1.5 rounded-2xl p-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset"
       >
-        <span className="flex w-full items-start gap-2">
-          <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-foreground/8 text-foreground/80">
-            <ToolIcon name={tool.icon} className="size-4" />
+        <span className="flex w-full items-center gap-2">
+          <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-foreground/8 text-foreground/80">
+            <ToolIcon name={tool.icon} className="size-3.5" />
           </span>
+
+          {/* min-w-0 so a long name truncates instead of shoving the chevron
+              out of the card. `title` keeps the full name reachable if it does. */}
+          <span
+            title={tool.name}
+            className="min-w-0 flex-1 truncate text-sm font-medium tracking-tight"
+          >
+            {tool.name}
+          </span>
+
           <ChevronDown
             className={cn(
-              "mt-2 ml-auto size-4 shrink-0 text-muted-foreground transition-transform duration-200 motion-reduce:transition-none",
+              "size-3.5 shrink-0 text-muted-foreground transition-transform duration-200 motion-reduce:transition-none",
               expanded && "rotate-180",
             )}
             aria-hidden
           />
         </span>
 
-        <span className="text-sm font-medium tracking-tight">{tool.name}</span>
-        <span className="line-clamp-3 text-xs leading-relaxed text-muted-foreground">
+        <span className="line-clamp-2 text-xs leading-snug text-muted-foreground">
           {tool.description}
         </span>
       </button>
