@@ -24,7 +24,7 @@ function buildIndex(): string {
 
     for (const tool of tools) {
       const marker = tool.api.status === "live" ? "" : "  [not implemented yet]";
-      lines.push(`  GET /api/v1/${tool.id}${marker}`);
+      lines.push(`  ${tool.api.method} /api/v1/${tool.id}${marker}`);
       lines.push(`    ${tool.name} — ${tool.description}`);
 
       for (const param of tool.api.params) {

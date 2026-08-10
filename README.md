@@ -12,11 +12,17 @@ Two front doors onto the same set of tools:
 
 ## Status
 
-This is a scaffold. The **UI shell, search, and API layer are real**; the tools
-themselves are not implemented yet. Cards expand to show the API contract for
-the tool they represent, and every endpoint except `/api/v1/ip` returns `501`.
+All ten tools work, in the browser and over the API. Cards sit four to a row;
+opening one slides a full-width panel in beneath its row with two tabs — **Tool**
+for the interactive version and **API** for the curl equivalent.
 
-`/api/v1/ip` is wired end to end and proves the whole pipeline.
+Both surfaces call the same function. `lib/tools/impl/` holds the logic, the
+panel imports it directly and the route handler imports it too, so the browser
+and `curl` cannot disagree about what a tool does.
+
+Two tools need `node:crypto` and so cannot run in the browser — OpenSSH key
+encoding and X.509 parsing. Their panels call our own public API, which means
+the page shows byte-for-byte what a `curl` user sees.
 
 ## Running it
 
@@ -38,26 +44,44 @@ pnpm lint
 
 ## Adding a tool
 
-Everything is driven off one registry, so a tool is three edits:
-
-1. **`lib/tools/registry.ts`** — add the `Tool` entry. This alone gives you a
-   card, search coverage, and an entry in the `/api/v1` index.
-2. **`lib/api/handlers.ts`** — add a handler keyed by the tool's `id`. Throw
-   `BadRequestError` for a 400; anything returned is sent as `text/plain`.
-3. Flip that tool's `api.status` to `"live"` and drop its controls into
-   `components/tools/tool-panel.tsx`.
+1. **`lib/tools/impl/<tool>.ts`** — the logic. Return a `ToolResult`
+   (`lines`, `fields` or `text`) and throw `ToolInputError` for bad input.
+   Keep it isomorphic unless it genuinely needs Node; if it does, put it under
+   `impl/server/` and mark the tool `serverOnly`.
+2. **`lib/tools/registry.ts`** — the `Tool` entry. This alone gives you a card,
+   search coverage, and an entry in the `/api/v1` index.
+3. **`lib/api/handlers.ts`** — parse the query params and call your function.
+4. **`components/tools/panels/`** — the interactive panel, registered in
+   `panels/index.tsx`.
 
 Keep `registry.ts` free of React and lucide imports — the route handlers import
 it. Icons are string keys resolved by `components/tools/icon-map.tsx`.
 
+Plain-text output is generated from the `ToolResult` by `renderText` in
+`lib/tools/result.ts`. Single-line fields are printed as an aligned column;
+multi-line ones (PEM blocks, SAN lists) get their own flush-left block, so
+`curl .../ssh-keypair-generator | sed -n '/BEGIN/,/END/p' > id_ed25519`
+produces a key `ssh-keygen` will actually load.
+
 ## API
 
 ```
-GET  /api/v1              plain-text index of every endpoint
-GET  /api/v1/ip           the caller's public IP
-GET  /api/v1/<tool>       501 until the tool is implemented
-GET  /api/health          liveness, not rate limited
+GET  /api/v1                          plain-text index of every endpoint
+GET  /api/v1/ip                       the caller's public IP
+GET  /api/v1/password-generator       ?length=32&count=3&symbols=false
+GET  /api/v1/uuid-generator           ?version=7&count=5
+GET  /api/v1/token-generator          ?bytes=32&encoding=hex&prefix=sk_live
+GET  /api/v1/ssh-keypair-generator    ?type=ed25519&comment=laptop
+GET  /api/v1/subnet-calculator        ?cidr=10.0.0.0/22
+GET  /api/v1/timestamp-converter      ?value=1754870400&tz=Europe/London
+POST /api/v1/cert-reader              PEM certificate as the body
+POST /api/v1/json-beautify            ?indent=2&sort=true
+POST /api/v1/text-tool                ?op=join&sep=,
+GET  /api/health                      liveness, not rate limited
 ```
+
+`GET /api/v1` lists all of this with every parameter, so the API documents
+itself the way icanhazip does.
 
 Rate limiting is a sliding-window log in Redis, evaluated atomically in one Lua
 round trip. Defaults to 60 requests per 60 seconds per IP, tunable with
