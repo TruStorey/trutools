@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, Terminal, X } from "lucide-react";
+import { Check, Copy, SlidersHorizontal, Terminal, X } from "lucide-react";
 import { useState } from "react";
 
 import { useIsland } from "@/components/island/island-provider";
@@ -102,8 +102,22 @@ export function ToolDetail({ tool, onClose }: { tool: Tool; onClose: () => void 
         {/* The default TabsList is an opaque bg-muted bar, which punches a
             solid rectangle through the glass. */}
         <TabsList className="border border-white/15 bg-white/10 dark:bg-black/20">
-          <TabsTrigger value="tool">Tool</TabsTrigger>
-          <TabsTrigger value="api">API</TabsTrigger>
+          {/* The active trigger defaults to an opaque bg-background for the
+              same reason — translucent keeps the glass reading through. */}
+          <TabsTrigger
+            value="tool"
+            className="data-active:bg-white/25 dark:data-active:bg-white/10"
+          >
+            <SlidersHorizontal className="size-3.5" />
+            Tool
+          </TabsTrigger>
+          <TabsTrigger
+            value="api"
+            className="data-active:bg-white/25 dark:data-active:bg-white/10"
+          >
+            <Terminal className="size-3.5" />
+            API
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="tool" className="pt-3">
