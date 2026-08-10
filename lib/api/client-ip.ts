@@ -73,6 +73,19 @@ function isPrivateIpv6(value: bigint): boolean {
   return false;
 }
 
+/** True when this parses as an IP at all, public or otherwise. */
+export function isParseableAddress(candidate: string): boolean {
+  const value = normalise(candidate);
+  if (!value) return false;
+  try {
+    if (value.includes(":")) parseIpv6(value);
+    else parseIpv4(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** True when this address could belong to someone out on the internet. */
 export function isPublicAddress(candidate: string): boolean {
   const value = normalise(candidate);
@@ -106,7 +119,10 @@ function forwardedChain(headers: Headers): string[] {
 export function clientIp(headers: Headers): string {
   if (TRUSTED_HEADER) {
     const value = headers.get(TRUSTED_HEADER)?.split(",")[0];
-    if (value) return normalise(value);
+    // Must parse as an address. A misconfigured CLIENT_IP_HEADER pointing at
+    // something that is not an IP should fall through to the chain rather than
+    // report whatever string happened to be there.
+    if (value && isParseableAddress(normalise(value))) return normalise(value);
   }
 
   const chain = forwardedChain(headers);
@@ -206,6 +222,23 @@ export function describeClientIp(headers: Headers): { label: string; value: stri
     label: "CLIENT_IP_HEADER",
     value: TRUSTED_HEADER ? TRUSTED_HEADER : "unset",
   });
+
+  // The common Cloudflare/Coolify shape: TLS terminates at the origin, so
+  // Traefik rewrites X-Forwarded-For from the tunnel peer, but the CDN's own
+  // header rides through untouched. If one is present and unused, that is the
+  // answer, so say it rather than leaving it to be inferred.
+  const cdnHeader = ["cf-connecting-ip", "true-client-ip", "fastly-client-ip"].find(
+    (name) => headers.get(name) && isParseableAddress(headers.get(name) ?? ""),
+  );
+
+  if (cdnHeader && !TRUSTED_HEADER) {
+    fields.push({
+      label: "Fix",
+      value:
+        `${cdnHeader} is present and holds ${normalise(headers.get(cdnHeader) ?? "")}. ` +
+        `Set CLIENT_IP_HEADER=${cdnHeader} to use it.`,
+    });
+  }
 
   const anyPublic = chain.some((entry) => isPublicAddress(entry));
   fields.push({

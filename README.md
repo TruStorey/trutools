@@ -141,11 +141,19 @@ Two notes on behaviour that are deliberate:
   our own Docker and proxy hops (all private), and cannot be moved by a spoofed
   header because a caller can only prepend entries on the left. The rate limiter
   keys on the same value. See `lib/api/client-ip.ts`.
-- **Behind a CDN, set `CLIENT_IP_HEADER`.** With Cloudflare in front, the
-  right-most public entry is Cloudflare's edge, not the visitor — so every
-  visitor would share one rate-limit bucket. `CLIENT_IP_HEADER=cf-connecting-ip`
-  makes that header the authority. Leave it unset otherwise: trusting it with no
-  CDN in front would let anyone spoof their address.
+- **Behind a CDN, set `CLIENT_IP_HEADER`.** Two different setups need it. If
+  Cloudflare proxies straight to Traefik, the rightmost public entry is
+  Cloudflare's edge rather than the visitor. If TLS instead terminates at the
+  origin — an L4 passthrough or a WireGuard tunnel in between — then nothing on
+  the path can add `X-Forwarded-For`, Traefik rewrites the incoming one from the
+  tunnel peer, and the chain holds only private hops. Either way
+  `CLIENT_IP_HEADER=cf-connecting-ip` uses the header Cloudflare sets, which
+  rides through both untouched. `GET /ip?debug` says so explicitly when it spots
+  one going unused.
+
+  Leave it unset without a CDN in front, and with one, restrict the origin to
+  the CDN's ranges — otherwise anyone reaching the origin directly can send the
+  header themselves.
 - **The limiter fails open.** If Redis is unreachable, requests are allowed
   rather than refused. A public utility API going down because its rate limiter
   is sick is a worse outcome than a brief window without limiting.
