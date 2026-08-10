@@ -7,6 +7,7 @@ import { useIsland } from "@/components/island/island-provider";
 import { ToolIcon } from "@/components/tools/icon-map";
 import { ToolPanelFor } from "@/components/tools/panels";
 import { Button } from "@/components/ui/button";
+import { GlassCard } from "@/components/ui/glasscn/glass-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Tool } from "@/lib/tools/registry";
 
@@ -39,7 +40,7 @@ function ApiTab({ tool }: { tool: Tool }) {
           </Button>
         </div>
 
-        <pre className="overflow-x-auto rounded-lg border border-border/50 bg-background/40 p-3 font-mono text-xs leading-relaxed">
+        <pre className="overflow-x-auto rounded-lg border border-white/10 bg-black/15 p-3 font-mono text-xs leading-relaxed backdrop-blur-sm dark:bg-black/25">
           <code>{tool.api.example}</code>
         </pre>
       </div>
@@ -65,7 +66,7 @@ function ApiTab({ tool }: { tool: Tool }) {
         </div>
       ) : null}
 
-      <p className="flex items-start gap-2 rounded-lg border border-border/50 bg-background/30 px-3 py-2 text-xs text-muted-foreground">
+      <p className="flex items-start gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-muted-foreground">
         <Terminal className="mt-0.5 size-3.5 shrink-0" aria-hidden />
         <span>
           Responses are <code className="font-mono">text/plain</code> and rate limited per IP.
@@ -79,7 +80,9 @@ function ApiTab({ tool }: { tool: Tool }) {
 
 export function ToolDetail({ tool, onClose }: { tool: Tool; onClose: () => void }) {
   return (
-    <div className="rounded-2xl border border-border/50 bg-background/45 p-5 backdrop-blur-xl">
+    // Same pure-CSS `liquid` glass as the cards, so the panel reads as part of
+    // the same surface rather than a plain box that opened underneath them.
+    <GlassCard glassVariant="liquid" className="gap-0 rounded-2xl p-5 py-5">
       <div className="mb-4 flex items-start gap-3">
         <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-foreground/8 text-foreground/80">
           <ToolIcon name={tool.icon} className="size-4.5" />
@@ -96,7 +99,9 @@ export function ToolDetail({ tool, onClose }: { tool: Tool; onClose: () => void 
       </div>
 
       <Tabs defaultValue="tool">
-        <TabsList>
+        {/* The default TabsList is an opaque bg-muted bar, which punches a
+            solid rectangle through the glass. */}
+        <TabsList className="border border-white/15 bg-white/10 dark:bg-black/20">
           <TabsTrigger value="tool">Tool</TabsTrigger>
           <TabsTrigger value="api">API</TabsTrigger>
         </TabsList>
@@ -109,6 +114,6 @@ export function ToolDetail({ tool, onClose }: { tool: Tool; onClose: () => void 
           <ApiTab tool={tool} />
         </TabsContent>
       </Tabs>
-    </div>
+    </GlassCard>
   );
 }

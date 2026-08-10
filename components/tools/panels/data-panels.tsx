@@ -48,7 +48,7 @@ export function SubnetPanel() {
               key={example}
               type="button"
               onClick={() => setCidr(example)}
-              className="rounded-md border border-border/60 px-2 py-1 font-mono text-[0.7rem] text-muted-foreground transition-colors hover:border-border hover:text-foreground"
+              className="rounded-md border border-white/15 bg-white/5 px-2 py-1 font-mono text-[0.7rem] text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground dark:bg-black/20 dark:hover:bg-black/30"
             >
               {example}
             </button>
@@ -204,7 +204,7 @@ export function TextPanel() {
               className={
                 op === operation
                   ? "rounded-md bg-foreground/90 px-2.5 py-1 text-xs font-medium text-background"
-                  : "rounded-md border border-border/60 px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  : "rounded-md border border-white/15 bg-white/5 px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground dark:bg-black/20 dark:hover:bg-black/30"
               }
             >
               {op}

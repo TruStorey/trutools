@@ -69,7 +69,7 @@ export function ToolOutput({
       </div>
 
       {result.kind === "lines" ? (
-        <ul className="divide-y divide-border/40 overflow-hidden rounded-lg border border-border/50 bg-background/40">
+        <ul className="divide-y divide-white/10 overflow-hidden rounded-lg border border-white/10 bg-black/15 backdrop-blur-sm dark:bg-black/25">
           {result.lines.map((line, index) => (
             <li
               key={`${index}-${line}`}
@@ -90,7 +90,7 @@ export function ToolOutput({
       ) : null}
 
       {result.kind === "fields" ? (
-        <dl className="divide-y divide-border/40 overflow-hidden rounded-lg border border-border/50 bg-background/40">
+        <dl className="divide-y divide-white/10 overflow-hidden rounded-lg border border-white/10 bg-black/15 backdrop-blur-sm dark:bg-black/25">
           {result.fields.map((field) => (
             <div
               key={field.label}
@@ -118,7 +118,7 @@ export function ToolOutput({
       ) : null}
 
       {result.kind === "text" ? (
-        <pre className="max-h-80 overflow-auto rounded-lg border border-border/50 bg-background/40 p-3 font-mono text-xs leading-relaxed">
+        <pre className="max-h-80 overflow-auto rounded-lg border border-white/10 bg-black/15 p-3 font-mono text-xs leading-relaxed backdrop-blur-sm dark:bg-black/25">
           <code>{result.text}</code>
         </pre>
       ) : null}
