@@ -1,3 +1,4 @@
+import { rateLimitConfig } from "./rate-limit-config";
 import { getRedis } from "./redis";
 
 export type RateLimitResult = {
@@ -8,16 +9,10 @@ export type RateLimitResult = {
   resetAt: number;
 };
 
-const DEFAULT_MAX = 60;
-const DEFAULT_WINDOW_SEC = 60;
-
+/** One source for the numbers, shared with the UI that documents them. */
 function config() {
-  const max = Number.parseInt(process.env.RATE_LIMIT_MAX ?? "", 10);
-  const windowSec = Number.parseInt(process.env.RATE_LIMIT_WINDOW_SEC ?? "", 10);
-  return {
-    max: Number.isFinite(max) && max > 0 ? max : DEFAULT_MAX,
-    windowMs: (Number.isFinite(windowSec) && windowSec > 0 ? windowSec : DEFAULT_WINDOW_SEC) * 1000,
-  };
+  const { max, windowSec } = rateLimitConfig();
+  return { max, windowMs: windowSec * 1000 };
 }
 
 /**

@@ -1,6 +1,5 @@
 import { ToolGrid } from "@/components/tools/tool-grid";
 import { SECTIONS, TOOLS } from "@/lib/tools/registry";
-import { SITE_HOST } from "@/lib/site";
 
 export default function Home() {
   return (

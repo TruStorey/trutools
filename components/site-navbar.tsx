@@ -1,12 +1,17 @@
 import Link from "next/link";
 import { Terminal } from "lucide-react";
 
+import { ApiInfoDialog } from "@/components/api-info-dialog";
 import { DynamicIsland } from "@/components/island/dynamic-island";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { glassVariantStyles } from "@/lib/glass-variants";
-import { cn } from "@/lib/utils";
+import { describeWindow, rateLimitConfig } from "@/lib/api/rate-limit-config";
+import { SITE_HOST } from "@/lib/site";
 
 export function SiteNavbar() {
+  // Server component, so the dialog can state the real configured limit
+  // rather than a number hardcoded into the copy.
+  const limit = rateLimitConfig();
+
   return (
     <header className="sticky top-0 z-50 border-b border-white/10 bg-background/50 backdrop-blur-xl backdrop-saturate-150">
       {/*
@@ -30,25 +35,10 @@ export function SiteNavbar() {
         <DynamicIsland />
 
         <div className="flex items-center justify-end gap-2">
-          {/* GlassIcon renders a plain <button> and its cva lives in a client
-              module, so this navbar (a server component) styles a real anchor
-              directly rather than calling glassIconVariants().
-
-              eslint-disable: /api/v1 is a route handler, not a page. next/link
-              would try to client-side navigate to it and break. */}
-          {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-          <a
-            href="/api/v1"
-            aria-label="API documentation"
-            className={cn(
-              "inline-flex size-7 shrink-0 items-center justify-center rounded-full",
-              "text-foreground select-none outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
-              "transition-transform duration-150 active:scale-95 motion-reduce:transition-none",
-              glassVariantStyles.frosted,
-            )}
-          >
-            <span className="font-mono text-[0.65rem] leading-none">API</span>
-          </a>
+          <ApiInfoDialog
+            siteHost={SITE_HOST}
+            rateLimit={{ max: limit.max, window: describeWindow(limit.windowSec) }}
+          />
           <ThemeToggle />
         </div>
       </nav>
