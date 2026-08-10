@@ -4,6 +4,12 @@ import { useEffect, useState } from "react";
 
 export type ApiHealth = "checking" | "up" | "down";
 
+export type ApiHealthState = {
+  status: ApiHealth;
+  /** The HTTP status the healthcheck answered with, or null if nothing came back. */
+  code: number | null;
+};
+
 const DEFAULT_INTERVAL_MS = 30_000;
 
 /**
@@ -13,14 +19,15 @@ const DEFAULT_INTERVAL_MS = 30_000;
 const REQUEST_TIMEOUT_MS = 5_000;
 
 /**
- * Polls /api/health so the island can show whether the API is reachable.
+ * Polls /api/health so the island can show whether the API is reachable, and
+ * what it actually said.
  *
  * /api/health is deliberately exempt from rate limiting and does not touch
  * Redis, so polling it costs nothing and a Redis blip does not show up here as
  * a false outage.
  */
-export function useApiHealth(intervalMs = DEFAULT_INTERVAL_MS): ApiHealth {
-  const [status, setStatus] = useState<ApiHealth>("checking");
+export function useApiHealth(intervalMs = DEFAULT_INTERVAL_MS): ApiHealthState {
+  const [state, setState] = useState<ApiHealthState>({ status: "checking", code: null });
 
   useEffect(() => {
     let cancelled = false;
@@ -49,10 +56,13 @@ export function useApiHealth(intervalMs = DEFAULT_INTERVAL_MS): ApiHealth {
           cache: "no-store",
           signal: controller.signal,
         });
-        if (!cancelled) setStatus(response.ok ? "up" : "down");
+        if (!cancelled) {
+          setState({ status: response.ok ? "up" : "down", code: response.status });
+        }
       } catch {
-        // Aborted, offline, or DNS failure — all of them mean "not reachable".
-        if (!cancelled) setStatus("down");
+        // Aborted, offline, or DNS failure — nothing answered, so there is no
+        // status code to report, only that it is unreachable.
+        if (!cancelled) setState({ status: "down", code: null });
       } finally {
         clearTimeout(abortTimer);
       }
@@ -78,5 +88,42 @@ export function useApiHealth(intervalMs = DEFAULT_INTERVAL_MS): ApiHealth {
     };
   }, [intervalMs]);
 
-  return status;
+  return state;
+}
+
+/**
+ * Reason phrases for the codes a healthcheck plausibly returns. Anything else
+ * falls back to the bare number rather than guessing.
+ */
+const STATUS_TEXT: Record<number, string> = {
+  200: "OK",
+  204: "No Content",
+  301: "Moved Permanently",
+  302: "Found",
+  400: "Bad Request",
+  401: "Unauthorized",
+  403: "Forbidden",
+  404: "Not Found",
+  408: "Request Timeout",
+  429: "Too Many Requests",
+  500: "Internal Server Error",
+  502: "Bad Gateway",
+  503: "Service Unavailable",
+  504: "Gateway Timeout",
+};
+
+/** e.g. "API: 200 OK", "API: 502 Bad Gateway", "API unreachable". */
+export function healthLabel({ status, code }: ApiHealthState): string {
+  if (status === "checking") return "Checking API status";
+  if (code === null) return "API unreachable";
+
+  const text = STATUS_TEXT[code];
+  return text ? `API: ${code} ${text}` : `API: ${code}`;
+}
+
+export function healthDetail({ status, code }: ApiHealthState): string {
+  if (status === "checking") return "Asking /api/health…";
+  if (code === null) return "/api/health did not respond";
+  if (status === "up") return "All endpoints reachable";
+  return `/api/health returned ${code}`;
 }

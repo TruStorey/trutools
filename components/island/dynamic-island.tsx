@@ -8,7 +8,13 @@ import { Tooltip, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import { useIsland, type IslandVariant } from "./island-provider";
-import { useApiHealth, type ApiHealth } from "./use-api-health";
+import {
+  healthDetail,
+  healthLabel,
+  useApiHealth,
+  type ApiHealth,
+  type ApiHealthState,
+} from "./use-api-health";
 
 /**
  * Adapted from @smoothui/dynamic-island.
@@ -35,53 +41,40 @@ const VARIANT_STYLES: Record<IslandVariant, { icon: typeof Info; tint: string }>
   loading: { icon: LoaderCircle, tint: "text-amber-400" },
 };
 
-const HEALTH_DOT: Record<
-  ApiHealth,
-  { className: string; label: string; detail: string }
-> = {
-  checking: {
-    className: "bg-white/40",
-    label: "Checking API status",
-    detail: "Asking /api/health…",
-  },
-  up: {
-    className: "bg-emerald-400",
-    label: "API is up",
-    detail: "All endpoints reachable",
-  },
+const HEALTH_DOT: Record<ApiHealth, string> = {
+  checking: "bg-white/40",
+  up: "bg-emerald-400",
   // Pulsing so an outage is noticeable without the island having to expand.
-  down: {
-    className: "bg-rose-500 animate-pulse motion-reduce:animate-none",
-    label: "API is down",
-    detail: "/api/health is not responding",
-  },
+  down: "bg-rose-500 animate-pulse motion-reduce:animate-none",
 };
 
-function IdlePill({ health }: { health: ApiHealth }) {
-  const dot = HEALTH_DOT[health];
-
+function IdlePill({ health }: { health: ApiHealthState }) {
   return (
     <div className="flex items-center gap-2 px-4 py-1.5">
       {/* No `title` here — the native tooltip would race the glass one. */}
-      <span className={cn("size-1.5 shrink-0 rounded-full", dot.className)} aria-hidden />
+      <span
+        className={cn("size-1.5 shrink-0 rounded-full", HEALTH_DOT[health.status])}
+        aria-hidden
+      />
       <span className="font-mono text-xs tracking-[0.2em] text-white/70 select-none">
-        TRUTOOLS
+        API STATUS
       </span>
-      <span className="sr-only">{dot.label}</span>
+      <span className="sr-only">{healthLabel(health)}</span>
     </div>
   );
 }
 
-/** What the glass tooltip shows on hover: the same status, spelled out. */
-function HealthTooltip({ health }: { health: ApiHealth }) {
-  const dot = HEALTH_DOT[health];
-
+/** What the glass tooltip shows on hover: the status code, spelled out. */
+function HealthTooltip({ health }: { health: ApiHealthState }) {
   return (
     <div className="flex items-start gap-2">
-      <span className={cn("mt-1 size-1.5 shrink-0 rounded-full", dot.className)} aria-hidden />
+      <span
+        className={cn("mt-1 size-1.5 shrink-0 rounded-full", HEALTH_DOT[health.status])}
+        aria-hidden
+      />
       <div className="space-y-0.5">
-        <p className="font-medium">{dot.label}</p>
-        <p className="text-muted-foreground">{dot.detail}</p>
+        <p className="font-medium">{healthLabel(health)}</p>
+        <p className="text-muted-foreground">{healthDetail(health)}</p>
         <p className="pt-0.5 font-mono text-[0.65rem] text-muted-foreground/70">
           checked every 30s
         </p>
@@ -115,7 +108,7 @@ export function DynamicIsland({ className }: { className?: string }) {
       */}
       <TooltipTrigger
         render={<div className="mx-auto w-fit" />}
-        aria-label={HEALTH_DOT[health].label}
+        aria-label={healthLabel(health)}
       >
         <motion.div
           layout
