@@ -134,11 +134,18 @@ round trip. Defaults to 60 requests per 60 seconds per IP, tunable with
 
 Two notes on behaviour that are deliberate:
 
-- **The reported IP and the rate-limit key are different.** `/api/v1/ip` echoes
-  the *leftmost* `X-Forwarded-For` entry, which is what a caller behind a proxy
-  expects to see. The limiter keys on the *rightmost* entry — the hop our own
-  proxy observed — because the leftmost value is client-supplied and would
-  otherwise make the limiter trivial to bypass. See `lib/api/client-ip.ts`.
+- **The caller's IP is the first publicly routable entry scanning the
+  `X-Forwarded-For` chain from the right.** icanhazip reports the address it was
+  connected from and ignores the header entirely; a route handler cannot see the
+  socket peer, so this recovers the same answer. Scanning from the right skips
+  our own Docker and proxy hops (all private), and cannot be moved by a spoofed
+  header because a caller can only prepend entries on the left. The rate limiter
+  keys on the same value. See `lib/api/client-ip.ts`.
+- **Behind a CDN, set `CLIENT_IP_HEADER`.** With Cloudflare in front, the
+  right-most public entry is Cloudflare's edge, not the visitor — so every
+  visitor would share one rate-limit bucket. `CLIENT_IP_HEADER=cf-connecting-ip`
+  makes that header the authority. Leave it unset otherwise: trusting it with no
+  CDN in front would let anyone spoof their address.
 - **The limiter fails open.** If Redis is unreachable, requests are allowed
   rather than refused. A public utility API going down because its rate limiter
   is sick is a worse outcome than a brief window without limiting.
