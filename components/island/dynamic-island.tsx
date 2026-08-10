@@ -6,6 +6,7 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
 
 import { useIsland, type IslandVariant } from "./island-provider";
+import { useApiHealth, type ApiHealth } from "./use-api-health";
 
 /**
  * Adapted from @smoothui/dynamic-island.
@@ -32,13 +33,23 @@ const VARIANT_STYLES: Record<IslandVariant, { icon: typeof Info; tint: string }>
   loading: { icon: LoaderCircle, tint: "text-amber-400" },
 };
 
-function IdlePill() {
+const HEALTH_DOT: Record<ApiHealth, { className: string; label: string }> = {
+  checking: { className: "bg-white/40", label: "Checking API status" },
+  up: { className: "bg-emerald-400", label: "API is up" },
+  // Pulsing so an outage is noticeable without the island having to expand.
+  down: { className: "bg-rose-500 animate-pulse motion-reduce:animate-none", label: "API is down" },
+};
+
+function IdlePill({ health }: { health: ApiHealth }) {
+  const dot = HEALTH_DOT[health];
+
   return (
     <div className="flex items-center gap-2 px-4 py-1.5">
-      <span className="size-1.5 rounded-full bg-white/50" />
+      <span className={cn("size-1.5 shrink-0 rounded-full", dot.className)} title={dot.label} />
       <span className="font-mono text-xs tracking-[0.2em] text-white/70 select-none">
         TRUTOOLS
       </span>
+      <span className="sr-only">{dot.label}</span>
     </div>
   );
 }
@@ -46,6 +57,9 @@ function IdlePill() {
 export function DynamicIsland({ className }: { className?: string }) {
   const { current, dismiss } = useIsland();
   const shouldReduceMotion = useReducedMotion();
+  // Polled here rather than inside IdlePill: the pill unmounts on every toast,
+  // which would restart the poll each time a message came and went.
+  const health = useApiHealth();
 
   const view = current ? current.id : "idle";
   const bounce = current ? BOUNCE.toMessage : BOUNCE.toIdle;
@@ -127,7 +141,7 @@ export function DynamicIsland({ className }: { className?: string }) {
                 </div>
               </div>
             ) : (
-              <IdlePill />
+              <IdlePill health={health} />
             )}
           </motion.div>
         </AnimatePresence>
