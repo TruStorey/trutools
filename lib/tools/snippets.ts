@@ -79,6 +79,9 @@ export function outputsFor(language: SnippetLanguage, kind: ResultKind): OutputO
           { value: "pscustomobject", label: "PSCustomObject" },
         ];
       }
+      if (kind === "rows") {
+        return [plain, { value: "array", label: "PSCustomObject[]" }];
+      }
       return [plain, { value: "typed", label: "string" }];
 
     case "python":
@@ -97,6 +100,9 @@ export function outputsFor(language: SnippetLanguage, kind: ResultKind): OutputO
           { value: "items", label: "items" },
         ];
       }
+      if (kind === "rows") {
+        return [plain, { value: "list", label: "list[dict]" }];
+      }
       return [plain, { value: "typed", label: "str" }];
 
     case "javascript":
@@ -111,6 +117,9 @@ export function outputsFor(language: SnippetLanguage, kind: ResultKind): OutputO
           { value: "entries", label: "entries" },
         ];
       }
+      if (kind === "rows") {
+        return [plain, { value: "array", label: "object[]" }];
+      }
       return [plain, { value: "typed", label: "string" }];
 
     case "go":
@@ -119,6 +128,9 @@ export function outputsFor(language: SnippetLanguage, kind: ResultKind): OutputO
       }
       if (kind === "fields") {
         return [plain, { value: "typed", label: "map[string]string" }];
+      }
+      if (kind === "rows") {
+        return [plain, { value: "typed", label: "[]map[string]string" }];
       }
       return [plain, { value: "typed", label: "string" }];
   }
@@ -323,7 +335,13 @@ function goSnippet(tool: Tool, shape: OutputShape): string {
   const kind = tool.api.resultKind;
 
   const goType =
-    kind === "lines" ? "[]string" : kind === "fields" ? "map[string]string" : "string";
+    kind === "lines"
+      ? "[]string"
+      : kind === "fields"
+        ? "map[string]string"
+        : kind === "rows"
+          ? "[]map[string]string"
+          : "string";
 
   const request = tool.api.bodyFile
     ? `body, err := os.ReadFile(${JSON.stringify(tool.api.bodyFile)})\n` +

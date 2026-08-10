@@ -7,6 +7,7 @@ import {
   KeyRound,
   KeySquare,
   Network,
+  Split,
   Terminal,
   TextQuote,
   Wrench,
@@ -28,6 +29,7 @@ const ICONS: Record<string, LucideIcon> = {
   "key-round": KeyRound,
   "key-square": KeySquare,
   network: Network,
+  split: Split,
   terminal: Terminal,
   "text-quote": TextQuote,
 };

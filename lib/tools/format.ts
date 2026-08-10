@@ -41,6 +41,7 @@ function escapeXml(value: string): string {
 
 function toJson(tool: string, result: ToolResult): string {
   let payload: unknown;
+  let note: string | undefined;
 
   switch (result.kind) {
     case "lines":
@@ -49,6 +50,14 @@ function toJson(tool: string, result: ToolResult): string {
     case "text":
       payload = result.text;
       break;
+    case "rows": {
+      const keys = result.columns.map(slugify);
+      payload = result.rows.map((row) =>
+        Object.fromEntries(keys.map((key, index) => [key, row[index] ?? ""])),
+      );
+      note = result.note;
+      break;
+    }
     case "fields": {
       const object: Record<string, string> = {};
       for (const field of result.fields) {
@@ -59,7 +68,7 @@ function toJson(tool: string, result: ToolResult): string {
     }
   }
 
-  return JSON.stringify({ tool, result: payload }, null, 2);
+  return JSON.stringify(note ? { tool, result: payload, note } : { tool, result: payload }, null, 2);
 }
 
 function toXml(tool: string, result: ToolResult): string {
@@ -77,6 +86,20 @@ function toXml(tool: string, result: ToolResult): string {
     case "text":
       lines.push(`  <result>${escapeXml(result.text)}</result>`);
       break;
+    case "rows": {
+      const keys = result.columns.map(slugify);
+      for (const row of result.rows) {
+        lines.push("  <row>");
+        keys.forEach((key, index) => {
+          lines.push(
+            `    <${key} label="${escapeXml(result.columns[index])}">${escapeXml(row[index] ?? "")}</${key}>`,
+          );
+        });
+        lines.push("  </row>");
+      }
+      if (result.note) lines.push(`  <note>${escapeXml(result.note)}</note>`);
+      break;
+    }
     case "fields":
       for (const field of result.fields) {
         const name = slugify(field.label);

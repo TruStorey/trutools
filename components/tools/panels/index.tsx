@@ -8,6 +8,7 @@ import {
   UuidPanel,
 } from "./crypto-panels";
 import { JsonPanel, SubnetPanel, TextPanel, TimestampPanel } from "./data-panels";
+import { SubnetSplitterPanel } from "./subnet-splitter-panel";
 import { CertReaderPanel, IpPanel, SshKeypairPanel } from "./server-panels";
 
 /** Interactive panels, keyed by the tool id in lib/tools/registry.ts. */
@@ -18,6 +19,7 @@ const PANELS: Record<string, ComponentType> = {
   "ssh-keypair-generator": SshKeypairPanel,
   "cert-reader": CertReaderPanel,
   "subnet-calculator": SubnetPanel,
+  "subnet-splitter": SubnetSplitterPanel,
   ip: IpPanel,
   "timestamp-converter": TimestampPanel,
   "json-beautify": JsonPanel,

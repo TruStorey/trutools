@@ -6,6 +6,7 @@ import { generatePassword, PASSWORD_DEFAULTS } from "@/lib/tools/impl/password";
 import { generateToken, type TokenEncoding } from "@/lib/tools/impl/token";
 import { generateUuid } from "@/lib/tools/impl/uuid";
 import { calculateSubnet } from "@/lib/tools/impl/subnet";
+import { DEFAULT_LIMIT, splitSubnet } from "@/lib/tools/impl/subnet-split";
 import { convertTimestamp } from "@/lib/tools/impl/timestamp";
 import { transformText, type TextOperation } from "@/lib/tools/impl/text";
 import { generateSshKeypair, type SshKeyType } from "@/lib/tools/impl/server/ssh";
@@ -163,6 +164,27 @@ export const HANDLERS: Record<string, ToolHandler> = {
       const cidr = params.get("cidr") ?? params.get("q");
       if (!cidr) throw new BadRequestError("cidr is required, e.g. ?cidr=10.0.0.0/22");
       return calculateSubnet(cidr);
+    }),
+
+  "subnet-splitter": ({ params }) =>
+    run(() => {
+      const cidr = params.get("cidr");
+      if (!cidr) throw new BadRequestError("cidr is required, e.g. ?cidr=10.0.0.0/16");
+
+      // Absent stays absent: splitSubnet treats "none given" as a request for
+      // the summary, and "more than one given" as an error, so defaulting any
+      // of these would quietly change what was asked for.
+      const optionalInt = (name: string) =>
+        params.get(name) === null ? undefined : intParam(params, name, 0);
+
+      return splitSubnet({
+        cidr,
+        count: optionalInt("count"),
+        prefix: optionalInt("prefix"),
+        divide: params.get("divide") ?? undefined,
+        limit: intParam(params, "limit", DEFAULT_LIMIT),
+        offset: intParam(params, "offset", 0),
+      });
     }),
 
   "timestamp-converter": ({ params }) =>

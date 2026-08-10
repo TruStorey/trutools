@@ -11,7 +11,20 @@ export type ToolResult =
   /** Labelled readings: subnet maths, certificate contents, timestamps. */
   | { kind: "fields"; fields: { label: string; value: string }[] }
   /** One blob, meant to be copied whole: formatted JSON, transformed text. */
-  | { kind: "text"; text: string };
+  | { kind: "text"; text: string }
+  /**
+   * A table: subnet splits, and anything else with repeating columns.
+   *
+   * `lines` would work for the terminal but would hand JSON consumers strings
+   * to re-parse, which defeats the point of the per-language native shapes.
+   */
+  | {
+      kind: "rows";
+      columns: string[];
+      rows: string[][];
+      /** Truncation, rounding, anything the caller must know about the rows. */
+      note?: string;
+    };
 
 /** Thrown by a tool for bad input. Surfaced as a 400 by the API. */
 export class ToolInputError extends Error {}
@@ -23,6 +36,28 @@ export function renderText(result: ToolResult): string {
       return result.lines.join("\n");
     case "text":
       return result.text;
+    case "rows": {
+      // Pad every column to its widest cell, header included, so the table
+      // lines up in a terminal.
+      const widths = result.columns.map((column, index) =>
+        Math.max(column.length, ...result.rows.map((row) => (row[index] ?? "").length)),
+      );
+
+      const line = (cells: string[]) =>
+        cells
+          .map((cell, index) => (cell ?? "").padEnd(widths[index]))
+          .join("  ")
+          .trimEnd();
+
+      const out = [line(result.columns), ...result.rows.map(line)];
+
+      // Prefixed with # so `grep -v '^#'` drops it and the table stays
+      // pipe-friendly for anyone who does not want the commentary.
+      if (result.note) out.push("", `# ${result.note}`);
+
+      return out.join("\n");
+    }
+
     case "fields": {
       const isMultiline = (value: string) => value.includes("\n");
 

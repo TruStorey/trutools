@@ -51,7 +51,7 @@ export type Tool = {
      * The shape this tool returns, used to type the generated code snippets
      * (a list in PowerShell, a dict in Python, and so on).
      */
-    resultKind: "lines" | "fields" | "text";
+    resultKind: "lines" | "fields" | "text" | "rows";
     /** Example query arguments. Snippets in every language are built from these. */
     query?: Record<string, string>;
     /** For body tools: the filename the example reads from. */
@@ -265,6 +265,62 @@ export const TOOLS: Tool[] = [
       resultKind: "fields",
       query: { cidr: "10.0.0.0/22" },
       sampleKey: "network",
+    },
+  },
+  {
+    id: "subnet-splitter",
+    name: "Subnet Splitter",
+    description:
+      "Carve a block into smaller ones. Divide and join like a whiteboard, or ask for a set number of equal subnets.",
+    section: "networking",
+    icon: "split",
+    keywords: [
+      "subnet",
+      "split",
+      "divide",
+      "vlsm",
+      "cidr",
+      "supernet",
+      "allocate",
+      "carve",
+      "davidc",
+      "visual subnet calculator",
+    ],
+    api: {
+      status: "live",
+      method: "GET",
+      params: [
+        {
+          name: "cidr",
+          required: true,
+          description: "The block to split, IPv4 or IPv6, e.g. 10.0.0.0/16.",
+        },
+        {
+          name: "count",
+          required: false,
+          description:
+            "Split into at least this many equal subnets. Rounded up to a power of two.",
+        },
+        {
+          name: "prefix",
+          required: false,
+          description: "Split down to this prefix length, e.g. 20.",
+        },
+        {
+          name: "divide",
+          required: false,
+          description:
+            "An explicit division tree as 0s and 1s, the same encoding the browser panel produces.",
+        },
+        {
+          name: "limit",
+          required: false,
+          description: "Rows per response. 1 to 4096. Default 256.",
+        },
+        { name: "offset", required: false, description: "Skip this many rows. Default 0." },
+      ],
+      resultKind: "rows",
+      query: { cidr: "10.0.0.0/16", count: "4" },
     },
   },
   {

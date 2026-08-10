@@ -78,6 +78,7 @@ GET  /uuid-generator            ?version=7&count=5
 GET  /token-generator           ?bytes=32&encoding=hex&prefix=sk_live
 GET  /ssh-keypair-generator     ?type=ed25519&comment=laptop
 GET  /subnet-calculator         ?cidr=10.0.0.0/22
+GET  /subnet-splitter           ?cidr=10.0.0.0/16&count=4
 GET  /timestamp-converter       ?value=1754870400&tz=Europe/London
 POST /cert-reader               PEM certificate as the body
 POST /json-beautify             ?indent=2&sort=true
@@ -151,12 +152,6 @@ ioredis.
 The navbar island is adapted from `@smoothui/dynamic-island` — the registry
 ships a demo (fixed height, hardcoded scenes, view-switcher buttons), so only
 its motion recipe survives. See `components/island/dynamic-island.tsx`.
-
-## Thanks
-
-[icanhazip](https://github.com/major/icanhaz) — the plain-text API here is
-modelled on it: one value per request, a trailing newline, and an index that
-documents itself.
 
 ## Deploying
 

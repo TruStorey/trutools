@@ -117,6 +117,42 @@ export function ToolOutput({
         </dl>
       ) : null}
 
+      {result.kind === "rows" ? (
+        <div className="overflow-x-auto rounded-lg border border-white/10 bg-black/15 backdrop-blur-sm dark:bg-black/25">
+          <table className="w-full border-collapse font-mono text-xs">
+            <thead>
+              <tr className="border-b border-white/10">
+                {result.columns.map((column) => (
+                  <th
+                    key={column}
+                    scope="col"
+                    className="px-3 py-2 text-left font-medium whitespace-nowrap text-muted-foreground"
+                  >
+                    {column}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {result.rows.map((row, index) => (
+                <tr key={index} className="border-b border-white/5 last:border-0">
+                  {row.map((cell, cellIndex) => (
+                    <td key={cellIndex} className="px-3 py-1.5 whitespace-nowrap">
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {result.note ? (
+            <p className="border-t border-white/10 px-3 py-2 font-sans text-xs text-muted-foreground">
+              {result.note}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
       {result.kind === "text" ? (
         <pre className="max-h-80 overflow-auto rounded-lg border border-white/10 bg-black/15 p-3 font-mono text-xs leading-relaxed backdrop-blur-sm dark:bg-black/25">
           <code>{result.text}</code>
