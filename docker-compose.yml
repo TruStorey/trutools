@@ -1,0 +1,18 @@
+# Local development only — Coolify builds and runs the Dockerfile directly.
+# Gives `pnpm dev` a Redis to talk to so the rate limiter exercises the real
+# code path instead of the in-process fallback.
+#
+#   docker compose up -d
+#   echo 'REDIS_URL=redis://localhost:6380' >> .env.local
+#
+# Published on 6380, not 6379: this machine already has another project's Redis
+# bound to 6379. Override with REDIS_HOST_PORT if 6380 is taken too.
+
+services:
+  redis:
+    image: redis:8-alpine
+    container_name: trutools-redis
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    ports:
+      - "${REDIS_HOST_PORT:-6380}:6379"
+    restart: unless-stopped

@@ -1,0 +1,58 @@
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+
+import { IslandProvider } from "@/components/island/island-provider";
+import { SiteNavbar } from "@/components/site-navbar";
+import { ThemeProvider } from "@/components/theme-provider";
+
+// globals.css maps --color-* onto --font-sans / --font-geist-mono, so the CSS
+// variable names here have to match what @theme inline expects.
+const geistSans = Geist({
+  variable: "--font-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata: Metadata = {
+  metadataBase: new URL("https://trutools.truvibe.dev"),
+  title: {
+    default: "trutools — simple IT tools",
+    template: "%s · trutools",
+  },
+  description:
+    "Simple IT tools for crypto, networking, data formats and text — with a public, rate-limited plain-text API you can curl.",
+  openGraph: {
+    title: "trutools — simple IT tools",
+    description:
+      "Simple IT tools with a public, rate-limited plain-text API you can curl.",
+    url: "https://trutools.truvibe.dev",
+    siteName: "trutools",
+    type: "website",
+  },
+};
+
+export default function RootLayout({ children }: LayoutProps<"/">) {
+  return (
+    // suppressHydrationWarning: next-themes writes the class on <html> before
+    // React hydrates, which the server render cannot know about.
+    <html
+      lang="en"
+      suppressHydrationWarning
+      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+    >
+      <body className="flex min-h-full flex-col">
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+          <IslandProvider>
+            <SiteNavbar />
+            <main className="flex-1">{children}</main>
+          </IslandProvider>
+        </ThemeProvider>
+      </body>
+    </html>
+  );
+}
