@@ -152,6 +152,12 @@ The navbar island is adapted from `@smoothui/dynamic-island` — the registry
 ships a demo (fixed height, hardcoded scenes, view-switcher buttons), so only
 its motion recipe survives. See `components/island/dynamic-island.tsx`.
 
+## Thanks
+
+[icanhazip](https://github.com/major/icanhaz) — the plain-text API here is
+modelled on it: one value per request, a trailing newline, and an index that
+documents itself.
+
 ## Deploying
 
 Coolify builds the `Dockerfile` directly — a multi-stage build on
