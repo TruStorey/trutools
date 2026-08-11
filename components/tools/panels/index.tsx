@@ -9,6 +9,19 @@ import {
 } from "./crypto-panels";
 import { JsonPanel, SubnetPanel, TextPanel, TimestampPanel } from "./data-panels";
 import { SubnetSplitterPanel } from "./subnet-splitter-panel";
+import {
+  Base64Panel,
+  BytesPanel,
+  HashPanel,
+  JwtPanel,
+  YamlJsonPanel,
+} from "./encoding-panels";
+import {
+  CasePanel,
+  LoremPanel,
+  PermissionsPanel,
+  SystemdPanel,
+} from "./system-panels";
 import { CertReaderPanel, IpPanel, SshKeypairPanel } from "./server-panels";
 
 /** Interactive panels, keyed by the tool id in lib/tools/registry.ts. */
@@ -24,6 +37,15 @@ const PANELS: Record<string, ComponentType> = {
   "timestamp-converter": TimestampPanel,
   "json-beautify": JsonPanel,
   "text-tool": TextPanel,
+  base64: Base64Panel,
+  "hash-generator": HashPanel,
+  "jwt-decoder": JwtPanel,
+  "bytes-converter": BytesPanel,
+  "yaml-json": YamlJsonPanel,
+  "case-converter": CasePanel,
+  "lorem-ipsum": LoremPanel,
+  "file-permissions": PermissionsPanel,
+  "systemd-lint": SystemdPanel,
 };
 
 export function ToolPanelFor({ id }: { id: string }) {

@@ -8,7 +8,7 @@
  * in components/tools/icon-map.tsx.
  */
 
-export type SectionId = "crypto" | "networking" | "data-format" | "text";
+export type SectionId = "crypto" | "networking" | "data-format" | "text" | "system";
 
 export type ToolStatus = "live" | "planned";
 
@@ -93,6 +93,11 @@ export const SECTIONS: Section[] = [
     name: "Text",
     description: "Everyday string wrangling.",
   },
+  {
+    id: "system",
+    name: "System",
+    description: "Bits of Linux you have to look up every time.",
+  },
 ];
 
 export const TOOLS: Tool[] = [
@@ -169,6 +174,54 @@ export const TOOLS: Tool[] = [
       ],
       resultKind: "lines",
       query: { bytes: "32", prefix: "sk_live" },
+    },
+  },
+  {
+    id: "hash-generator",
+    name: "Hash Generator",
+    description:
+      "MD5, SHA-1, SHA-256 and SHA-512 of any text, all four at once or one at a time.",
+    section: "crypto",
+    icon: "hash",
+    keywords: ["hash", "md5", "sha1", "sha256", "sha512", "checksum", "digest", "sum"],
+    bodyInput: true,
+    api: {
+      status: "live",
+      method: "POST",
+      params: [
+        { name: "body", required: true, description: "The text to hash, as the raw request body." },
+        {
+          name: "algo",
+          required: false,
+          description: "md5, sha1, sha256 or sha512. All four are returned if omitted.",
+        },
+      ],
+      resultKind: "fields",
+      bodyFile: "input.txt",
+      bodySample: "hello world",
+      sampleKey: "sha_256",
+    },
+  },
+  {
+    id: "jwt-decoder",
+    name: "JWT Decoder",
+    description:
+      "Read the header, payload and expiry of a JSON Web Token. Inspection only — nothing is verified.",
+    section: "crypto",
+    icon: "badge-check",
+    keywords: ["jwt", "token", "bearer", "claims", "oauth", "oidc", "decode", "exp"],
+    api: {
+      status: "live",
+      method: "GET",
+      params: [
+        { name: "token", required: true, description: "The JWT, as three dot-separated parts." },
+      ],
+      resultKind: "fields",
+      query: {
+        token:
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
+      },
+      sampleKey: "algorithm",
     },
   },
   {
@@ -342,6 +395,88 @@ export const TOOLS: Tool[] = [
 
   // ----------------------------------------------------------- data format
   {
+    id: "base64",
+    name: "Base64 Encode / Decode",
+    description:
+      "Encode text to base64 or decode it back. Works out which way round you meant, or you can say.",
+    section: "data-format",
+    icon: "binary",
+    keywords: ["base64", "encode", "decode", "b64", "base64url", "atob", "btoa"],
+    bodyInput: true,
+    api: {
+      status: "live",
+      method: "POST",
+      params: [
+        { name: "body", required: true, description: "The text to convert, as the raw request body." },
+        {
+          name: "mode",
+          required: false,
+          description: "auto, encode or decode. Default auto, which guesses from the input.",
+        },
+        {
+          name: "urlsafe",
+          required: false,
+          description: "Use the URL-safe alphabet and drop padding. Default false.",
+        },
+      ],
+      resultKind: "fields",
+      query: { mode: "encode" },
+      bodyFile: "input.txt",
+      bodySample: "hello world",
+      sampleKey: "result",
+    },
+  },
+  {
+    id: "bytes-converter",
+    name: "Bytes Converter",
+    description:
+      "Convert between B, kB, MB, GB and up, showing both the 1000-based and 1024-based answer.",
+    section: "data-format",
+    icon: "hard-drive",
+    keywords: ["bytes", "kb", "mb", "gb", "tb", "kib", "mib", "gib", "size", "units", "convert"],
+    api: {
+      status: "live",
+      method: "GET",
+      params: [
+        { name: "value", required: true, description: "The number to convert, e.g. 1.5." },
+        { name: "from", required: true, description: "The unit it is in, e.g. GB or GiB." },
+        {
+          name: "to",
+          required: false,
+          description: "A single target unit. The whole table is returned if omitted.",
+        },
+      ],
+      resultKind: "rows",
+      query: { value: "1.5", from: "GB" },
+    },
+  },
+  {
+    id: "yaml-json",
+    name: "YAML / JSON Converter",
+    description:
+      "Convert YAML to JSON or back again, with the parse error and its line if it will not parse.",
+    section: "data-format",
+    icon: "file-code",
+    keywords: ["yaml", "json", "yml", "convert", "kubernetes", "compose", "manifest"],
+    bodyInput: true,
+    api: {
+      status: "live",
+      method: "POST",
+      params: [
+        { name: "body", required: true, description: "The document to convert, as the raw request body." },
+        {
+          name: "to",
+          required: false,
+          description: "json, yaml, or auto to convert to whichever it is not. Default auto.",
+        },
+        { name: "indent", required: false, description: "Spaces per level, 0 to 8. Default 2." },
+      ],
+      resultKind: "text",
+      bodyFile: "config.yaml",
+      bodySample: "name: trutools\nports:\n  - 3000",
+    },
+  },
+  {
     id: "timestamp-converter",
     name: "Timestamp Converter",
     description:
@@ -391,6 +526,58 @@ export const TOOLS: Tool[] = [
 
   // ------------------------------------------------------------------ text
   {
+    id: "case-converter",
+    name: "Case Converter",
+    description:
+      "camelCase, PascalCase, snake_case, kebab-case, CONSTANT_CASE and more, all at once or one at a time.",
+    section: "text",
+    icon: "case-sensitive",
+    keywords: ["case", "camel", "pascal", "snake", "kebab", "constant", "title", "slug", "identifier"],
+    api: {
+      status: "live",
+      method: "GET",
+      params: [
+        { name: "text", required: true, description: "The text to convert." },
+        {
+          name: "to",
+          required: false,
+          description:
+            "camel, pascal, snake, kebab, constant, title, sentence, dot, path, lower or upper. All are returned if omitted.",
+        },
+      ],
+      resultKind: "fields",
+      query: { text: "hello world example" },
+      sampleKey: "camelcase",
+    },
+  },
+  {
+    id: "lorem-ipsum",
+    name: "Lorem Ipsum",
+    description: "Placeholder text by paragraph, sentence or word count.",
+    section: "text",
+    icon: "pilcrow",
+    keywords: ["lorem", "ipsum", "placeholder", "filler", "dummy", "text", "mock"],
+    api: {
+      status: "live",
+      method: "GET",
+      params: [
+        {
+          name: "unit",
+          required: false,
+          description: "paragraphs, sentences or words. Default paragraphs.",
+        },
+        { name: "count", required: false, description: "How many. Default 3." },
+        {
+          name: "classic",
+          required: false,
+          description: 'Start with the traditional "Lorem ipsum dolor sit amet". Default true.',
+        },
+      ],
+      resultKind: "text",
+      query: { unit: "paragraphs", count: "2" },
+    },
+  },
+  {
     id: "text-tool",
     name: "Text Tool",
     description:
@@ -420,6 +607,46 @@ export const TOOLS: Tool[] = [
       query: { op: "join", sep: "," },
       bodyFile: "hosts.txt",
       bodySample: "web-01\nweb-02\ndb-01",
+    },
+  },
+  {
+    id: "file-permissions",
+    name: "File Permissions",
+    description:
+      "Convert between 755 and rwxr-xr-x in either direction, with the owner, group and other breakdown.",
+    section: "system",
+    icon: "shield",
+    keywords: ["chmod", "permissions", "octal", "symbolic", "umask", "setuid", "setgid", "sticky", "rwx"],
+    api: {
+      status: "live",
+      method: "GET",
+      params: [
+        { name: "mode", required: false, description: "Octal mode, 3 or 4 digits, e.g. 755 or 4755." },
+        { name: "symbolic", required: false, description: "Symbolic mode, e.g. rwxr-xr-x." },
+      ],
+      resultKind: "fields",
+      query: { mode: "4755" },
+      sampleKey: "symbolic",
+    },
+  },
+  {
+    id: "systemd-lint",
+    name: "Systemd Unit Linter",
+    description:
+      "Check a unit file for structural mistakes: unknown sections, misplaced directives, a Service with no ExecStart.",
+    section: "system",
+    icon: "server-cog",
+    keywords: ["systemd", "unit", "service", "timer", "socket", "lint", "validate", "execstart"],
+    bodyInput: true,
+    api: {
+      status: "live",
+      method: "POST",
+      params: [
+        { name: "body", required: true, description: "The unit file, as the raw request body." },
+      ],
+      resultKind: "rows",
+      bodyFile: "app.service",
+      bodySample: "[Unit]\nDescription=Example\n\n[Service]\nExecStart=/usr/bin/true",
     },
   },
 ];

@@ -30,6 +30,28 @@ export function useToolRun() {
   }, []);
 
   /**
+   * The same, for tools whose computation is asynchronous — the hashes, since
+   * crypto.subtle.digest returns a promise. Still the tool's own function, so
+   * this stays a local computation rather than a request.
+   */
+  const runAsync = useCallback(async (compute: () => Promise<ToolResult>) => {
+    setPending(true);
+    try {
+      setResult(await compute());
+      setError(null);
+    } catch (caught) {
+      setResult(null);
+      setError(
+        caught instanceof ToolInputError || caught instanceof Error
+          ? caught.message
+          : "something went wrong",
+      );
+    } finally {
+      setPending(false);
+    }
+  }, []);
+
+  /**
    * For the tools that cannot run in the browser (OpenSSH encoding, X.509
    * parsing). Calls our own public API and shows the plain-text body — which
    * is exactly what a `curl` user would see, so the two surfaces stay honest.
@@ -64,5 +86,5 @@ export function useToolRun() {
     setError(null);
   }, []);
 
-  return { result, error, pending, run, runRemote, reset };
+  return { result, error, pending, run, runAsync, runRemote, reset };
 }

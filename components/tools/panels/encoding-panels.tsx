@@ -1,0 +1,219 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
+import { Field, Segmented, TextAreaControl, TextControl, Toggle } from "@/components/tools/controls";
+import { ToolOutput } from "@/components/tools/tool-output";
+import { useToolRun } from "@/components/tools/use-tool-run";
+import { convertBase64, type Base64Mode } from "@/lib/tools/impl/base64";
+import { convertBytes } from "@/lib/tools/impl/bytes";
+import { generateHashes, HASH_ALGORITHMS, type HashAlgorithm } from "@/lib/tools/impl/hash";
+import { inspectJwt } from "@/lib/tools/impl/jwt";
+import { convertYamlJson, type YamlJsonDirection } from "@/lib/tools/impl/yaml-json";
+
+export function Base64Panel() {
+  const [input, setInput] = useState("");
+  const [mode, setMode] = useState<Base64Mode>("auto");
+  const [urlSafe, setUrlSafe] = useState(false);
+  const { result, error, run, reset } = useToolRun();
+
+  useEffect(() => {
+    if (!input.trim()) {
+      reset();
+      return;
+    }
+    run(() => convertBase64({ input, mode, urlSafe }));
+  }, [input, mode, urlSafe, run, reset]);
+
+  return (
+    <div className="space-y-4">
+      <Field label="Text or base64">
+        <TextAreaControl
+          value={input}
+          onChange={(event) => setInput(event.target.value)}
+          placeholder="hello world"
+        />
+      </Field>
+
+      <div className="flex flex-wrap items-end gap-4">
+        <Segmented
+          label="Direction"
+          value={mode}
+          onChange={setMode}
+          options={[
+            { value: "auto", label: "auto" },
+            { value: "encode", label: "encode" },
+            { value: "decode", label: "decode" },
+          ]}
+        />
+        <div className="pb-1">
+          <Toggle label="URL-safe" checked={urlSafe} onChange={setUrlSafe} />
+        </div>
+      </div>
+
+      <ToolOutput result={result} error={error} />
+    </div>
+  );
+}
+
+export function HashPanel() {
+  const [input, setInput] = useState("");
+  const [algorithm, setAlgorithm] = useState<HashAlgorithm | "all">("all");
+  const { result, error, pending, runAsync, reset } = useToolRun();
+
+  // Async because crypto.subtle.digest is; runAsync keeps the same error
+  // handling as the synchronous tools.
+  useEffect(() => {
+    if (!input) {
+      reset();
+      return;
+    }
+    void runAsync(() =>
+      generateHashes({ input, algorithm: algorithm === "all" ? undefined : algorithm }),
+    );
+  }, [input, algorithm, runAsync, reset]);
+
+  return (
+    <div className="space-y-4">
+      <Field label="Text to hash">
+        <TextAreaControl
+          value={input}
+          onChange={(event) => setInput(event.target.value)}
+          placeholder="hello world"
+        />
+      </Field>
+
+      <Segmented
+        label="Algorithm"
+        value={algorithm}
+        onChange={setAlgorithm}
+        options={[
+          { value: "all" as const, label: "all" },
+          ...HASH_ALGORITHMS.map((id) => ({ value: id, label: id })),
+        ]}
+      />
+
+      {pending ? <p className="text-xs text-muted-foreground">Hashing…</p> : null}
+      <ToolOutput result={result} error={error} />
+    </div>
+  );
+}
+
+export function JwtPanel() {
+  const [token, setToken] = useState("");
+  const { result, error, run, reset } = useToolRun();
+
+  useEffect(() => {
+    if (!token.trim()) {
+      reset();
+      return;
+    }
+    run(() => inspectJwt(token));
+  }, [token, run, reset]);
+
+  return (
+    <div className="space-y-4">
+      <Field label="JSON Web Token">
+        <TextAreaControl
+          value={token}
+          onChange={(event) => setToken(event.target.value)}
+          placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature"
+        />
+      </Field>
+
+      <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+        Decoding only. The signature is not checked, so nothing here proves the token
+        is genuine — anyone can craft one that reads however they like.
+      </p>
+
+      <ToolOutput result={result} error={error} />
+    </div>
+  );
+}
+
+export function BytesPanel() {
+  const [value, setValue] = useState("1.5");
+  const [from, setFrom] = useState("GB");
+  const { result, error, run } = useToolRun();
+
+  useEffect(() => {
+    run(() => convertBytes({ value: Number(value), from }));
+  }, [value, from, run]);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Value">
+          <TextControl
+            type="number"
+            step="any"
+            min={0}
+            value={value}
+            onChange={(event) => setValue(event.target.value)}
+          />
+        </Field>
+        <Field label="Unit">
+          <TextControl value={from} onChange={(event) => setFrom(event.target.value)} />
+        </Field>
+      </div>
+
+      <div className="flex flex-wrap gap-1.5">
+        {["B", "kB", "MB", "GB", "TB", "KiB", "MiB", "GiB", "TiB"].map((unit) => (
+          <button
+            key={unit}
+            type="button"
+            onClick={() => setFrom(unit)}
+            className={
+              unit === from
+                ? "rounded-md bg-foreground/90 px-2 py-1 text-xs font-medium text-background"
+                : "rounded-md border border-white/15 bg-white/5 px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground dark:bg-black/20 dark:hover:bg-black/30"
+            }
+          >
+            {unit}
+          </button>
+        ))}
+      </div>
+
+      <ToolOutput result={result} error={error} />
+    </div>
+  );
+}
+
+export function YamlJsonPanel() {
+  const [input, setInput] = useState("");
+  const [to, setTo] = useState<YamlJsonDirection>("auto");
+  const { result, error, run, reset } = useToolRun();
+
+  useEffect(() => {
+    if (!input.trim()) {
+      reset();
+      return;
+    }
+    run(() => convertYamlJson({ input, to, indent: 2 }));
+  }, [input, to, run, reset]);
+
+  return (
+    <div className="space-y-4">
+      <Field label="YAML or JSON">
+        <TextAreaControl
+          value={input}
+          onChange={(event) => setInput(event.target.value)}
+          placeholder={"name: trutools\nports:\n  - 3000"}
+        />
+      </Field>
+
+      <Segmented
+        label="Convert to"
+        value={to}
+        onChange={setTo}
+        options={[
+          { value: "auto", label: "auto" },
+          { value: "json", label: "JSON" },
+          { value: "yaml", label: "YAML" },
+        ]}
+      />
+
+      <ToolOutput result={result} error={error} />
+    </div>
+  );
+}

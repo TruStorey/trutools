@@ -11,6 +11,15 @@ import { convertTimestamp } from "@/lib/tools/impl/timestamp";
 import { transformText, type TextOperation } from "@/lib/tools/impl/text";
 import { generateSshKeypair, type SshKeyType } from "@/lib/tools/impl/server/ssh";
 import { readCertificate } from "@/lib/tools/impl/server/cert";
+import { convertBase64, type Base64Mode } from "@/lib/tools/impl/base64";
+import { convertBytes } from "@/lib/tools/impl/bytes";
+import { convertCase, CASE_STYLES, type CaseStyle } from "@/lib/tools/impl/case-convert";
+import { generateHashes, HASH_ALGORITHMS, type HashAlgorithm } from "@/lib/tools/impl/hash";
+import { inspectJwt } from "@/lib/tools/impl/jwt";
+import { generateLorem, LOREM_UNITS, type LoremUnit } from "@/lib/tools/impl/lorem";
+import { calculatePermissions } from "@/lib/tools/impl/permissions";
+import { lintUnitFile } from "@/lib/tools/impl/systemd";
+import { convertYamlJson, type YamlJsonDirection } from "@/lib/tools/impl/yaml-json";
 
 export type HandlerContext = {
   request: Request;
@@ -81,10 +90,49 @@ function requireBody(ctx: HandlerContext, hint: string): string {
   return value;
 }
 
+/** Reads a decimal number, rejecting anything that is not one. */
+function floatParam(params: URLSearchParams, name: string, fallback: number): number {
+  const raw = params.get(name);
+  if (raw === null || raw === "") return fallback;
+
+  const value = Number(raw);
+  if (!Number.isFinite(value)) {
+    throw new BadRequestError(`${name} must be a number, got "${raw}"`);
+  }
+  return value;
+}
+
+/**
+ * An enum that may legitimately be absent, where absent means something
+ * different from any of the values — "give me all of them" rather than one.
+ */
+function optionalEnum<T extends string>(
+  params: URLSearchParams,
+  name: string,
+  allowed: readonly T[],
+): T | undefined {
+  const raw = params.get(name);
+  if (raw === null || raw === "") return undefined;
+  if (!allowed.includes(raw as T)) {
+    throw new BadRequestError(`${name} must be one of ${allowed.join(", ")}, got "${raw}"`);
+  }
+  return raw as T;
+}
+
 /** Runs a tool, converting its input errors into 400s. */
 function run(compute: () => ToolResult): ToolResult {
   try {
     return compute();
+  } catch (error) {
+    if (error instanceof ToolInputError) throw new BadRequestError(error.message);
+    throw error;
+  }
+}
+
+/** The same, for a tool whose computation is asynchronous. */
+async function runAsync(compute: () => Promise<ToolResult>): Promise<ToolResult> {
+  try {
+    return await compute();
   } catch (error) {
     if (error instanceof ToolInputError) throw new BadRequestError(error.message);
     throw error;
@@ -193,6 +241,80 @@ export const HANDLERS: Record<string, ToolHandler> = {
         offset: intParam(params, "offset", 0),
       });
     }),
+
+  base64: (ctx) =>
+    run(() =>
+      convertBase64({
+        input: requireBody(ctx, "Try: curl --data-binary @input.txt <url>"),
+        mode: enumParam<Base64Mode>(ctx.params, "mode", ["auto", "encode", "decode"], "auto"),
+        urlSafe: boolParam(ctx.params, "urlsafe", false),
+      }),
+    ),
+
+  "hash-generator": (ctx) =>
+    runAsync(() =>
+      generateHashes({
+        input: requireBody(ctx, "Try: printf 'hello' | curl --data-binary @- <url>"),
+        algorithm: optionalEnum<HashAlgorithm>(ctx.params, "algo", HASH_ALGORITHMS),
+      }),
+    ),
+
+  "jwt-decoder": (ctx) =>
+    run(() => {
+      const token = ctx.params.get("token") ?? ctx.body?.trim();
+      if (!token) throw new BadRequestError("token is required, e.g. ?token=eyJhbGci...");
+      return inspectJwt(token);
+    }),
+
+  "bytes-converter": ({ params }) =>
+    run(() => {
+      const from = params.get("from");
+      if (!from) throw new BadRequestError("from is required, e.g. ?value=1.5&from=GB");
+      return convertBytes({
+        value: floatParam(params, "value", 1),
+        from,
+        to: params.get("to") ?? undefined,
+      });
+    }),
+
+  "yaml-json": (ctx) =>
+    run(() =>
+      convertYamlJson({
+        input: requireBody(ctx, "Try: curl --data-binary @config.yaml <url>"),
+        to: enumParam<YamlJsonDirection>(ctx.params, "to", ["auto", "json", "yaml"], "auto"),
+        indent: intParam(ctx.params, "indent", 2),
+      }),
+    ),
+
+  "case-converter": ({ params }) =>
+    run(() => {
+      const text = params.get("text");
+      if (!text) throw new BadRequestError("text is required, e.g. ?text=hello world");
+      return convertCase({
+        input: text,
+        style: optionalEnum<CaseStyle>(params, "to", CASE_STYLES),
+      });
+    }),
+
+  "lorem-ipsum": ({ params }) =>
+    run(() =>
+      generateLorem({
+        unit: enumParam<LoremUnit>(params, "unit", LOREM_UNITS, "paragraphs"),
+        count: intParam(params, "count", 3),
+        classic: boolParam(params, "classic", true),
+      }),
+    ),
+
+  "file-permissions": ({ params }) =>
+    run(() =>
+      calculatePermissions({
+        mode: params.get("mode") ?? undefined,
+        symbolic: params.get("symbolic") ?? undefined,
+      }),
+    ),
+
+  "systemd-lint": (ctx) =>
+    run(() => lintUnitFile(requireBody(ctx, "Try: curl --data-binary @app.service <url>"))),
 
   "timestamp-converter": ({ params }) =>
     run(() =>

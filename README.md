@@ -79,6 +79,15 @@ GET  /token-generator           ?bytes=32&encoding=hex&prefix=sk_live
 GET  /ssh-keypair-generator     ?type=ed25519&comment=laptop
 GET  /subnet-calculator         ?cidr=10.0.0.0/22
 GET  /subnet-splitter           ?cidr=10.0.0.0/16&count=4
+GET  /bytes-converter           ?value=1.5&from=GB
+GET  /case-converter            ?text=hello+world&to=camel
+GET  /file-permissions          ?mode=4755
+GET  /jwt-decoder               ?token=eyJhbGci...
+GET  /lorem-ipsum               ?unit=paragraphs&count=3
+POST /base64                    text or base64 as the body
+POST /hash-generator            ?algo=sha256, text as the body
+POST /yaml-json                 ?to=json, document as the body
+POST /systemd-lint              unit file as the body
 GET  /timestamp-converter       ?value=1754870400&tz=Europe/London
 POST /cert-reader               PEM certificate as the body
 POST /json-beautify             ?indent=2&sort=true
