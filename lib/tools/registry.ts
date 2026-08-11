@@ -420,6 +420,40 @@ export const TOOLS: Tool[] = [
     },
   },
   {
+    id: "mail-check",
+    name: "Mail Check",
+    description:
+      "SPF and DMARC for a domain, including whether SPF is over the ten-lookup budget receivers enforce.",
+    section: "networking",
+    icon: "mail-check",
+    keywords: [
+      "spf",
+      "dmarc",
+      "dkim",
+      "email",
+      "mail",
+      "deliverability",
+      "permerror",
+      "spoofing",
+      "dns",
+      "txt",
+    ],
+    serverOnly: true,
+    api: {
+      status: "live",
+      method: "GET",
+      params: [
+        {
+          name: "domain",
+          required: true,
+          description: "The domain to check. A pasted URL or email address is reduced to its domain.",
+        },
+      ],
+      resultKind: "rows",
+      query: { domain: "github.com" },
+    },
+  },
+  {
     id: "ip",
     name: "What Is My IP",
     description:

@@ -12,6 +12,7 @@ import { transformText, type TextOperation } from "@/lib/tools/impl/text";
 import { generateSshKeypair, type SshKeyType } from "@/lib/tools/impl/ssh";
 import { readCertificate } from "@/lib/tools/impl/server/cert";
 import { DNS_TYPES, lookupDns, type DnsType } from "@/lib/tools/impl/server/dns";
+import { checkMail } from "@/lib/tools/impl/server/mail";
 import { convertBase64, type Base64Mode } from "@/lib/tools/impl/base64";
 import { convertBytes } from "@/lib/tools/impl/bytes";
 import { convertCase, CASE_STYLES, type CaseStyle } from "@/lib/tools/impl/case-convert";
@@ -325,6 +326,13 @@ export const HANDLERS: Record<string, ToolHandler> = {
         name,
         type: enumParam<DnsType | "all">(params, "type", [...DNS_TYPES, "all"], "A"),
       });
+    }),
+
+  "mail-check": ({ params }) =>
+    runAsync(() => {
+      const domain = params.get("domain");
+      if (!domain) throw new BadRequestError("domain is required, e.g. ?domain=example.com");
+      return checkMail(domain);
     }),
 
   "timestamp-converter": ({ params }) =>

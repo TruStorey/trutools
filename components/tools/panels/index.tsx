@@ -10,6 +10,7 @@ import {
 import { JsonPanel, SubnetPanel, TextPanel, TimestampPanel } from "./data-panels";
 import { SubnetSplitterPanel } from "./subnet-splitter-panel";
 import { DnsPanel } from "./dns-panel";
+import { MailPanel } from "./mail-panel";
 import {
   Base64Panel,
   BytesPanel,
@@ -36,6 +37,7 @@ const PANELS: Record<string, ComponentType> = {
   "subnet-splitter": SubnetSplitterPanel,
   ip: IpPanel,
   "dns-lookup": DnsPanel,
+  "mail-check": MailPanel,
   "timestamp-converter": TimestampPanel,
   "json-beautify": JsonPanel,
   "text-tool": TextPanel,

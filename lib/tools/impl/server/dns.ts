@@ -1,5 +1,6 @@
 import { ToolInputError, type ToolResult } from "../../result";
 import { parseIpv4, parseIpv6 } from "../ip";
+import { dohQuery, DOH_STATUS, type DohResponse } from "./doh";
 
 /**
  * DNS lookups over Cloudflare's DNS-over-HTTPS JSON API.
@@ -13,9 +14,6 @@ import { parseIpv4, parseIpv6 } from "../ip";
  * There is no SSRF surface here: the host contacted is a constant. Only the
  * query string varies, and the name in it is validated as a hostname first.
  */
-
-const RESOLVER = "https://cloudflare-dns.com/dns-query";
-const REQUEST_TIMEOUT_MS = 5_000;
 
 export const DNS_TYPES = [
   "A",
@@ -54,23 +52,6 @@ const TYPE_NAMES: Record<number, string> = {
   257: "CAA",
 };
 
-const STATUS_NAMES: Record<number, string> = {
-  0: "NOERROR",
-  1: "FORMERR",
-  2: "SERVFAIL",
-  3: "NXDOMAIN",
-  4: "NOTIMP",
-  5: "REFUSED",
-};
-
-type DohAnswer = { name: string; type: number; TTL: number; data: string };
-type DohResponse = {
-  Status: number;
-  AD?: boolean;
-  Answer?: DohAnswer[];
-  Authority?: DohAnswer[];
-  Comment?: string;
-};
 
 /**
  * Accepts what people actually paste — a URL, a trailing dot, mixed case — and
@@ -100,36 +81,7 @@ export function normaliseHostname(input: string): string {
   return name;
 }
 
-async function query(name: string, type: DnsType): Promise<DohResponse> {
-  const url = `${RESOLVER}?name=${encodeURIComponent(name)}&type=${type}`;
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
-
-  try {
-    const response = await fetch(url, {
-      headers: { accept: "application/dns-json" },
-      signal: controller.signal,
-      cache: "no-store",
-    });
-
-    if (!response.ok) {
-      throw new ToolInputError(`the resolver answered ${response.status}`);
-    }
-
-    return (await response.json()) as DohResponse;
-  } catch (error) {
-    if (error instanceof ToolInputError) throw error;
-    // An abort, a DNS failure reaching Cloudflare, a TLS problem — from the
-    // caller's side these are all "the lookup did not happen".
-    throw new ToolInputError(
-      error instanceof Error && error.name === "AbortError"
-        ? `the resolver did not answer within ${REQUEST_TIMEOUT_MS / 1000}s`
-        : "could not reach the resolver",
-    );
-  } finally {
-    clearTimeout(timer);
-  }
-}
+const query = (name: string, type: DnsType): Promise<DohResponse> => dohQuery(name, type);
 
 /**
  * PTR lookups are really queries for a name under in-addr.arpa or ip6.arpa.
@@ -182,7 +134,7 @@ export async function lookupDns(options: DnsOptions): Promise<ToolResult> {
 
   responses.forEach((response, index) => {
     authenticated = authenticated || response.AD === true;
-    statuses.add(STATUS_NAMES[response.Status] ?? `status ${response.Status}`);
+    statuses.add(DOH_STATUS[response.Status] ?? `status ${response.Status}`);
 
     for (const answer of response.Answer ?? []) {
       rows.push([
