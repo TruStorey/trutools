@@ -7,23 +7,43 @@ import { Field, Segmented, TextAreaControl, TextControl } from "@/components/too
 import { ToolOutput } from "@/components/tools/tool-output";
 import { useToolRun } from "@/components/tools/use-tool-run";
 import { Button } from "@/components/ui/button";
-import type { SshKeyType } from "@/lib/tools/impl/server/ssh";
+import {
+  generateSshKeypair,
+  localKeygenSupported,
+  type SshKeyType,
+} from "@/lib/tools/impl/ssh";
 
 /**
- * Panels for the tools that cannot run in the browser.
+ * Panels whose work happens somewhere other than a plain local computation.
  *
- * OpenSSH key encoding and X.509 parsing both need node:crypto, so these call
- * our own public API. That is not a compromise — it means the browser sees
- * byte-for-byte what a `curl` user sees.
+ * The certificate reader and the IP echo genuinely need the server — X.509
+ * parsing wants node:crypto, and only the server can see who connected. SSH
+ * keygen used to be here for the same reason and no longer is: WebCrypto can
+ * do it, so the key is made in the page and never transmitted.
  */
 
 export function SshKeypairPanel() {
   const [type, setType] = useState<SshKeyType>("ed25519");
   const [bits, setBits] = useState(4096);
   const [comment, setComment] = useState("");
-  const { result, error, pending, runRemote } = useToolRun();
+  const [ranLocally, setRanLocally] = useState(true);
+  const { result, error, pending, runAsync, runRemote } = useToolRun();
 
-  function generate() {
+  /**
+   * Generated in the browser, so the private key is never transmitted.
+   *
+   * Ed25519 only reached WebCrypto recently (Chrome 137, Safari 17), so a
+   * browser that cannot do it falls back to the API rather than failing —
+   * which is also why the endpoint still exists for curl.
+   */
+  async function generate() {
+    if (await localKeygenSupported(type)) {
+      setRanLocally(true);
+      void runAsync(() => generateSshKeypair({ type, bits: bits as 2048 | 3072 | 4096, comment }));
+      return;
+    }
+
+    setRanLocally(false);
     const params = new URLSearchParams({ type });
     if (type === "rsa") params.set("bits", String(bits));
     if (comment.trim()) params.set("comment", comment.trim());
@@ -70,7 +90,9 @@ export function SshKeypairPanel() {
           {pending ? "Generating…" : "Generate keypair"}
         </Button>
         <p className="text-xs text-muted-foreground">
-          Generated on the server and never stored.
+          {ranLocally
+            ? "Generated in your browser — the private key never leaves this page."
+            : "This browser cannot generate that key type, so the server did it."}
         </p>
       </div>
 

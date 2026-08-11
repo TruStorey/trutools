@@ -9,7 +9,7 @@ import { calculateSubnet } from "@/lib/tools/impl/subnet";
 import { DEFAULT_LIMIT, splitSubnet } from "@/lib/tools/impl/subnet-split";
 import { convertTimestamp } from "@/lib/tools/impl/timestamp";
 import { transformText, type TextOperation } from "@/lib/tools/impl/text";
-import { generateSshKeypair, type SshKeyType } from "@/lib/tools/impl/server/ssh";
+import { generateSshKeypair, type SshKeyType } from "@/lib/tools/impl/ssh";
 import { readCertificate } from "@/lib/tools/impl/server/cert";
 import { DNS_TYPES, lookupDns, type DnsType } from "@/lib/tools/impl/server/dns";
 import { convertBase64, type Base64Mode } from "@/lib/tools/impl/base64";
@@ -200,7 +200,7 @@ export const HANDLERS: Record<string, ToolHandler> = {
     ),
 
   "ssh-keypair-generator": ({ params }) =>
-    run(() =>
+    runAsync(() =>
       generateSshKeypair({
         type: enumParam<SshKeyType>(params, "type", ["ed25519", "rsa"], "ed25519"),
         bits: intParam(params, "bits", 4096) as 2048 | 3072 | 4096,

@@ -228,7 +228,7 @@ export const TOOLS: Tool[] = [
     id: "ssh-keypair-generator",
     name: "SSH Keypair Generator",
     description:
-      "Produce an OpenSSH keypair — ed25519 or RSA — with the private key and a ready-to-paste public key.",
+      "Produce an OpenSSH keypair — ed25519 or RSA. Generated in your browser, so the private key never leaves the page.",
     section: "crypto",
     icon: "terminal",
     keywords: [
@@ -241,7 +241,6 @@ export const TOOLS: Tool[] = [
       "public key",
       "authorized_keys",
     ],
-    serverOnly: true,
     api: {
       status: "live",
       method: "GET",

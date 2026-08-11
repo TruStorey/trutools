@@ -20,9 +20,16 @@ Both surfaces call the same function. `lib/tools/impl/` holds the logic, the
 panel imports it directly and the route handler imports it too, so the browser
 and `curl` cannot disagree about what a tool does.
 
-Two tools need `node:crypto` and so cannot run in the browser — OpenSSH key
-encoding and X.509 parsing. Their panels call our own public API, which means
-the page shows byte-for-byte what a `curl` user sees.
+Most tools run locally in the page. The certificate reader needs `node:crypto`
+for X.509 parsing and the IP echo can only be answered by the server, so those
+two panels call our own public API — which means the page shows byte-for-byte
+what a `curl` user sees.
+
+SSH keygen runs in the browser via WebCrypto, so the private key is never
+transmitted. It used to be server-side with `generateKeyPairSync`, which cost
+~700ms of *synchronous* CPU per RSA-4096 key: four concurrent requests made
+every other endpoint hang for six seconds. The endpoint still exists for `curl`,
+now on the async path.
 
 ## Running it
 
