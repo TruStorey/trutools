@@ -10,11 +10,6 @@ import { SITE_URL } from "@/lib/site";
 
 // globals.css maps --color-* onto --font-sans / --font-geist-mono, so the CSS
 // variable names here have to match what @theme inline expects.
-const interSans = Inter({
-  variable: "--font-sans",
-  subsets: ["latin"],
-});
-
 const geistSans = Geist({
   variable: "--font-sans",
   subsets: ["latin"],
@@ -34,7 +29,7 @@ export const metadata: Metadata = {
   description:
     "A collection of tools to make the fiddly stuff less, well fiddly. All tools are available in the Browser or via an API. No account needed.",
   openGraph: {
-    title: "trutools — in the browser or via an AP",
+    title: "trutools — in the browser or via an API",
     description:
       "A collection of tools to make the fiddly stuff less, well fiddly. All tools are available in the Browser or via an API. No account needed.",
     url: SITE_URL,
