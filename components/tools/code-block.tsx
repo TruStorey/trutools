@@ -1,5 +1,7 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 import { tokenize, type TokenType } from "@/lib/tools/highlight";
 import type { SnippetLanguage } from "@/lib/tools/snippets";
 import { cn } from "@/lib/utils";
@@ -26,17 +28,22 @@ export function CodeBlock({
   code,
   language,
   className,
+  action,
 }: {
   code: string;
   language: SnippetLanguage;
   className?: string;
+  /** Rendered pinned to the top right, over the code. */
+  action?: ReactNode;
 }) {
   const tokens = tokenize(code, language);
 
-  return (
+  const block = (
     <pre
       className={cn(
         "overflow-x-auto rounded-lg border border-white/10 bg-black/15 p-3 font-mono text-xs leading-relaxed backdrop-blur-sm dark:bg-black/25",
+        // Keep long lines from running under the button.
+        action && "pr-20",
         className,
       )}
     >
@@ -53,5 +60,16 @@ export function CodeBlock({
         ))}
       </code>
     </pre>
+  );
+
+  if (!action) return block;
+
+  // The action sits outside the <pre>, not inside it: an absolutely positioned
+  // child of a scrolling box scrolls away with the content.
+  return (
+    <div className="relative">
+      {block}
+      <div className="absolute top-2 right-2">{action}</div>
+    </div>
   );
 }

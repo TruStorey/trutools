@@ -102,22 +102,16 @@ function ApiTab({ tool }: { tool: Tool }) {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <PillGroup
-            label="Language"
-            value={language}
-            onChange={changeLanguage}
-            options={SNIPPET_LANGUAGES.map((id) => ({
-              value: id,
-              label: LANGUAGE_LABELS[id],
-              icon: <LanguageIcon language={id} className="size-3.5" />,
-            }))}
-          />
-          <Button variant="ghost" size="xs" onClick={copy}>
-            {copied ? <Check /> : <Copy />}
-            {copied ? "Copied" : "Copy"}
-          </Button>
-        </div>
+        <PillGroup
+          label="Language"
+          value={language}
+          onChange={changeLanguage}
+          options={SNIPPET_LANGUAGES.map((id) => ({
+            value: id,
+            label: LANGUAGE_LABELS[id],
+            icon: <LanguageIcon language={id} className="size-3.5" />,
+          }))}
+        />
 
         <div className="flex flex-wrap items-center gap-2 pt-0.5">
           <span className="text-[0.7rem] text-muted-foreground/70">
@@ -131,7 +125,22 @@ function ApiTab({ tool }: { tool: Tool }) {
           />
         </div>
 
-        <CodeBlock code={snippet} language={language} />
+        <CodeBlock
+          code={snippet}
+          language={language}
+          action={
+            <Button
+              variant="ghost"
+              size="xs"
+              onClick={copy}
+              aria-label={`Copy the ${LANGUAGE_LABELS[language]} snippet`}
+              className="border border-white/10 bg-black/30 backdrop-blur-sm hover:bg-black/50"
+            >
+              {copied ? <Check /> : <Copy />}
+              {copied ? "Copied" : "Copy"}
+            </Button>
+          }
+        />
 
         <p className="font-mono text-[0.7rem] text-muted-foreground/70">
           {tool.api.method} /{tool.id}
