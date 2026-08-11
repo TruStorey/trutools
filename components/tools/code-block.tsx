@@ -66,10 +66,18 @@ export function CodeBlock({
 
   // The action sits outside the <pre>, not inside it: an absolutely positioned
   // child of a scrolling box scrolls away with the content.
+  //
+  // top-3 matches the pre's p-3, so the box starts exactly where the first line
+  // of code does, and the h-[1.625em] wrapper is one line tall at this font
+  // size (text-xs x leading-relaxed) so items-center puts the button on that
+  // line's centre. Derived from the same values as the code rather than a
+  // magic offset, so it follows if the type scale changes.
   return (
     <div className="relative">
       {block}
-      <div className="absolute top-2 right-2">{action}</div>
+      <div className="absolute top-3 right-2 flex h-[1.625em] items-center text-xs">
+        {action}
+      </div>
     </div>
   );
 }
