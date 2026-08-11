@@ -73,6 +73,7 @@ can land without breaking anything.
 ```
 GET  /api/v1                    plain-text index of every endpoint
 GET  /ip                        the caller's public IP
+GET  /dns-lookup                ?name=example.com&type=all
 GET  /password-generator        ?length=32&count=3&symbols=false
 GET  /uuid-generator            ?version=7&count=5
 GET  /token-generator           ?bytes=32&encoding=hex&prefix=sk_live

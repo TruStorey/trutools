@@ -11,6 +11,7 @@ import { convertTimestamp } from "@/lib/tools/impl/timestamp";
 import { transformText, type TextOperation } from "@/lib/tools/impl/text";
 import { generateSshKeypair, type SshKeyType } from "@/lib/tools/impl/server/ssh";
 import { readCertificate } from "@/lib/tools/impl/server/cert";
+import { DNS_TYPES, lookupDns, type DnsType } from "@/lib/tools/impl/server/dns";
 import { convertBase64, type Base64Mode } from "@/lib/tools/impl/base64";
 import { convertBytes } from "@/lib/tools/impl/bytes";
 import { convertCase, CASE_STYLES, type CaseStyle } from "@/lib/tools/impl/case-convert";
@@ -315,6 +316,16 @@ export const HANDLERS: Record<string, ToolHandler> = {
 
   "systemd-lint": (ctx) =>
     run(() => lintUnitFile(requireBody(ctx, "Try: curl --data-binary @app.service <url>"))),
+
+  "dns-lookup": ({ params }) =>
+    runAsync(() => {
+      const name = params.get("name");
+      if (!name) throw new BadRequestError("name is required, e.g. ?name=example.com");
+      return lookupDns({
+        name,
+        type: enumParam<DnsType | "all">(params, "type", [...DNS_TYPES, "all"], "A"),
+      });
+    }),
 
   "timestamp-converter": ({ params }) =>
     run(() =>

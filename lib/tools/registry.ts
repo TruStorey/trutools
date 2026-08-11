@@ -377,6 +377,50 @@ export const TOOLS: Tool[] = [
     },
   },
   {
+    id: "dns-lookup",
+    name: "DNS Lookup",
+    description:
+      "Look up A, AAAA, MX, TXT, NS and more through Cloudflare's resolver, with TTLs and DNSSEC status.",
+    section: "networking",
+    icon: "radio-tower",
+    keywords: [
+      "dns",
+      "lookup",
+      "dig",
+      "nslookup",
+      "resolve",
+      "a record",
+      "aaaa",
+      "mx",
+      "txt",
+      "cname",
+      "ns",
+      "spf",
+      "dkim",
+      "doh",
+    ],
+    serverOnly: true,
+    api: {
+      status: "live",
+      method: "GET",
+      params: [
+        {
+          name: "name",
+          required: true,
+          description: "The hostname to look up. A pasted URL is reduced to its host.",
+        },
+        {
+          name: "type",
+          required: false,
+          description:
+            "A, AAAA, CNAME, MX, TXT, NS, SOA, SRV, CAA, PTR, or all for the common set. Default A.",
+        },
+      ],
+      resultKind: "rows",
+      query: { name: "example.com", type: "A" },
+    },
+  },
+  {
     id: "ip",
     name: "What Is My IP",
     description:

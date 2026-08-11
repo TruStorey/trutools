@@ -9,6 +9,7 @@ import {
 } from "./crypto-panels";
 import { JsonPanel, SubnetPanel, TextPanel, TimestampPanel } from "./data-panels";
 import { SubnetSplitterPanel } from "./subnet-splitter-panel";
+import { DnsPanel } from "./dns-panel";
 import {
   Base64Panel,
   BytesPanel,
@@ -34,6 +35,7 @@ const PANELS: Record<string, ComponentType> = {
   "subnet-calculator": SubnetPanel,
   "subnet-splitter": SubnetSplitterPanel,
   ip: IpPanel,
+  "dns-lookup": DnsPanel,
   "timestamp-converter": TimestampPanel,
   "json-beautify": JsonPanel,
   "text-tool": TextPanel,
