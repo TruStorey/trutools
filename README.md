@@ -91,7 +91,6 @@ GET  /subnet-splitter           ?cidr=10.0.0.0/16&count=4
 GET  /ip-range                  ?range=10.0.0.5-10.0.0.30
 GET  /bandwidth                 ?rate=1&unit=Gbps&size=1&sizeUnit=TiB&overhead=6
 GET  /cron-explain              ?expr=0+3+*+*+1&count=5&tz=Europe/London
-GET  /umask                     ?umask=022
 GET  /duration                  ?value=1h30m
 POST /ssh-key-inspect           public key line as the body
 GET  /bytes-converter           ?value=1.5&from=GB

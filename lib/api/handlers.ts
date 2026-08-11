@@ -18,7 +18,6 @@ import { explainCron } from "@/lib/tools/impl/cron";
 import { convertDuration } from "@/lib/tools/impl/duration";
 import { convertIpRange } from "@/lib/tools/impl/ip-range";
 import { inspectSshKey } from "@/lib/tools/impl/ssh-inspect";
-import { calculateUmask } from "@/lib/tools/impl/umask";
 import { convertBase64, type Base64Mode } from "@/lib/tools/impl/base64";
 import { convertBytes } from "@/lib/tools/impl/bytes";
 import { convertCase, CASE_STYLES, type CaseStyle } from "@/lib/tools/impl/case-convert";
@@ -365,15 +364,6 @@ export const HANDLERS: Record<string, ToolHandler> = {
       if (!value) throw new BadRequestError("value is required, e.g. ?value=1h30m");
       return convertDuration(value);
     }),
-
-  umask: ({ params }) =>
-    run(() =>
-      calculateUmask({
-        umask: params.get("umask") ?? undefined,
-        file: params.get("file") ?? undefined,
-        directory: params.get("directory") ?? undefined,
-      }),
-    ),
 
   bandwidth: ({ params }) =>
     run(() =>

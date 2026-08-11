@@ -26,7 +26,6 @@ import {
   LoremPanel,
   PermissionsPanel,
   SystemdPanel,
-  UmaskPanel,
 } from "./system-panels";
 import { CertReaderPanel, IpPanel, SshKeypairPanel } from "./server-panels";
 
@@ -55,7 +54,6 @@ const PANELS: Record<string, ComponentType> = {
   "file-permissions": PermissionsPanel,
   "systemd-lint": SystemdPanel,
   "cron-explain": CronPanel,
-  umask: UmaskPanel,
   "ip-range": IpRangePanel,
   bandwidth: BandwidthPanel,
   duration: DurationPanel,

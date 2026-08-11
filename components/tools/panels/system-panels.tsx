@@ -16,7 +16,6 @@ import {
   symbolicToOctal,
 } from "@/lib/tools/impl/permissions";
 import { lintUnitFile } from "@/lib/tools/impl/systemd";
-import { calculateUmask } from "@/lib/tools/impl/umask";
 
 export function CasePanel() {
   const [input, setInput] = useState("");
@@ -252,44 +251,6 @@ export function CronPanel() {
             </button>
           ),
         )}
-      </div>
-
-      <ToolOutput result={result} error={error} />
-    </div>
-  );
-}
-
-export function UmaskPanel() {
-  const [umask, setUmask] = useState("022");
-  const { result, error, run } = useToolRun();
-
-  useEffect(() => {
-    if (!umask.trim()) return;
-    run(() => calculateUmask({ umask }));
-  }, [umask, run]);
-
-  return (
-    <div className="space-y-4">
-      <Field label="umask" hint="the bits to remove, not to grant">
-        <TextControl
-          value={umask}
-          onChange={(event) => setUmask(event.target.value)}
-          placeholder="022"
-          autoComplete="off"
-        />
-      </Field>
-
-      <div className="flex flex-wrap gap-1.5">
-        {["000", "002", "022", "027", "077"].map((preset) => (
-          <button
-            key={preset}
-            type="button"
-            onClick={() => setUmask(preset)}
-            className="rounded-md border border-white/15 bg-white/5 px-2 py-1 font-mono text-[0.7rem] text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground dark:bg-black/20 dark:hover:bg-black/30"
-          >
-            {preset}
-          </button>
-        ))}
       </div>
 
       <ToolOutput result={result} error={error} />

@@ -864,27 +864,6 @@ export const TOOLS: Tool[] = [
       sampleKey: "meaning",
     },
   },
-  {
-    id: "umask",
-    name: "umask Calculator",
-    description:
-      "What a umask produces for new files and directories, or which umask produces the mode you want.",
-    section: "system",
-    icon: "file-lock",
-    keywords: ["umask", "permissions", "chmod", "octal", "default", "file mode", "creation mask"],
-    api: {
-      status: "live",
-      method: "GET",
-      params: [
-        { name: "umask", required: false, description: "The mask itself, e.g. 022." },
-        { name: "file", required: false, description: "A wanted file mode, to find the umask that gives it." },
-        { name: "directory", required: false, description: "A wanted directory mode." },
-      ],
-      resultKind: "fields",
-      query: { umask: "022" },
-      sampleKey: "files",
-    },
-  },
 ];
 
 export function getTool(id: string): Tool | undefined {
