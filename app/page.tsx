@@ -9,7 +9,7 @@ export default function Home() {
           TruTools - click it or curl it
         </h1>
         <p className="text-muted-foreground">
-          A collection of tools to make the fiddly stuff less, well fiddly. All tools are available in the Browser or via the API. No account needed.{" "}
+          A collection of tools to make the fiddly stuff less, well fiddly. All tools are available in the Browser or via an API. No account needed.{" "}
         </p>
       </div>
 

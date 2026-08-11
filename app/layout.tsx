@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 
 import { IslandProvider } from "@/components/island/island-provider";
@@ -10,6 +10,11 @@ import { SITE_URL } from "@/lib/site";
 
 // globals.css maps --color-* onto --font-sans / --font-geist-mono, so the CSS
 // variable names here have to match what @theme inline expects.
+const interSans = Inter({
+  variable: "--font-sans",
+  subsets: ["latin"],
+});
+
 const geistSans = Geist({
   variable: "--font-sans",
   subsets: ["latin"],
@@ -23,15 +28,15 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "trutools — simple tools, in the browser or over an API",
+    default: "trutools — in the browser or via an API",
     template: "%s · trutools",
   },
   description:
-    "Passwords, keys, subnets, timestamps and text. Use them in the browser, or curl the same tool on a URL of its own.",
+    "A collection of tools to make the fiddly stuff less, well fiddly. All tools are available in the Browser or via an API. No account needed.",
   openGraph: {
-    title: "trutools — simple tools, in the browser or over an API",
+    title: "trutools — in the browser or via an AP",
     description:
-      "Passwords, keys, subnets, timestamps and text. Use them in the browser, or curl the same tool on a URL of its own.",
+      "A collection of tools to make the fiddly stuff less, well fiddly. All tools are available in the Browser or via an API. No account needed.",
     url: SITE_URL,
     siteName: "trutools",
     type: "website",
