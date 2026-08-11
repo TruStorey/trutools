@@ -13,6 +13,12 @@ import { generateSshKeypair, type SshKeyType } from "@/lib/tools/impl/ssh";
 import { readCertificate } from "@/lib/tools/impl/server/cert";
 import { DNS_TYPES, lookupDns, type DnsType } from "@/lib/tools/impl/server/dns";
 import { checkMail } from "@/lib/tools/impl/server/mail";
+import { convertBandwidth } from "@/lib/tools/impl/bandwidth";
+import { explainCron } from "@/lib/tools/impl/cron";
+import { convertDuration } from "@/lib/tools/impl/duration";
+import { convertIpRange } from "@/lib/tools/impl/ip-range";
+import { inspectSshKey } from "@/lib/tools/impl/ssh-inspect";
+import { calculateUmask } from "@/lib/tools/impl/umask";
 import { convertBase64, type Base64Mode } from "@/lib/tools/impl/base64";
 import { convertBytes } from "@/lib/tools/impl/bytes";
 import { convertCase, CASE_STYLES, type CaseStyle } from "@/lib/tools/impl/case-convert";
@@ -334,6 +340,56 @@ export const HANDLERS: Record<string, ToolHandler> = {
       if (!domain) throw new BadRequestError("domain is required, e.g. ?domain=example.com");
       return checkMail(domain);
     }),
+
+  "cron-explain": ({ params }) =>
+    run(() => {
+      const expression = params.get("expr") ?? params.get("expression");
+      if (!expression) throw new BadRequestError("expr is required, e.g. ?expr=0 3 * * 1");
+      return explainCron({
+        expression,
+        count: intParam(params, "count", 5),
+        timeZone: params.get("tz") ?? "UTC",
+      });
+    }),
+
+  "ip-range": ({ params }) =>
+    run(() => {
+      const range = params.get("range") ?? params.get("cidr");
+      if (!range) throw new BadRequestError("range is required, e.g. ?range=10.0.0.5-10.0.0.30");
+      return convertIpRange({ input: range });
+    }),
+
+  duration: ({ params }) =>
+    run(() => {
+      const value = params.get("value");
+      if (!value) throw new BadRequestError("value is required, e.g. ?value=1h30m");
+      return convertDuration(value);
+    }),
+
+  umask: ({ params }) =>
+    run(() =>
+      calculateUmask({
+        umask: params.get("umask") ?? undefined,
+        file: params.get("file") ?? undefined,
+        directory: params.get("directory") ?? undefined,
+      }),
+    ),
+
+  bandwidth: ({ params }) =>
+    run(() =>
+      convertBandwidth({
+        rate: floatParam(params, "rate", 1),
+        rateUnit: params.get("unit") ?? "Gbps",
+        size: params.get("size") === null ? undefined : floatParam(params, "size", 1),
+        sizeUnit: params.get("sizeUnit") ?? "GiB",
+        overhead: floatParam(params, "overhead", 0),
+      }),
+    ),
+
+  "ssh-key-inspect": (ctx) =>
+    runAsync(() =>
+      inspectSshKey(requireBody(ctx, "Try: curl --data-binary @~/.ssh/id_ed25519.pub <url>")),
+    ),
 
   "timestamp-converter": ({ params }) =>
     run(() =>

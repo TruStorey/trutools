@@ -14,6 +14,7 @@ import {
 import { ToolOutput } from "@/components/tools/tool-output";
 import { useToolRun } from "@/components/tools/use-tool-run";
 import { Button } from "@/components/ui/button";
+import { convertDuration } from "@/lib/tools/impl/duration";
 import { calculateSubnet } from "@/lib/tools/impl/subnet";
 import { convertTimestamp, COMMON_TIMEZONES } from "@/lib/tools/impl/timestamp";
 import { formatJson } from "@/lib/tools/impl/json-format";
@@ -231,6 +232,47 @@ export function TextPanel() {
         <Wand2 />
         Apply
       </Button>
+
+      <ToolOutput result={result} error={error} />
+    </div>
+  );
+}
+
+export function DurationPanel() {
+  const [value, setValue] = useState("1h30m");
+  const { result, error, run, reset } = useToolRun();
+
+  useEffect(() => {
+    if (!value.trim()) {
+      reset();
+      return;
+    }
+    run(() => convertDuration(value));
+  }, [value, run, reset]);
+
+  return (
+    <div className="space-y-4">
+      <Field label="Duration" hint="seconds, 1h30m, 2h 30min or PT1H30M">
+        <TextControl
+          value={value}
+          onChange={(event) => setValue(event.target.value)}
+          placeholder="1h30m"
+          autoComplete="off"
+        />
+      </Field>
+
+      <div className="flex flex-wrap gap-1.5">
+        {["90", "3600", "1h30m", "2h 30min", "PT1H30M", "7d"].map((preset) => (
+          <button
+            key={preset}
+            type="button"
+            onClick={() => setValue(preset)}
+            className="rounded-md border border-white/15 bg-white/5 px-2 py-1 font-mono text-[0.7rem] text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground dark:bg-black/20 dark:hover:bg-black/30"
+          >
+            {preset}
+          </button>
+        ))}
+      </div>
 
       <ToolOutput result={result} error={error} />
     </div>

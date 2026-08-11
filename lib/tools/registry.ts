@@ -225,6 +225,41 @@ export const TOOLS: Tool[] = [
     },
   },
   {
+    id: "ssh-key-inspect",
+    name: "SSH Key Inspector",
+    description:
+      "Read a public key or authorized_keys line: type, size, both fingerprints, comment and any forced options.",
+    section: "crypto",
+    icon: "file-key",
+    keywords: [
+      "ssh",
+      "public key",
+      "authorized_keys",
+      "fingerprint",
+      "sha256",
+      "md5",
+      "known_hosts",
+      "ed25519",
+      "rsa",
+    ],
+    bodyInput: true,
+    api: {
+      status: "live",
+      method: "POST",
+      params: [
+        {
+          name: "body",
+          required: true,
+          description: "The public key line, as the raw request body.",
+        },
+      ],
+      resultKind: "fields",
+      bodyFile: "id_ed25519.pub",
+      bodySample: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... you@laptop",
+      sampleKey: "sha256",
+    },
+  },
+  {
     id: "ssh-keypair-generator",
     name: "SSH Keypair Generator",
     description:
@@ -454,6 +489,65 @@ export const TOOLS: Tool[] = [
     },
   },
   {
+    id: "ip-range",
+    name: "IP Range to CIDR",
+    description:
+      "Turn an arbitrary address range into the smallest set of CIDR blocks that covers it, or a CIDR back into its range.",
+    section: "networking",
+    icon: "list-tree",
+    keywords: ["cidr", "range", "summarize", "aggregate", "firewall", "acl", "ipv4", "ipv6", "supernet"],
+    api: {
+      status: "live",
+      method: "GET",
+      params: [
+        {
+          name: "range",
+          required: true,
+          description: 'A range like 10.0.0.5-10.0.0.30, or a CIDR to see the range it covers.',
+        },
+      ],
+      resultKind: "rows",
+      query: { range: "10.0.0.5-10.0.0.30" },
+    },
+  },
+  {
+    id: "bandwidth",
+    name: "Bandwidth & Transfer Time",
+    description:
+      "Convert between Mbps and MB/s, and work out how long a transfer takes — including the decimal/binary gap.",
+    section: "networking",
+    icon: "gauge",
+    keywords: [
+      "bandwidth",
+      "mbps",
+      "gbps",
+      "throughput",
+      "transfer",
+      "download",
+      "speed",
+      "link rate",
+      "bits",
+      "bytes",
+    ],
+    api: {
+      status: "live",
+      method: "GET",
+      params: [
+        { name: "rate", required: true, description: "The link rate, e.g. 1." },
+        { name: "unit", required: false, description: "bps, kbps, Mbps, Gbps, MB/s, MiB/s. Default Gbps." },
+        { name: "size", required: false, description: "How much data to move, for a transfer time." },
+        { name: "sizeUnit", required: false, description: "GB, GiB, TB, TiB and so on. Default GiB." },
+        {
+          name: "overhead",
+          required: false,
+          description: "Protocol overhead as a percentage. 6 is typical for TCP over Ethernet. Default 0.",
+        },
+      ],
+      resultKind: "rows",
+      query: { rate: "1", unit: "Gbps", size: "1", sizeUnit: "TiB", overhead: "6" },
+    },
+  },
+  {
     id: "ip",
     name: "What Is My IP",
     description:
@@ -551,6 +645,29 @@ export const TOOLS: Tool[] = [
       resultKind: "text",
       bodyFile: "config.yaml",
       bodySample: "name: trutools\nports:\n  - 3000",
+    },
+  },
+  {
+    id: "duration",
+    name: "Duration Converter",
+    description:
+      "Move between seconds, 1h30m, systemd time spans and ISO 8601 — whichever form the config file wants.",
+    section: "data-format",
+    icon: "hourglass",
+    keywords: ["duration", "seconds", "timespan", "systemd", "iso8601", "humanise", "timeout", "interval"],
+    api: {
+      status: "live",
+      method: "GET",
+      params: [
+        {
+          name: "value",
+          required: true,
+          description: "A number of seconds, or a duration like 1h30m, 2h 30min or PT1H30M.",
+        },
+      ],
+      resultKind: "fields",
+      query: { value: "1h30m" },
+      sampleKey: "seconds",
     },
   },
   {
@@ -724,6 +841,48 @@ export const TOOLS: Tool[] = [
       resultKind: "rows",
       bodyFile: "app.service",
       bodySample: "[Unit]\nDescription=Example\n\n[Service]\nExecStart=/usr/bin/true",
+    },
+  },
+  {
+    id: "cron-explain",
+    name: "Cron Explainer",
+    description:
+      "Say what a cron expression means in English and when it next runs — including the day-of-month/day-of-week trap.",
+    section: "system",
+    icon: "calendar-clock",
+    keywords: ["cron", "crontab", "schedule", "expression", "next run", "timer", "@daily", "quartz"],
+    api: {
+      status: "live",
+      method: "GET",
+      params: [
+        { name: "expr", required: true, description: "A 5-field cron expression, or a macro like @daily." },
+        { name: "count", required: false, description: "How many upcoming runs to list. 1 to 50. Default 5." },
+        { name: "tz", required: false, description: "IANA timezone the schedule runs in. Default UTC." },
+      ],
+      resultKind: "fields",
+      query: { expr: "0 3 * * 1", count: "5", tz: "Europe/London" },
+      sampleKey: "meaning",
+    },
+  },
+  {
+    id: "umask",
+    name: "umask Calculator",
+    description:
+      "What a umask produces for new files and directories, or which umask produces the mode you want.",
+    section: "system",
+    icon: "file-lock",
+    keywords: ["umask", "permissions", "chmod", "octal", "default", "file mode", "creation mask"],
+    api: {
+      status: "live",
+      method: "GET",
+      params: [
+        { name: "umask", required: false, description: "The mask itself, e.g. 022." },
+        { name: "file", required: false, description: "A wanted file mode, to find the umask that gives it." },
+        { name: "directory", required: false, description: "A wanted directory mode." },
+      ],
+      resultKind: "fields",
+      query: { umask: "022" },
+      sampleKey: "files",
     },
   },
 ];

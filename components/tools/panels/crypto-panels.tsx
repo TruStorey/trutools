@@ -3,7 +3,7 @@
 import { RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import { Field, Segmented, TextControl, Toggle } from "@/components/tools/controls";
+import { Field, Segmented, TextAreaControl, TextControl, Toggle } from "@/components/tools/controls";
 import { ToolOutput } from "@/components/tools/tool-output";
 import { useToolRun } from "@/components/tools/use-tool-run";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import {
   type PasswordOptions,
 } from "@/lib/tools/impl/password";
 import { generateToken, TOKEN_DEFAULTS, type TokenOptions } from "@/lib/tools/impl/token";
+import { inspectSshKey } from "@/lib/tools/impl/ssh-inspect";
 import { generateUuid, UUID_DEFAULTS, type UuidOptions } from "@/lib/tools/impl/uuid";
 
 export function PasswordPanel() {
@@ -184,6 +185,39 @@ export function TokenPanel() {
         <RefreshCw />
         Regenerate
       </Button>
+
+      <ToolOutput result={result} error={error} />
+    </div>
+  );
+}
+
+export function SshKeyInspectPanel() {
+  const [input, setInput] = useState("");
+  const { result, error, runAsync, reset } = useToolRun();
+
+  useEffect(() => {
+    if (!input.trim()) {
+      reset();
+      return;
+    }
+    void runAsync(() => inspectSshKey(input));
+  }, [input, runAsync, reset]);
+
+  return (
+    <div className="space-y-4">
+      <Field label="Public key or authorized_keys line">
+        <TextAreaControl
+          className="min-h-24"
+          value={input}
+          onChange={(event) => setInput(event.target.value)}
+          placeholder="ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... you@laptop"
+        />
+      </Field>
+
+      <p className="text-xs text-muted-foreground">
+        Public keys only, and it runs here in the page. Never paste a private key into a
+        website — this one refuses them, but the habit is what matters.
+      </p>
 
       <ToolOutput result={result} error={error} />
     </div>

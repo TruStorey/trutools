@@ -8,6 +8,7 @@ import { ToolOutput } from "@/components/tools/tool-output";
 import { useToolRun } from "@/components/tools/use-tool-run";
 import { Button } from "@/components/ui/button";
 import { convertCase } from "@/lib/tools/impl/case-convert";
+import { explainCron } from "@/lib/tools/impl/cron";
 import { generateLorem, LOREM_UNITS, type LoremUnit } from "@/lib/tools/impl/lorem";
 import {
   calculatePermissions,
@@ -15,6 +16,7 @@ import {
   symbolicToOctal,
 } from "@/lib/tools/impl/permissions";
 import { lintUnitFile } from "@/lib/tools/impl/systemd";
+import { calculateUmask } from "@/lib/tools/impl/umask";
 
 export function CasePanel() {
   const [input, setInput] = useState("");
@@ -187,6 +189,108 @@ export function SystemdPanel() {
         <code className="font-mono">systemd-analyze verify</code>, which needs systemd
         itself and is not in the container this runs in.
       </p>
+
+      <ToolOutput result={result} error={error} />
+    </div>
+  );
+}
+
+export function CronPanel() {
+  const [expression, setExpression] = useState("0 3 * * 1");
+  const [count, setCount] = useState(5);
+  // The viewer's own zone, since a schedule is only meaningful in one.
+  const [timeZone, setTimeZone] = useState(
+    () => Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC",
+  );
+  const { result, error, run, reset } = useToolRun();
+
+  useEffect(() => {
+    if (!expression.trim()) {
+      reset();
+      return;
+    }
+    run(() => explainCron({ expression, count, timeZone }));
+  }, [expression, count, timeZone, run, reset]);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-[2fr_1fr]">
+        <Field label="Expression" hint="5 fields, or a macro like @daily">
+          <TextControl
+            value={expression}
+            onChange={(event) => setExpression(event.target.value)}
+            placeholder="0 3 * * 1"
+            autoComplete="off"
+            spellCheck={false}
+          />
+        </Field>
+        <Field label="Next runs">
+          <TextControl
+            type="number"
+            min={1}
+            max={50}
+            value={count}
+            onChange={(event) => setCount(Number(event.target.value))}
+          />
+        </Field>
+      </div>
+
+      <Field label="Timezone">
+        <TextControl value={timeZone} onChange={(event) => setTimeZone(event.target.value)} />
+      </Field>
+
+      <div className="flex flex-wrap gap-1.5">
+        {["0 3 * * 1", "*/15 * * * *", "@daily", "0 0 1 * *", "0 0 13 * 5", "0 9-17 * * 1-5"].map(
+          (preset) => (
+            <button
+              key={preset}
+              type="button"
+              onClick={() => setExpression(preset)}
+              className="rounded-md border border-white/15 bg-white/5 px-2 py-1 font-mono text-[0.7rem] text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground dark:bg-black/20 dark:hover:bg-black/30"
+            >
+              {preset}
+            </button>
+          ),
+        )}
+      </div>
+
+      <ToolOutput result={result} error={error} />
+    </div>
+  );
+}
+
+export function UmaskPanel() {
+  const [umask, setUmask] = useState("022");
+  const { result, error, run } = useToolRun();
+
+  useEffect(() => {
+    if (!umask.trim()) return;
+    run(() => calculateUmask({ umask }));
+  }, [umask, run]);
+
+  return (
+    <div className="space-y-4">
+      <Field label="umask" hint="the bits to remove, not to grant">
+        <TextControl
+          value={umask}
+          onChange={(event) => setUmask(event.target.value)}
+          placeholder="022"
+          autoComplete="off"
+        />
+      </Field>
+
+      <div className="flex flex-wrap gap-1.5">
+        {["000", "002", "022", "027", "077"].map((preset) => (
+          <button
+            key={preset}
+            type="button"
+            onClick={() => setUmask(preset)}
+            className="rounded-md border border-white/15 bg-white/5 px-2 py-1 font-mono text-[0.7rem] text-muted-foreground transition-colors hover:bg-white/10 hover:text-foreground dark:bg-black/20 dark:hover:bg-black/30"
+          >
+            {preset}
+          </button>
+        ))}
+      </div>
 
       <ToolOutput result={result} error={error} />
     </div>

@@ -6,11 +6,13 @@ import {
   PasswordPanel,
   TokenPanel,
   UuidPanel,
+  SshKeyInspectPanel,
 } from "./crypto-panels";
-import { JsonPanel, SubnetPanel, TextPanel, TimestampPanel } from "./data-panels";
+import { DurationPanel, JsonPanel, SubnetPanel, TextPanel, TimestampPanel } from "./data-panels";
 import { SubnetSplitterPanel } from "./subnet-splitter-panel";
 import { DnsPanel } from "./dns-panel";
 import { MailPanel } from "./mail-panel";
+import { BandwidthPanel, IpRangePanel } from "./network-panels";
 import {
   Base64Panel,
   BytesPanel,
@@ -20,9 +22,11 @@ import {
 } from "./encoding-panels";
 import {
   CasePanel,
+  CronPanel,
   LoremPanel,
   PermissionsPanel,
   SystemdPanel,
+  UmaskPanel,
 } from "./system-panels";
 import { CertReaderPanel, IpPanel, SshKeypairPanel } from "./server-panels";
 
@@ -50,6 +54,12 @@ const PANELS: Record<string, ComponentType> = {
   "lorem-ipsum": LoremPanel,
   "file-permissions": PermissionsPanel,
   "systemd-lint": SystemdPanel,
+  "cron-explain": CronPanel,
+  umask: UmaskPanel,
+  "ip-range": IpRangePanel,
+  bandwidth: BandwidthPanel,
+  duration: DurationPanel,
+  "ssh-key-inspect": SshKeyInspectPanel,
 };
 
 export function ToolPanelFor({ id }: { id: string }) {
