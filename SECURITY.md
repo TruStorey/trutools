@@ -8,9 +8,8 @@ Use GitHub's **[Report a vulnerability](https://github.com/TruStorey/trutools/se
 button, under the Security tab. That opens a private thread visible only to you
 and the maintainer.
 
-The canonical repository is on a private Gitea instance and GitHub is a mirror,
-so a GitHub pull request cannot be merged directly — but an advisory is read,
-and fixes land upstream and sync back.
+Please don't open a public issue or a pull request for a security problem — that
+publishes the details before there is a fix to go with them.
 
 What helps, roughly in order:
 

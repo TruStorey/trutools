@@ -3,15 +3,9 @@
 Thanks for looking. This is a small hobby project, so the bar is "does it fit"
 rather than "is it perfect".
 
-## Where the repository lives
-
-The canonical remote is a **private Gitea instance**; GitHub is a read-only
-mirror. That has one practical consequence: **a GitHub pull request cannot be
-merged directly.** It can still be reviewed, and the patch applied upstream with
-you credited — but if that arrangement bothers you, open an issue first and we
-can sort out how to get the change in.
-
-Issues and discussion on GitHub are read and welcome either way.
+Issues, pull requests and discussion are all welcome. For anything larger than a
+fix, open an issue first — it is a much cheaper way to find out that an idea
+does not fit than writing it and finding out afterwards.
 
 ## Getting it running
 
