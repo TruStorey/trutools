@@ -28,6 +28,17 @@ pnpm dev
 on your network — handy for testing on a phone, worth knowing before you run it
 on a café's wifi.
 
+If you reach it as anything other than `localhost`, Next will block the
+cross-origin requests to its dev assets until you name that hostname:
+
+```bash
+# in .env.local, which is gitignored
+ALLOWED_DEV_ORIGINS=dev.example.com,*.example.com
+```
+
+That is read by `next.config.ts` rather than hardcoded there, so nobody's dev
+host ends up published in the repo. It has no effect on a production build.
+
 Redis is optional. Without `REDIS_URL` the limiter falls back to an in-process
 one and logs a warning; that is fine unless you are specifically working on rate
 limiting.
