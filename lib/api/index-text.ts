@@ -23,6 +23,10 @@ export function buildIndex(): string {
     "response, or send an Accept header of application/json or application/xml.",
     "Errors come back in the same format you asked for.",
     "",
+    "Some tools let you drop the name of their one required parameter, so",
+    "/dns-lookup?example.com reads the same as /dns-lookup?name=example.com.",
+    "Those parameters are marked below.",
+    "",
     "Rate limited per IP; check X-RateLimit-Remaining and Retry-After.",
     "",
   ];
@@ -40,7 +44,8 @@ export function buildIndex(): string {
 
       for (const param of tool.api.params) {
         const flag = param.required ? "required" : "optional";
-        lines.push(`    - ${param.name} (${flag}): ${param.description}`);
+        const bare = tool.api.bareParam === param.name ? ", name optional" : "";
+        lines.push(`    - ${param.name} (${flag}${bare}): ${param.description}`);
       }
 
       lines.push(`    $ ${curlExample(tool)}`);

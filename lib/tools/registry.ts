@@ -73,6 +73,17 @@ export type Tool = {
     sampleKey?: string;
     /** A caveat about this tool specifically, shown above the shared one. */
     note?: string;
+    /**
+     * The one parameter that may also be given without its name, so
+     * `?example.com` means the same as `?name=example.com`.
+     *
+     * Only for values that can never contain `=`, `&` or `+`. A bare value has
+     * no delimiter protecting it: `=` would split it into a key and a value,
+     * `&` into two parameters, and `+` form-decodes to a space. That rules out
+     * anything token-shaped — a JWT carries base64 padding, so jwt-decoder
+     * deliberately does not have this.
+     */
+    bareParam?: string;
   };
 };
 
@@ -366,6 +377,7 @@ export const TOOLS: Tool[] = [
         },
       ],
       resultKind: "fields",
+      bareParam: "cidr",
       query: { cidr: "10.0.0.0/22" },
       sampleKey: "network",
     },
@@ -416,6 +428,7 @@ export const TOOLS: Tool[] = [
         { name: "offset", required: false, description: "Skip this many rows. Default 0." },
       ],
       resultKind: "rows",
+      bareParam: "cidr",
       query: { cidr: "10.0.0.0/16", count: "4" },
     },
   },
@@ -499,6 +512,7 @@ export const TOOLS: Tool[] = [
         },
       ],
       resultKind: "rows",
+      bareParam: "name",
       query: { name: "example.com", type: "A" },
     },
   },
@@ -533,6 +547,7 @@ export const TOOLS: Tool[] = [
         },
       ],
       resultKind: "rows",
+      bareParam: "domain",
       query: { domain: "github.com" },
     },
   },
@@ -570,6 +585,7 @@ export const TOOLS: Tool[] = [
         },
       ],
       resultKind: "rows",
+      bareParam: "rate",
       query: { rate: "1", unit: "Gbps", size: "1", sizeUnit: "TiB", overhead: "6" },
     },
   },
@@ -692,6 +708,7 @@ export const TOOLS: Tool[] = [
         },
       ],
       resultKind: "fields",
+      bareParam: "value",
       query: { value: "1h30m" },
       sampleKey: "seconds",
     },
@@ -886,6 +903,7 @@ export const TOOLS: Tool[] = [
         { name: "tz", required: false, description: "IANA timezone the schedule runs in. Default UTC." },
       ],
       resultKind: "fields",
+      bareParam: "expr",
       query: { expr: "0 3 * * 1", count: "5", tz: "Europe/London" },
       sampleKey: "meaning",
     },

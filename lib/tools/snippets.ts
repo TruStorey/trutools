@@ -193,17 +193,44 @@ function wireFormat(shape: OutputShape): ApiFormat {
   return "json";
 }
 
+/**
+ * The query string for the languages that build a URL by hand.
+ *
+ * Where the tool allows it, the required parameter is written without its name
+ * — `?10.0.0.0/22` rather than `?cidr=10.0.0.0/22` — since that is the form
+ * someone typing curl would actually use. The languages that pass a parameter
+ * map instead (Python, JavaScript, Ruby) keep the names, because a keyless
+ * entry in a dict is a worse thing to teach than a slightly longer URL.
+ */
 function queryString(tool: Tool, format: ApiFormat): string {
-  const params = new URLSearchParams(tool.api.query ?? {});
+  const query = { ...(tool.api.query ?? {}) };
+
+  const bare = tool.api.bareParam;
+  const bareValue = bare ? query[bare] : undefined;
+  if (bare && bareValue !== undefined) delete query[bare];
+
+  const params = new URLSearchParams(query);
   if (format !== "text") params.set("format", format);
 
   // URLSearchParams percent-encodes "/" and ":", which turns a readable
   // `cidr=10.0.0.0/22` into `cidr=10.0.0.0%2F22`. Both characters are legal
   // in a query component (RFC 3986: query = *( pchar / "/" / "?" )), so put
   // them back — these snippets are meant to be read as much as run.
-  const encoded = params.toString().replace(/%2F/g, "/").replace(/%3A/g, ":");
+  const readable = (value: string) => value.replace(/%2F/g, "/").replace(/%3A/g, ":");
 
-  return encoded ? `?${encoded}` : "";
+  const encoded = readable(params.toString());
+
+  // Encoded through URLSearchParams too, so a cron expression's spaces come
+  // out as "+" exactly as they do in the named form — and are read back as
+  // spaces by the same parser on the other end.
+  const encodedBare =
+    bareValue === undefined
+      ? ""
+      : readable(new URLSearchParams({ value: bareValue }).toString().slice("value=".length));
+
+  // The bare value leads, so the eye lands on it rather than on ?format=.
+  const parts = [encodedBare, encoded].filter((part) => part);
+  return parts.length > 0 ? `?${parts.join("&")}` : "";
 }
 
 function url(tool: Tool, shape: OutputShape): string {

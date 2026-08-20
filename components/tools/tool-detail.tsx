@@ -160,12 +160,26 @@ function ApiTab({ tool }: { tool: Tool }) {
       {tool.api.params.length > 0 ? (
         <div className="space-y-2">
           <h4 className={FIELD_LABEL}>Parameters</h4>
+
+          {/* The snippet above uses the short form, so say what the long one is. */}
+          {tool.api.bareParam ? (
+            <p className="text-xs text-muted-foreground">
+              The snippet leaves{" "}
+              <code className="font-mono text-foreground/90">{tool.api.bareParam}</code> unnamed,
+              which this tool accepts. Writing{" "}
+              <code className="font-mono text-foreground/90">{tool.api.bareParam}=</code> in front
+              of the value works just the same, and is clearer when you are reading the URL back
+              later.
+            </p>
+          ) : null}
+
           <dl className="space-y-1.5">
             {tool.api.params.map((param) => (
               <div key={param.name} className="flex flex-wrap items-baseline gap-x-2 text-xs">
                 <dt className="font-mono font-medium text-foreground/90">{param.name}</dt>
                 <span className="text-[0.65rem] text-muted-foreground/70">
                   {param.required ? "required" : "optional"}
+                  {tool.api.bareParam === param.name ? " · name optional" : ""}
                 </span>
                 <dd className="w-full text-muted-foreground sm:w-auto sm:flex-1">
                   {param.description}
