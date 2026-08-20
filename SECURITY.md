@@ -41,7 +41,8 @@ publishing.
   generator will happily produce a 4-character lowercase password. That is the
   parameter you passed.
 - **MD5 and SHA-1 being broken.** They are offered because real systems still
-  emit them and you need to match one. The tool says so.
+  emit them and you need to match one. The tool's page says so, next to the
+  algorithm picker.
 - **The JWT decoder not verifying signatures.** It cannot — it has no key. It
   states "not verified" in its own output, not just in the docs.
 - **Missing rate limits on the static site.** Only the API is limited.

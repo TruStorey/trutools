@@ -50,12 +50,5 @@ export async function generateHashes(options: HashOptions): Promise<ToolResult> 
     fields.push({ label: LABELS[algorithm], value: await hashOne(options.input, algorithm) });
   }
 
-  // Said in the result, not just the docs. Someone reaching for MD5 here is
-  // usually checking a download, but the ones who are not should be told.
-  fields.push({
-    label: "Note",
-    value: "MD5 and SHA-1 are broken for security. Use them for checksums only.",
-  });
-
   return { kind: "fields", fields };
 }

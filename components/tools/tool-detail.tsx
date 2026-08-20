@@ -176,6 +176,13 @@ function ApiTab({ tool }: { tool: Tool }) {
         </div>
       ) : null}
 
+      {/* This tool's own caveat, above the one every tool shares. */}
+      {tool.api.note ? (
+        <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+          {tool.api.note}
+        </p>
+      ) : null}
+
       <div className="flex items-start gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-muted-foreground">
         <Terminal className="mt-0.5 size-3.5 shrink-0" aria-hidden />
         <div className="space-y-1">

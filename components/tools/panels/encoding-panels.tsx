@@ -10,6 +10,7 @@ import { convertBytes } from "@/lib/tools/impl/bytes";
 import { generateHashes, HASH_ALGORITHMS, type HashAlgorithm } from "@/lib/tools/impl/hash";
 import { inspectJwt } from "@/lib/tools/impl/jwt";
 import { convertYamlJson, type YamlJsonDirection } from "@/lib/tools/impl/yaml-json";
+import { HASH_WEAK_ALGORITHM_NOTE } from "@/lib/tools/registry";
 
 export function Base64Panel() {
   const [input, setInput] = useState("");
@@ -92,6 +93,10 @@ export function HashPanel() {
           ...HASH_ALGORITHMS.map((id) => ({ value: id, label: id })),
         ]}
       />
+
+      <p className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+        {HASH_WEAK_ALGORITHM_NOTE}
+      </p>
 
       {pending ? <p className="text-xs text-muted-foreground">Hashing…</p> : null}
       <ToolOutput result={result} error={error} />

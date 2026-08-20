@@ -18,6 +18,14 @@ export type ApiParam = {
   description: string;
 };
 
+/**
+ * Shown on the Hash Generator's page and in its API reference, and defined
+ * once here so the two cannot drift. Deliberately not part of the response —
+ * a caller parsing the JSON wants four digests, not prose mixed in with them.
+ */
+export const HASH_WEAK_ALGORITHM_NOTE =
+  "MD5 and SHA-1 are broken for security. Use them for checksums only.";
+
 export type Tool = {
   /**
    * The path segment, served at both /<id> and /api/v1/<id>.
@@ -63,6 +71,8 @@ export type Tool = {
      * field access rather than a placeholder.
      */
     sampleKey?: string;
+    /** A caveat about this tool specifically, shown above the shared one. */
+    note?: string;
   };
 };
 
@@ -200,6 +210,7 @@ export const TOOLS: Tool[] = [
       bodyFile: "input.txt",
       bodySample: "hello world",
       sampleKey: "sha_256",
+      note: HASH_WEAK_ALGORITHM_NOTE,
     },
   },
   {
