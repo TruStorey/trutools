@@ -183,10 +183,20 @@ export function ApiInfoDialog({ siteHost, rateLimit }: ApiInfoDialogProps) {
           </Section>
         </div>
 
+        {/*
+          Not target="_blank": the proxy serves this as a page in the site
+          chrome, so it is an ordinary navigation, not a raw text dump.
+
+          And deliberately an anchor rather than next/link. A client-side
+          navigation fetches the RSC payload without an HTML Accept header,
+          which is exactly how the proxy tells a script from a browser — so
+          Link would be handed text/plain and have nothing it could render. A
+          real document request carries a real Accept header, and negotiation
+          works.
+        */}
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
         <a
           href="/api/v1"
-          target="_blank"
-          rel="noreferrer"
           className="inline-flex items-center gap-1.5 self-start rounded-lg border border-white/15 bg-white/10 px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none dark:bg-black/20 dark:hover:bg-black/30"
         >
           Full endpoint reference
