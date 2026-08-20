@@ -3,7 +3,7 @@
 Simple IT tools, in the browser or over an API — at
 **[tools.truvibe.dev](https://tools.truvibe.dev)**.
 
-Twenty-seven small utilities of the sort you otherwise keep a browser tab, a
+Twenty-eight small utilities of the sort you otherwise keep a browser tab, a
 half-remembered `python3 -c` and a dubious ad-funded website open for. Subnet
 maths, timestamp conversion, hashes, SSH key inspection, cron explanations.
 
@@ -13,8 +13,7 @@ The point is that each one has **two front doors onto the same function**:
 $ curl tools.truvibe.dev/ip
 203.0.113.42
 
-$ curl 'tools.truvibe.dev/subnet-calculator?cidr=10.0.0.0/22'
-Input            10.0.0.0/22
+$ curl 'tools.truvibe.dev/subnet-inspector?cidr=10.0.0.0/22'
 Network          10.0.0.0/22
 Netmask          255.255.252.0 (/22)
 Wildcard         0.0.3.255
@@ -43,26 +42,28 @@ answer. Plain text in, plain text out, rate limited per IP — the model
 
 The browser side is the same tools as a filterable card grid. Open a card and it
 expands in place with two tabs: **Tool** for the interactive version, **API** for
-a ready-to-paste snippet in curl, PowerShell, Python, JavaScript or Go.
+a ready-to-paste snippet in curl, Go, JavaScript, PowerShell, Python,
+Ruby or Rust.
 
 ## The tools
 
 | Crypto | Networking | Data Format |
 |---|---|---|
-| Password Generator | Subnet Calculator | Base64 Encode / Decode |
+| Password Generator | Subnet Inspector | Base64 Encode / Decode |
 | UUID Generator | Subnet Splitter | Bytes Converter |
-| Token Generator | DNS Lookup | YAML / JSON Converter |
-| Hash Generator | Mail Check (SPF + DMARC) | Duration Converter |
-| JWT Decoder | IP Range to CIDR | Timestamp Converter |
+| Token Generator | Subnet Planner | YAML / JSON Converter |
+| Hash Generator | DNS Lookup | Duration Converter |
+| JWT Decoder | Mail Check (SPF + DMARC) | Timestamp Converter |
 | SSH Key Inspector | Bandwidth & Transfer Time | Beautify JSON |
 | SSH Keypair Generator | What Is My IP | |
 | Certificate Reader | | |
 
 | Text | System |
 |---|---|
-| Case Converter | File Permissions |
-| Lorem Ipsum | Systemd Unit Linter |
-| Text Tool | Cron Explainer |
+| Case Converter | Disk Space Calculator |
+| Lorem Ipsum | File Permissions |
+| Text Tool | Systemd Unit Linter |
+| | Cron Explainer |
 
 [`docs/tools.md`](docs/tools.md) covers what each one does and where the
 interesting edges are. `curl tools.truvibe.dev/api/v1` prints the same list with

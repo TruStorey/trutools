@@ -60,8 +60,8 @@ Plain text by default. Ask for something parseable with `?format=`, or with an
 `Accept` header:
 
 ```console
-$ curl 'tools.truvibe.dev/subnet-calculator?cidr=10.0.0.0/22&format=json'
-$ curl -H 'Accept: application/xml' 'tools.truvibe.dev/subnet-calculator?cidr=10.0.0.0/22'
+$ curl 'tools.truvibe.dev/subnet-inspector?cidr=10.0.0.0/22&format=json'
+$ curl -H 'Accept: application/xml' 'tools.truvibe.dev/subnet-inspector?cidr=10.0.0.0/22'
 ```
 
 | `format` | Content-Type |
@@ -168,9 +168,32 @@ destroys a PEM block or a unit file.
 Query parameters still apply alongside the body — `?algo=`, `?to=`, `?indent=`
 and so on.
 
+## Dropping the parameter name
+
+Where a tool has one required parameter and that parameter's value can never
+contain `=`, `&` or `+`, you can leave the name off:
+
+```console
+$ curl 'tools.truvibe.dev/dns-lookup?example.com&type=MX'
+$ curl 'tools.truvibe.dev/subnet-inspector?10.0.0.0/22'
+$ curl 'tools.truvibe.dev/duration?90m'
+```
+
+Both forms mean the same thing, and an explicit `?name=` always wins. The
+shorthand works on `subnet-inspector`, `subnet-splitter`, `dns-lookup`,
+`mail-check`, `bandwidth`, `duration` and `cron-explain`, and they are marked
+in `/api/v1`.
+
+It is deliberately not offered everywhere. A value given without its name has
+nothing delimiting it, so `=` would split it into a key and a value, `&` into
+two parameters, and `+` form-decodes to a space. That rules out anything
+token-shaped — `jwt-decoder` carries base64 padding and `case-converter` takes
+arbitrary text, so both keep their parameter names.
+
 ## Endpoint reference
 
-Parameters are optional unless marked **required**.
+Parameters are optional unless marked **required**. One marked *(name
+optional)* may also be given without its name, as above.
 
 ### Crypto
 
@@ -190,12 +213,12 @@ Parameters are optional unless marked **required**.
 | Endpoint | Parameters |
 |---|---|
 | `GET /ip` | none — returns your public address, nothing else |
-| `GET /subnet-calculator` | **`cidr`** e.g. `10.0.0.0/22`, v4 or v6 |
-| `GET /subnet-splitter` | **`cidr`** · `count` equal subnets, rounded up to a power of two · `prefix` split down to this length · `divide` an explicit division tree · `limit` 1–4096, default 256 · `offset` |
-| `GET /dns-lookup` | **`name`** · `type` `A`\|`AAAA`\|`CNAME`\|`MX`\|`TXT`\|`NS`\|`SOA`\|`SRV`\|`CAA`\|`PTR`\|`all` |
-| `GET /mail-check` | **`domain`** — a URL or email address is reduced to its domain |
-| `GET /ip-range` | **`range`** e.g. `10.0.0.5-10.0.0.30`, or a CIDR to see its range |
-| `GET /bandwidth` | **`rate`** · `unit` default `Gbps` · `size` · `sizeUnit` default `GiB` · `overhead` percent |
+| `GET /subnet-inspector` | **`cidr`** *(name optional)* e.g. `10.0.0.0/22`, v4 or v6 |
+| `GET /subnet-splitter` | **`cidr`** *(name optional)* · `count` equal subnets, rounded up to a power of two · `prefix` split down to this length · `limit` 1–4096, default 256 · `offset` |
+| `GET /subnet-planner` | **`cidr`** · **`need`** a `name:size` list, e.g. `pods:4000,mgmt:200,dmz:/26` — size is a host count or an explicit `/prefix` |
+| `GET /dns-lookup` | **`name`** *(name optional)* · `type` `A`\|`AAAA`\|`CNAME`\|`MX`\|`TXT`\|`NS`\|`SOA`\|`SRV`\|`CAA`\|`PTR`\|`all` |
+| `GET /mail-check` | **`domain`** *(name optional)* — a URL or email address is reduced to its domain |
+| `GET /bandwidth` | **`rate`** *(name optional)* · `unit` default `Gbps` · `size` · `sizeUnit` default `GiB` · `overhead` percent |
 
 ### Data Format
 
@@ -204,7 +227,7 @@ Parameters are optional unless marked **required**.
 | `POST /base64` | **body** · `mode` `auto`\|`encode`\|`decode` · `urlsafe` |
 | `GET /bytes-converter` | **`value`** · **`from`** e.g. `GB` or `GiB` · `to` a single unit, or the whole table |
 | `POST /yaml-json` | **body** · `to` `json`\|`yaml`\|`auto` · `indent` 0–8 |
-| `GET /duration` | **`value`** seconds, or `1h30m`, `2h 30min`, `PT1H30M` |
+| `GET /duration` | **`value`** *(name optional)* seconds, or `1h30m`, `2h 30min`, `PT1H30M` |
 | `GET /timestamp-converter` | `value` epoch seconds, millis, ISO 8601 or `now` · `tz` IANA zone |
 | `POST /json-beautify` | **body** · `indent` 0–8, `0` minifies · `sort` sort keys |
 
@@ -220,9 +243,10 @@ Parameters are optional unless marked **required**.
 
 | Endpoint | Parameters |
 |---|---|
+| `GET /disk-space` | `capacity` e.g. `100TB` · `used` e.g. `40TB` · `percent` e.g. `70` — **any two of the three** |
 | `GET /file-permissions` | `mode` octal e.g. `755` or `4755` · `symbolic` e.g. `rwxr-xr-x` — one or the other |
 | `POST /systemd-lint` | **body** a unit file |
-| `GET /cron-explain` | **`expr`** 5 fields or a macro like `@daily` · `count` 1–50 · `tz` IANA zone |
+| `GET /cron-explain` | **`expr`** *(name optional)* 5 fields or a macro like `@daily` · `count` 1–50 · `tz` IANA zone |
 
 ## Two tools that answer more than you asked
 
@@ -243,17 +267,19 @@ having to ask five times.
 ## Code snippets
 
 Each tool's **API** tab in the browser generates a ready-to-paste snippet in
-curl, PowerShell, Python, JavaScript and Go, with a second picker for what the
-snippet leaves you holding.
+curl, Go, JavaScript, PowerShell, Python, Ruby and Rust, with a second picker
+for what the snippet leaves you holding.
 
 For curl those are the wire formats. For everything else they are native shapes:
 
 | | |
 |---|---|
+| Go | text, `[]string`, `map[string]string` |
+| JavaScript | text, array, `Set`, object, `Map`, entries |
 | PowerShell | text, array, hashtable, `PSCustomObject` |
 | Python | text, list, tuple, set, dict, items |
-| JavaScript | text, array, `Set`, object, `Map`, entries |
-| Go | text, `[]string`, `map[string]string` |
+| Ruby | text, `Array`, `Set`, `Hash`, pairs |
+| Rust | text, `Vec<String>`, `HashMap<String, String>` |
 
 Which shapes appear depends on what the tool returns — a list of UUIDs has no
 sensible hashtable form — so `outputsFor()` in `lib/tools/snippets.ts` filters by

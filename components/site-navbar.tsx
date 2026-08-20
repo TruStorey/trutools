@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { Terminal } from "lucide-react";
 
+import { AboutDialog } from "@/components/about-dialog";
 import { ApiInfoDialog } from "@/components/api-info-dialog";
 import { DynamicIsland } from "@/components/island/dynamic-island";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { describeWindow, rateLimitConfig } from "@/lib/api/rate-limit-config";
 import { SITE_HOST } from "@/lib/site";
 
@@ -34,12 +34,12 @@ export function SiteNavbar() {
 
         <DynamicIsland />
 
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-end gap-1">
+          <AboutDialog />
           <ApiInfoDialog
             siteHost={SITE_HOST}
             rateLimit={{ max: limit.max, window: describeWindow(limit.windowSec) }}
           />
-          <ThemeToggle />
         </div>
       </nav>
     </header>

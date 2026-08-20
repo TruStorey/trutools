@@ -18,6 +18,14 @@ export type ApiParam = {
   description: string;
 };
 
+/**
+ * Shown on the Hash Generator's page and in its API reference, and defined
+ * once here so the two cannot drift. Deliberately not part of the response —
+ * a caller parsing the JSON wants four digests, not prose mixed in with them.
+ */
+export const HASH_WEAK_ALGORITHM_NOTE =
+  "MD5 and SHA-1 are broken for security. Use them for checksums only.";
+
 export type Tool = {
   /**
    * The path segment, served at both /<id> and /api/v1/<id>.
@@ -63,6 +71,19 @@ export type Tool = {
      * field access rather than a placeholder.
      */
     sampleKey?: string;
+    /** A caveat about this tool specifically, shown above the shared one. */
+    note?: string;
+    /**
+     * The one parameter that may also be given without its name, so
+     * `?example.com` means the same as `?name=example.com`.
+     *
+     * Only for values that can never contain `=`, `&` or `+`. A bare value has
+     * no delimiter protecting it: `=` would split it into a key and a value,
+     * `&` into two parameters, and `+` form-decodes to a space. That rules out
+     * anything token-shaped — a JWT carries base64 padding, so jwt-decoder
+     * deliberately does not have this.
+     */
+    bareParam?: string;
   };
 };
 
@@ -96,7 +117,7 @@ export const SECTIONS: Section[] = [
   {
     id: "system",
     name: "System",
-    description: "Bits of Linux you have to look up every time.",
+    description: "The bits of running a machine you have to look up every time.",
   },
 ];
 
@@ -200,6 +221,7 @@ export const TOOLS: Tool[] = [
       bodyFile: "input.txt",
       bodySample: "hello world",
       sampleKey: "sha_256",
+      note: HASH_WEAK_ALGORITHM_NOTE,
     },
   },
   {
@@ -322,8 +344,8 @@ export const TOOLS: Tool[] = [
 
   // ------------------------------------------------------------ networking
   {
-    id: "subnet-calculator",
-    name: "Subnet Calculator",
+    id: "subnet-inspector",
+    name: "Subnet Inspector",
     description:
       "Turn CIDR into the numbers you actually need: network, broadcast, usable range, mask and host count.",
     section: "networking",
@@ -337,7 +359,12 @@ export const TOOLS: Tool[] = [
       "network",
       "broadcast",
       "vlsm",
+      // The tool used to be called a calculator, and people still search for it
+      // that way — along with the other words for "tell me about this block".
       "calculator",
+      "inspector",
+      "info",
+      "lookup",
     ],
     api: {
       status: "live",
@@ -350,6 +377,7 @@ export const TOOLS: Tool[] = [
         },
       ],
       resultKind: "fields",
+      bareParam: "cidr",
       query: { cidr: "10.0.0.0/22" },
       sampleKey: "network",
     },
@@ -358,13 +386,12 @@ export const TOOLS: Tool[] = [
     id: "subnet-splitter",
     name: "Subnet Splitter",
     description:
-      "Carve a block into smaller ones. Divide and join like a whiteboard, or ask for a set number of equal subnets.",
+      "Carve a block into smaller ones. Split and join like a whiteboard, or ask for a set number of equal subnets.",
     section: "networking",
     icon: "split",
     keywords: [
       "subnet",
       "split",
-      "divide",
       "vlsm",
       "cidr",
       "supernet",
@@ -394,12 +421,6 @@ export const TOOLS: Tool[] = [
           description: "Split down to this prefix length, e.g. 20.",
         },
         {
-          name: "divide",
-          required: false,
-          description:
-            "An explicit division tree as 0s and 1s, the same encoding the browser panel produces.",
-        },
-        {
           name: "limit",
           required: false,
           description: "Rows per response. 1 to 4096. Default 256.",
@@ -407,7 +428,47 @@ export const TOOLS: Tool[] = [
         { name: "offset", required: false, description: "Skip this many rows. Default 0." },
       ],
       resultKind: "rows",
+      bareParam: "cidr",
       query: { cidr: "10.0.0.0/16", count: "4" },
+    },
+  },
+  {
+    id: "subnet-planner",
+    name: "Subnet Planner",
+    description:
+      "Carve a block into named subnets sized to what each one has to hold, and see what is left over.",
+    section: "networking",
+    icon: "list-tree",
+    keywords: [
+      "subnet",
+      "vlsm",
+      "plan",
+      "allocate",
+      "carve",
+      "cidr",
+      "ipam",
+      "vpc",
+      "vlan",
+      "design",
+    ],
+    api: {
+      status: "live",
+      method: "GET",
+      params: [
+        {
+          name: "cidr",
+          required: true,
+          description: "The block to plan inside, IPv4 or IPv6, e.g. 10.0.0.0/16.",
+        },
+        {
+          name: "need",
+          required: true,
+          description:
+            "Comma-separated name:size list, e.g. pods:4000,mgmt:200,dmz:/26. Size is a host count or an explicit /prefix; the name is optional.",
+        },
+      ],
+      resultKind: "rows",
+      query: { cidr: "10.0.0.0/16", need: "pods:4000,mgmt:200,dmz:/26" },
     },
   },
   {
@@ -451,6 +512,7 @@ export const TOOLS: Tool[] = [
         },
       ],
       resultKind: "rows",
+      bareParam: "name",
       query: { name: "example.com", type: "A" },
     },
   },
@@ -485,29 +547,8 @@ export const TOOLS: Tool[] = [
         },
       ],
       resultKind: "rows",
+      bareParam: "domain",
       query: { domain: "github.com" },
-    },
-  },
-  {
-    id: "ip-range",
-    name: "IP Range to CIDR",
-    description:
-      "Turn an arbitrary address range into the smallest set of CIDR blocks that covers it, or a CIDR back into its range.",
-    section: "networking",
-    icon: "list-tree",
-    keywords: ["cidr", "range", "summarize", "aggregate", "firewall", "acl", "ipv4", "ipv6", "supernet"],
-    api: {
-      status: "live",
-      method: "GET",
-      params: [
-        {
-          name: "range",
-          required: true,
-          description: 'A range like 10.0.0.5-10.0.0.30, or a CIDR to see the range it covers.',
-        },
-      ],
-      resultKind: "rows",
-      query: { range: "10.0.0.5-10.0.0.30" },
     },
   },
   {
@@ -544,6 +585,7 @@ export const TOOLS: Tool[] = [
         },
       ],
       resultKind: "rows",
+      bareParam: "rate",
       query: { rate: "1", unit: "Gbps", size: "1", sizeUnit: "TiB", overhead: "6" },
     },
   },
@@ -666,6 +708,7 @@ export const TOOLS: Tool[] = [
         },
       ],
       resultKind: "fields",
+      bareParam: "value",
       query: { value: "1h30m" },
       sampleKey: "seconds",
     },
@@ -803,6 +846,53 @@ export const TOOLS: Tool[] = [
       bodySample: "web-01\nweb-02\ndb-01",
     },
   },
+  // ---------------------------------------------------------------- system
+  {
+    id: "disk-space",
+    name: "Disk Space Calculator",
+    description:
+      "Any two of capacity, used and percentage give you the third, plus how much is free.",
+    section: "system",
+    icon: "chart-pie",
+    keywords: [
+      "disk",
+      "space",
+      "storage",
+      "capacity",
+      "used",
+      "free",
+      "usage",
+      "percent",
+      "percentage",
+      "volume",
+      "drive",
+      "quota",
+    ],
+    api: {
+      status: "live",
+      method: "GET",
+      params: [
+        {
+          name: "capacity",
+          required: false,
+          description: "Total size, e.g. 100TB or 512GiB. Give two of the three.",
+        },
+        {
+          name: "used",
+          required: false,
+          description: "Space in use, e.g. 40TB. Give two of the three.",
+        },
+        {
+          name: "percent",
+          required: false,
+          description: "Percentage used, e.g. 70 or 70%. Give two of the three.",
+        },
+      ],
+      resultKind: "fields",
+      query: { capacity: "100TB", used: "40TB" },
+      sampleKey: "free",
+    },
+  },
   {
     id: "file-permissions",
     name: "File Permissions",
@@ -860,6 +950,7 @@ export const TOOLS: Tool[] = [
         { name: "tz", required: false, description: "IANA timezone the schedule runs in. Default UTC." },
       ],
       resultKind: "fields",
+      bareParam: "expr",
       query: { expr: "0 3 * * 1", count: "5", tz: "Europe/London" },
       sampleKey: "meaning",
     },

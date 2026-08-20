@@ -1,11 +1,48 @@
 import { resolveFormat } from "@/lib/tools/format";
-import { getTool } from "@/lib/tools/registry";
+import { getTool, type Tool } from "@/lib/tools/registry";
 import { SITE_URL } from "@/lib/site";
 
 import { rateLimitKey } from "./client-ip";
 import { BadRequestError, HANDLERS } from "./handlers";
 import { rateLimit } from "./ratelimit";
 import { failure, result, tooManyRequests } from "./respond";
+
+/** Query parameters every tool understands, whatever its own list says. */
+const GLOBAL_PARAMS = new Set(["format"]);
+
+/**
+ * Lets the one required parameter be given without its name, so
+ * `?example.com` reads the same as `?name=example.com`.
+ *
+ * A bare value arrives as a key with an empty value — `?example.com` parses to
+ * ("example.com", "") — so the rule is: the first entry with no value whose key
+ * is not a parameter this tool already knows about. Anything the tool does name
+ * is left alone, which is what keeps `?format=json` and `?type=A` working
+ * alongside it.
+ *
+ * Opt-in per tool via `api.bareParam`, never blanket: see the note on that
+ * field for why a value containing `=`, `&` or `+` cannot survive the trip.
+ */
+function promoteBareParam(params: URLSearchParams, tool: Tool): URLSearchParams {
+  const bare = tool.api.bareParam;
+  if (!bare) return params;
+
+  // An explicit ?name= always wins; nothing is guessed over the top of it.
+  if (params.get(bare)) return params;
+
+  const named = new Set(tool.api.params.map((param) => param.name));
+
+  for (const [key, value] of params) {
+    if (value !== "" || named.has(key) || GLOBAL_PARAMS.has(key)) continue;
+
+    const promoted = new URLSearchParams(params);
+    promoted.delete(key);
+    promoted.set(bare, key);
+    return promoted;
+  }
+
+  return params;
+}
 
 /**
  * The tool dispatch, shared by both routes that expose it:
@@ -53,7 +90,8 @@ export async function handleToolRequest(request: Request, id: string): Promise<R
   const requestBody = request.method === "POST" ? await request.text() : null;
 
   try {
-    const value = await handler({ request, params: url.searchParams, body: requestBody });
+    const params = promoteBareParam(url.searchParams, tool);
+    const value = await handler({ request, params, body: requestBody });
     return result(id, value, format, rate);
   } catch (error) {
     if (error instanceof BadRequestError) {

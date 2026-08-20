@@ -13,14 +13,13 @@ import {
  * address maths both share lives in ip.ts.
  */
 export function calculateSubnet(input: string): ToolResult {
-  const { family, isV6, value, network, prefix, format } = parseCidr(input);
+  const { family, isV6, network, prefix, format } = parseCidr(input);
 
   const mask = maskFor(family, prefix);
   const total = blockSize(family, prefix);
   const broadcast = network + total - 1n;
 
   const fields: { label: string; value: string }[] = [
-    { label: "Input", value: `${format(value)}/${prefix}` },
     { label: "Network", value: `${format(network)}/${prefix}` },
   ];
 

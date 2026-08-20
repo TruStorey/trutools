@@ -196,3 +196,55 @@ export function usableRange(
 
   return { first: network + 1n, last: broadcast - 1n, count: size - 2n, broadcast };
 }
+
+/** How many low bits of this value are zero — the largest block it can start. */
+function trailingZeroBits(value: bigint, max: number): number {
+  if (value === 0n) return max;
+  let bits = 0;
+  while ((value & (1n << BigInt(bits))) === 0n) bits += 1;
+  return bits;
+}
+
+/** Highest power of two not exceeding the count, as a bit width. */
+function widthFor(count: bigint): number {
+  let bits = 0;
+  while (1n << BigInt(bits + 1) <= count) bits += 1;
+  return bits;
+}
+
+/**
+ * The smallest set of CIDR blocks covering an arbitrary address range exactly.
+ *
+ * A range only collapses to a single block when both its start and its length
+ * line up, so 10.0.0.5-10.0.0.30 needs five blocks of different sizes. The
+ * greedy walk: at each step take the largest block that both starts on the
+ * current address and fits inside what is left. This is minimal — any larger
+ * block would either be misaligned or overshoot.
+ *
+ * Matches Python's `ipaddress.summarize_address_range`, which is the reference
+ * worth checking against.
+ */
+export function rangeToCidrs(
+  start: bigint,
+  end: bigint,
+  family: Family,
+): { network: bigint; prefix: number }[] {
+  if (start > end) throw new ToolInputError("the range runs backwards — start is after end");
+
+  const blocks: { network: bigint; prefix: number }[] = [];
+  let cursor = start;
+
+  while (cursor <= end) {
+    const alignment = trailingZeroBits(cursor, family.size);
+    const remaining = end - cursor + 1n;
+    const bits = Math.min(alignment, widthFor(remaining));
+
+    blocks.push({ network: cursor, prefix: family.size - bits });
+    cursor += 1n << BigInt(bits);
+
+    // A /0 block consumes the whole space and would wrap to zero.
+    if (bits === family.size) break;
+  }
+
+  return blocks;
+}

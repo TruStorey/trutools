@@ -1,6 +1,6 @@
 # The tools
 
-Twenty-seven of them, in five sections. This page is about **what each one does
+Twenty-eight of them, in five sections. This page is about **what each one does
 and where the interesting edges are** — the parameter lists live in
 [`api.md`](api.md), and `curl tools.truvibe.dev/api/v1` prints them too.
 
@@ -92,7 +92,7 @@ It reads a certificate you already have; it does not fetch one from a live host.
 
 ## Networking
 
-### Subnet Calculator
+### Subnet Inspector
 
 CIDR in, every number you actually need out: network, netmask, wildcard,
 broadcast, usable range, host count, and whether the block is private,
@@ -108,15 +108,44 @@ print rather than an equivalent-but-differently-written form.
 
 Carve a block into smaller ones, the way
 [Dave's visual subnet calculator](https://www.davidc.net/sites/default/subnets/subnets.html)
-does: click a row to divide it, click again to join it back. Or skip the
-clicking and ask for a set number of equal subnets with `?count=`, or a target
-prefix with `?prefix=`.
+does: click a row to split it, click again to join it back.
 
-The division state is a **pre-order binary tree encoded as a bitstring**, which
-is what makes a layout shareable as a URL. Uniform splits are described rather
-than built — asking for a `/16` split to `/30` is sixteen thousand subnets, and
-materialising the tree for that would be silly — so the response paginates with
-`?limit=` and `?offset=`.
+That uneven, clicked-together layout is a browser-only affair — the API takes
+even splits, either a set number of equal subnets with `?count=` or a target
+prefix with `?prefix=`. Those are described rather than built: asking for a
+`/16` split to `/30` is sixteen thousand subnets, and materialising the tree for
+that would be silly, so the response paginates with `?limit=` and `?offset=`.
+
+### Subnet Planner
+
+Carving a block up by hand is usually not a question of halves — it is "a `/24`
+for management, something big enough for four thousand pods, a small DMZ". Say
+that directly and get the allocation back:
+
+```console
+$ curl 'tools.truvibe.dev/subnet-planner?cidr=10.0.0.0/16&need=pods:4000,mgmt:200,dmz:/26'
+Name  Subnet        Netmask          Usable range             Hosts  Needed
+pods  10.0.0.0/20   255.255.240.0    10.0.0.1 - 10.0.15.254   4,094  4000
+mgmt  10.0.16.0/24  255.255.255.0    10.0.16.1 - 10.0.16.254  254    200
+dmz   10.0.17.0/26  255.255.255.192  10.0.17.1 - 10.0.17.62   62     /26
+```
+
+Each entry in `?need=` is `name:size`. The name is optional and defaults to the
+entry's position; the size is either a **host count** or an explicit
+**`/prefix`**. `Needed` echoes what you asked for beside what you got, so the
+rounding up to the next power of two is visible rather than silent.
+
+Allocation is **first-fit decreasing** — biggest block first — which for
+power-of-two blocks packs perfectly, so the only free space is what is left at
+the end. That leftover is reported as CIDRs via the same greedy alignment walk
+that backs Python's `ipaddress.summarize_address_range`, which remains the
+reference worth checking against.
+
+One deliberate deviation from the arithmetic: **host counts never size down to a
+`/31`**. RFC 3021 makes both addresses of a `/31` usable and the Subnet
+Inspector says so, but handing someone a `/31` because they typed `2` is a
+surprise anywhere other than a point-to-point link, so the host-count path stops
+at `/30`. Ask for `/31` explicitly and you still get one.
 
 ### DNS Lookup · server
 
@@ -151,17 +180,6 @@ well-run domains sit at exactly 10 of 10 — no headroom for the next vendor.
 
 DKIM is not checked. It needs a selector, which is not discoverable from the
 domain alone.
-
-### IP Range to CIDR
-
-Turn an arbitrary range like `10.0.0.5-10.0.0.30` into the smallest set of CIDR
-blocks covering it — the thing you need when a firewall or ACL will only accept
-prefixes but the requirement was written as a range. Give it a CIDR instead and
-it goes the other way, showing the range that block covers.
-
-The greedy alignment walk matches Python's
-`ipaddress.summarize_address_range`, which is the reference worth checking
-against.
 
 ### Bandwidth & Transfer Time
 
@@ -280,6 +298,20 @@ comma-separated string, or splitting a CSV row into lines, is one call.
 ---
 
 ## System
+
+### Disk Space Calculator
+
+Capacity, used and percentage are three views of one relationship, so **any two
+of them give you the third** — plus how much is free, which is the number you
+actually wanted. Quote a capacity and a percentage from a monitoring alert, or a
+capacity and a used figure from `df`, whichever end you happen to be holding.
+
+Sizes come back in the convention you asked in. Say `1TiB` and you get GiB back;
+say `1TB` and you get GB. Answering a question asked in one convention with a
+number in the other is how the 931 GB argument starts.
+
+All three at once is an error rather than a silent preference, because they can
+disagree — `100TB`, `40TB` and `70%` cannot all be true.
 
 ### File Permissions
 
