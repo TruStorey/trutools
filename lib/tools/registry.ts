@@ -374,13 +374,12 @@ export const TOOLS: Tool[] = [
     id: "subnet-splitter",
     name: "Subnet Splitter",
     description:
-      "Carve a block into smaller ones. Divide and join like a whiteboard, or ask for a set number of equal subnets.",
+      "Carve a block into smaller ones. Split and join like a whiteboard, or ask for a set number of equal subnets.",
     section: "networking",
     icon: "split",
     keywords: [
       "subnet",
       "split",
-      "divide",
       "vlsm",
       "cidr",
       "supernet",
@@ -408,12 +407,6 @@ export const TOOLS: Tool[] = [
           name: "prefix",
           required: false,
           description: "Split down to this prefix length, e.g. 20.",
-        },
-        {
-          name: "divide",
-          required: false,
-          description:
-            "An explicit division tree as 0s and 1s, the same encoding the browser panel produces.",
         },
         {
           name: "limit",

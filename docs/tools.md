@@ -108,15 +108,13 @@ print rather than an equivalent-but-differently-written form.
 
 Carve a block into smaller ones, the way
 [Dave's visual subnet calculator](https://www.davidc.net/sites/default/subnets/subnets.html)
-does: click a row to divide it, click again to join it back. Or skip the
-clicking and ask for a set number of equal subnets with `?count=`, or a target
-prefix with `?prefix=`.
+does: click a row to split it, click again to join it back.
 
-The division state is a **pre-order binary tree encoded as a bitstring**, which
-is what makes a layout shareable as a URL. Uniform splits are described rather
-than built — asking for a `/16` split to `/30` is sixteen thousand subnets, and
-materialising the tree for that would be silly — so the response paginates with
-`?limit=` and `?offset=`.
+That uneven, clicked-together layout is a browser-only affair — the API takes
+even splits, either a set number of equal subnets with `?count=` or a target
+prefix with `?prefix=`. Those are described rather than built: asking for a
+`/16` split to `/30` is sixteen thousand subnets, and materialising the tree for
+that would be silly, so the response paginates with `?limit=` and `?offset=`.
 
 ### Subnet Planner
 

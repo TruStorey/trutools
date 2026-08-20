@@ -191,7 +191,7 @@ Parameters are optional unless marked **required**.
 |---|---|
 | `GET /ip` | none — returns your public address, nothing else |
 | `GET /subnet-inspector` | **`cidr`** e.g. `10.0.0.0/22`, v4 or v6 |
-| `GET /subnet-splitter` | **`cidr`** · `count` equal subnets, rounded up to a power of two · `prefix` split down to this length · `divide` an explicit division tree · `limit` 1–4096, default 256 · `offset` |
+| `GET /subnet-splitter` | **`cidr`** · `count` equal subnets, rounded up to a power of two · `prefix` split down to this length · `limit` 1–4096, default 256 · `offset` |
 | `GET /subnet-planner` | **`cidr`** · **`need`** a `name:size` list, e.g. `pods:4000,mgmt:200,dmz:/26` — size is a host count or an explicit `/prefix` |
 | `GET /dns-lookup` | **`name`** · `type` `A`\|`AAAA`\|`CNAME`\|`MX`\|`TXT`\|`NS`\|`SOA`\|`SRV`\|`CAA`\|`PTR`\|`all` |
 | `GET /mail-check` | **`domain`** — a URL or email address is reduced to its domain |

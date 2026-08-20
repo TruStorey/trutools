@@ -243,7 +243,6 @@ export const HANDLERS: Record<string, ToolHandler> = {
         cidr,
         count: optionalInt("count"),
         prefix: optionalInt("prefix"),
-        divide: params.get("divide") ?? undefined,
         limit: intParam(params, "limit", DEFAULT_LIMIT),
         offset: intParam(params, "offset", 0),
       });
