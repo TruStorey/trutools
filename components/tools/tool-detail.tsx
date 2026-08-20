@@ -9,6 +9,7 @@ import { CodeBlock } from "@/components/tools/code-block";
 import { ToolIcon } from "@/components/tools/icon-map";
 import { LanguageIcon } from "@/components/tools/language-icon";
 import { ToolPanelFor } from "@/components/tools/panels";
+import type { ToolView } from "@/components/tools/view-toggle";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glasscn/glass-card";
 import type { Tool } from "@/lib/tools/registry";
@@ -23,6 +24,9 @@ import {
   type SnippetLanguage,
 } from "@/lib/tools/snippets";
 import { cn } from "@/lib/utils";
+
+/** The small caption that sits above each section of the API tab. */
+const FIELD_LABEL = "block text-[0.7rem] text-muted-foreground/70";
 
 /** A row of small pills used for both the language and the format choice. */
 function PillGroup<T extends string>({
@@ -102,19 +106,22 @@ function ApiTab({ tool }: { tool: Tool }) {
   return (
     <div className="space-y-4">
       <div className="space-y-2">
-        <PillGroup
-          label="Language"
-          value={language}
-          onChange={changeLanguage}
-          options={SNIPPET_LANGUAGES.map((id) => ({
-            value: id,
-            label: LANGUAGE_LABELS[id],
-            icon: <LanguageIcon language={id} className="size-3.5" />,
-          }))}
-        />
+        <div className="space-y-1.5">
+          <span className={FIELD_LABEL}>Language</span>
+          <PillGroup
+            label="Language"
+            value={language}
+            onChange={changeLanguage}
+            options={SNIPPET_LANGUAGES.map((id) => ({
+              value: id,
+              label: LANGUAGE_LABELS[id],
+              icon: <LanguageIcon language={id} className="size-3.5" />,
+            }))}
+          />
+        </div>
 
-        <div className="flex flex-wrap items-center gap-2 pt-0.5">
-          <span className="text-[0.7rem] text-muted-foreground/70">
+        <div className="space-y-1.5 pt-0.5 pb-4">
+          <span className={FIELD_LABEL}>
             {language === "curl" ? "Response" : "Returns"}
           </span>
           <PillGroup
@@ -125,33 +132,36 @@ function ApiTab({ tool }: { tool: Tool }) {
           />
         </div>
 
-        <CodeBlock
-          code={snippet}
-          language={language}
-          action={
-            <Button
-              variant="ghost"
-              size="xs"
-              onClick={copy}
-              aria-label={`Copy the ${LANGUAGE_LABELS[language]} snippet`}
-              className="border border-white/10 bg-black/30 backdrop-blur-sm hover:bg-black/50"
-            >
-              {copied ? <Check /> : <Copy />}
-              {copied ? "Copied" : "Copy"}
-            </Button>
-          }
-        />
+        <div className="pb-4">
+          <CodeBlock
+            code={snippet}
+            language={language}
+            action={
+              <Button
+                variant="ghost"
+                size="xs"
+                onClick={copy}
+                aria-label={`Copy the ${LANGUAGE_LABELS[language]} snippet`}
+                className="border border-white/10 bg-black/30 backdrop-blur-sm hover:bg-black/50"
+              >
+                {copied ? <Check /> : <Copy />}
+                {copied ? "Copied" : "Copy"}
+              </Button>
+            }
+          />
+        </div>
+      </div>
 
-        <p className="font-mono text-[0.7rem] text-muted-foreground/70">
+      <div className="space-y-2">
+        <h4 className={FIELD_LABEL}>Endpoint</h4>
+        <p className="font-mono text-xs text-foreground/90">
           {tool.api.method} /{tool.id}
         </p>
       </div>
 
       {tool.api.params.length > 0 ? (
         <div className="space-y-2">
-          <h4 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-            Parameters
-          </h4>
+          <h4 className={FIELD_LABEL}>Parameters</h4>
           <dl className="space-y-1.5">
             {tool.api.params.map((param) => (
               <div key={param.name} className="flex flex-wrap items-baseline gap-x-2 text-xs">
@@ -168,24 +178,36 @@ function ApiTab({ tool }: { tool: Tool }) {
         </div>
       ) : null}
 
-      <p className="flex items-start gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-muted-foreground">
+      <div className="flex items-start gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-muted-foreground">
         <Terminal className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-        <span>
-          Responses default to <code className="font-mono">text/plain</code>; add{" "}
-          <code className="font-mono">?format=json</code> or{" "}
-          <code className="font-mono">xml</code> (or an{" "}
-          <code className="font-mono">Accept</code> header) for a parseable one. Errors come
-          back in whichever format you asked for. Rate limited per IP — check{" "}
-          <code className="font-mono">X-RateLimit-Remaining</code>, and{" "}
-          <code className="font-mono">Retry-After</code> on a 429.
-        </span>
-      </p>
+        <div className="space-y-1">
+          <p>
+            Responses default to <code className="font-mono">text/plain</code>; add{" "}
+            <code className="font-mono">?format=json</code> or{" "}
+            <code className="font-mono">xml</code> (or an{" "}
+            <code className="font-mono">Accept</code> header) for a parseable one.
+          </p>
+          <p>Errors come back in whichever format you asked for.</p>
+          <p>
+            Rate limited per IP — check{" "}
+            <code className="font-mono">X-RateLimit-Remaining</code>, and{" "}
+            <code className="font-mono">Retry-After</code> on a 429.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
 
-export function ToolDetail({ tool }: { tool: Tool }) {
-  const [view, setView] = useState<"tool" | "api">("tool");
+export function ToolDetail({
+  tool,
+  view,
+  onViewChange,
+}: {
+  tool: Tool;
+  view: ToolView;
+  onViewChange: (view: ToolView) => void;
+}) {
   const shouldReduceMotion = useReducedMotion();
   const showingTool = view === "tool";
 
@@ -207,10 +229,13 @@ export function ToolDetail({ tool }: { tool: Tool }) {
           One button, showing the view you are *not* looking at. It sits where
           the close button used to; the card's own chevron still collapses the
           panel, so nothing is lost by dropping the X.
+
+          It writes to the grid's shared view state, so flipping it here also
+          moves the Click it / Curl it toggle above the grid.
         */}
         <button
           type="button"
-          onClick={() => setView(showingTool ? "api" : "tool")}
+          onClick={() => onViewChange(showingTool ? "api" : "tool")}
           aria-label={
             showingTool
               ? `Show the API reference for ${tool.name}`

@@ -7,6 +7,7 @@ import { Fragment, useMemo, useRef, useState } from "react";
 import { ToolCard } from "@/components/tools/tool-card";
 import { ToolDetail } from "@/components/tools/tool-detail";
 import { ToolSearch } from "@/components/tools/tool-search";
+import { ViewToggle, type ToolView } from "@/components/tools/view-toggle";
 import { chunk, useGridColumns } from "@/components/tools/use-grid-columns";
 import { Button } from "@/components/ui/button";
 import { filterTools } from "@/lib/tools/search";
@@ -29,10 +30,14 @@ function SectionGrid({
   tools,
   expandedId,
   onToggle,
+  view,
+  onViewChange,
 }: {
   tools: Tool[];
   expandedId: string | null;
   onToggle: (id: string) => void;
+  view: ToolView;
+  onViewChange: (view: ToolView) => void;
 }) {
   const gridRef = useRef<HTMLDivElement>(null);
   const columns = useGridColumns(gridRef);
@@ -79,7 +84,11 @@ function SectionGrid({
                   {/* Inner wrapper carries the spacing: animating height on a
                       box that also has margin makes the collapse jump. */}
                   <div className="pt-1 pb-1">
-                    <ToolDetail tool={openTool} />
+                    <ToolDetail
+                      tool={openTool}
+                      view={view}
+                      onViewChange={onViewChange}
+                    />
                   </div>
                 </motion.div>
               ) : null}
@@ -94,6 +103,7 @@ function SectionGrid({
 export function ToolGrid({ tools, sections }: ToolGridProps) {
   const [query, setQuery] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [view, setView] = useState<ToolView>("tool");
 
   const matches = useMemo(() => filterTools(tools, query), [tools, query]);
 
@@ -116,12 +126,15 @@ export function ToolGrid({ tools, sections }: ToolGridProps) {
 
   return (
     <div className="space-y-10">
-      <ToolSearch
-        value={query}
-        onChange={setQuery}
-        resultCount={matches.length}
-        totalCount={tools.length}
-      />
+      <div className="flex flex-col items-center gap-3">
+        <ToolSearch
+          value={query}
+          onChange={setQuery}
+          resultCount={matches.length}
+          totalCount={tools.length}
+        />
+        <ViewToggle value={view} onChange={setView} />
+      </div>
 
       {visibleSections.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border/60 px-6 py-16 text-center">
@@ -151,6 +164,8 @@ export function ToolGrid({ tools, sections }: ToolGridProps) {
                 tools={sectionTools}
                 expandedId={expandedId}
                 onToggle={toggle}
+                view={view}
+                onViewChange={setView}
               />
             </section>
           ))}

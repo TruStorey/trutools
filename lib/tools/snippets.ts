@@ -4,22 +4,27 @@ import type { Tool } from "./registry";
 
 export { API_BASE };
 
+// Alphabetical, which is also the order the picker renders them in.
 export const SNIPPET_LANGUAGES = [
   "curl",
+  "go",
+  "javascript",
   "powershell",
   "python",
-  "javascript",
-  "go",
+  "ruby",
+  "rust",
 ] as const;
 
 export type SnippetLanguage = (typeof SNIPPET_LANGUAGES)[number];
 
 export const LANGUAGE_LABELS: Record<SnippetLanguage, string> = {
   curl: "curl",
+  go: "Go",
+  javascript: "JavaScript",
   powershell: "PowerShell",
   python: "Python",
-  javascript: "JavaScript",
-  go: "Go",
+  ruby: "Ruby",
+  rust: "Rust",
 };
 
 /**
@@ -45,6 +50,8 @@ export type OutputShape =
   | "object"
   | "map"
   | "entries"
+  | "hash"
+  | "pairs"
   | "typed";
 
 export type OutputOption = { value: OutputShape; label: string };
@@ -133,6 +140,34 @@ export function outputsFor(language: SnippetLanguage, kind: ResultKind): OutputO
         return [plain, { value: "typed", label: "[]map[string]string" }];
       }
       return [plain, { value: "typed", label: "string" }];
+
+    case "ruby":
+      if (kind === "lines") {
+        return [plain, { value: "array", label: "Array" }, { value: "set", label: "Set" }];
+      }
+      if (kind === "fields") {
+        return [
+          plain,
+          { value: "hash", label: "Hash" },
+          { value: "pairs", label: "pairs" },
+        ];
+      }
+      if (kind === "rows") {
+        return [plain, { value: "array", label: "Array<Hash>" }];
+      }
+      return [plain, { value: "typed", label: "String" }];
+
+    case "rust":
+      if (kind === "lines") {
+        return [plain, { value: "typed", label: "Vec<String>" }];
+      }
+      if (kind === "fields") {
+        return [plain, { value: "typed", label: "HashMap<String, String>" }];
+      }
+      if (kind === "rows") {
+        return [plain, { value: "typed", label: "Vec<HashMap<String, String>>" }];
+      }
+      return [plain, { value: "typed", label: "String" }];
   }
 }
 
@@ -294,10 +329,13 @@ function javascriptSnippet(tool: Tool, shape: OutputShape): string {
 
   let call: string;
   if (tool.api.bodyFile) {
-    // A template literal keeps a multi-line sample readable; JSON.stringify
-    // would collapse it into one line of escape sequences.
+    // The body is inlined rather than read off disk, so the snippet runs in a
+    // browser console as well as in Node. A template literal keeps a
+    // multi-line sample readable; JSON.stringify would collapse it into one
+    // line of escape sequences.
     const sample = (tool.api.bodySample ?? "").replace(/`/g, "\\`").replace(/\$/g, "\\$");
     call =
+      `// In Node, read it from disk instead: readFile(path, "utf8").\n` +
       `const body = \`${sample}\`;\n\n` +
       `const response = await fetch(\`${API_BASE}/${tool.id}?\${params}\`, {\n` +
       `  method: "POST",\n` +
@@ -382,6 +420,117 @@ function goSnippet(tool: Tool, shape: OutputShape): string {
   );
 }
 
+// -------------------------------------------------------------------- ruby
+
+function rubySnippet(tool: Tool, shape: OutputShape): string {
+  const format = wireFormat(shape);
+  const params: Record<string, string> = { ...(tool.api.query ?? {}) };
+  if (format !== "text") params.format = format;
+
+  // Ruby style is one require per line, alphabetically.
+  const names = ["net/http"];
+  if (shape !== "text") names.push("json");
+  if (shape === "set") names.push("set");
+  const requires = [...new Set(names)]
+    .sort()
+    .map((name) => `require "${name}"`)
+    .join("\n");
+
+  const entries = Object.entries(params)
+    .map(([key, value]) => `  ${JSON.stringify(key)} => ${JSON.stringify(value)},`)
+    .join("\n");
+
+  const uri = entries
+    ? `uri = URI("${API_BASE}/${tool.id}")\nuri.query = URI.encode_www_form(\n${entries}\n)`
+    : `uri = URI("${API_BASE}/${tool.id}")`;
+
+  const request = tool.api.bodyFile
+    ? `body = File.read(${JSON.stringify(tool.api.bodyFile)})\n` +
+      `response = Net::HTTP.post(uri, body, "Content-Type" => "text/plain")`
+    : `response = Net::HTTP.get_response(uri)`;
+
+  const head =
+    `${requires}\n\n${uri}\n\n${request}\n` +
+    `raise response.message unless response.is_a?(Net::HTTPSuccess)\n\n`;
+
+  const parsed = `JSON.parse(response.body)["result"]`;
+
+  switch (shape) {
+    case "text":
+      return `${head}result = response.body\n\nputs result`;
+    case "array":
+      return `${head}result = ${parsed}\n\nresult.first`;
+    case "set":
+      return `${head}result = ${parsed}.to_set`;
+    case "hash":
+      return `${head}result = ${parsed}\n\nresult["${sampleKey(tool)}"]`;
+    case "pairs":
+      return (
+        `${head}result = ${parsed}.to_a\n\n` +
+        `result.each do |key, value|\n  puts "#{key} #{value}"\nend`
+      );
+    default:
+      return `${head}result = ${parsed}`;
+  }
+}
+
+// -------------------------------------------------------------------- rust
+
+function rustSnippet(tool: Tool, shape: OutputShape): string {
+  const target = url(tool, shape);
+  const kind = tool.api.resultKind;
+
+  const rustType =
+    kind === "lines"
+      ? "Vec<String>"
+      : kind === "fields"
+        ? "HashMap<String, String>"
+        : kind === "rows"
+          ? "Vec<HashMap<String, String>>"
+          : "String";
+
+  const request = tool.api.bodyFile
+    ? `let body = fs::read_to_string(${JSON.stringify(tool.api.bodyFile)})?;\n\n` +
+      `let response = reqwest::blocking::Client::new()\n` +
+      `    .post("${target}")\n` +
+      `    .header("Content-Type", "text/plain")\n` +
+      `    .body(body)\n` +
+      `    .send()?;`
+    : `let response = reqwest::blocking::get("${target}")?;`;
+
+  // rustfmt sorts a use block alphabetically, so build the list and sort
+  // rather than hand-writing a block per combination.
+  const importBlock = (extra: string[]) => {
+    const names = [...extra];
+    if (tool.api.bodyFile) names.push("std::fs");
+    return [...new Set(names)]
+      .sort()
+      .map((name) => `use ${name};`)
+      .join("\n");
+  };
+
+  if (shape === "text") {
+    const uses = importBlock([]);
+    return (
+      (uses ? `${uses}\n\n` : "") +
+      `${request}\n\n` +
+      `let result = response.text()?;\n\n` +
+      `println!("{result}");`
+    );
+  }
+
+  const extra = ["serde::Deserialize"];
+  if (kind === "fields" || kind === "rows") extra.push("std::collections::HashMap");
+
+  return (
+    `${importBlock(extra)}\n\n` +
+    `#[derive(Deserialize)]\n` +
+    `struct Payload {\n    result: ${rustType},\n}\n\n` +
+    `${request}\n\n` +
+    `let payload: Payload = response.json()?;`
+  );
+}
+
 // ------------------------------------------------------------------ public
 
 export function snippetFor(
@@ -390,14 +539,18 @@ export function snippetFor(
   shape: OutputShape,
 ): string {
   switch (language) {
+    case "go":
+      return goSnippet(tool, shape);
+    case "javascript":
+      return javascriptSnippet(tool, shape);
     case "powershell":
       return powershellSnippet(tool, shape);
     case "python":
       return pythonSnippet(tool, shape);
-    case "javascript":
-      return javascriptSnippet(tool, shape);
-    case "go":
-      return goSnippet(tool, shape);
+    case "ruby":
+      return rubySnippet(tool, shape);
+    case "rust":
+      return rustSnippet(tool, shape);
     default:
       return curlSnippet(tool, shape);
   }

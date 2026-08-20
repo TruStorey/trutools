@@ -243,17 +243,19 @@ having to ask five times.
 ## Code snippets
 
 Each tool's **API** tab in the browser generates a ready-to-paste snippet in
-curl, PowerShell, Python, JavaScript and Go, with a second picker for what the
-snippet leaves you holding.
+curl, Go, JavaScript, PowerShell, Python, Ruby and Rust, with a second picker
+for what the snippet leaves you holding.
 
 For curl those are the wire formats. For everything else they are native shapes:
 
 | | |
 |---|---|
+| Go | text, `[]string`, `map[string]string` |
+| JavaScript | text, array, `Set`, object, `Map`, entries |
 | PowerShell | text, array, hashtable, `PSCustomObject` |
 | Python | text, list, tuple, set, dict, items |
-| JavaScript | text, array, `Set`, object, `Map`, entries |
-| Go | text, `[]string`, `map[string]string` |
+| Ruby | text, `Array`, `Set`, `Hash`, pairs |
+| Rust | text, `Vec<String>`, `HashMap<String, String>` |
 
 Which shapes appear depends on what the tool returns — a list of UUIDs has no
 sensible hashtable form — so `outputsFor()` in `lib/tools/snippets.ts` filters by

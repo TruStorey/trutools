@@ -27,11 +27,11 @@ export const metadata: Metadata = {
     template: "%s · trutools",
   },
   description:
-    "A collection of tools to make the fiddly stuff less, well fiddly. All tools are available in the Browser or via an API. No account needed.",
+    "A collection of tools to make the fiddly stuff less, well fiddly. All tools are available via an API or in the Browser. No account needed.",
   openGraph: {
     title: "trutools — in the browser or via an API",
     description:
-      "A collection of tools to make the fiddly stuff less, well fiddly. All tools are available in the Browser or via an API. No account needed.",
+      "A collection of tools to make the fiddly stuff less, well fiddly. All tools are available via an API or in the Browser. No account needed.",
     url: SITE_URL,
     siteName: "trutools",
     type: "website",

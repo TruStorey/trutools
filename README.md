@@ -43,7 +43,8 @@ answer. Plain text in, plain text out, rate limited per IP — the model
 
 The browser side is the same tools as a filterable card grid. Open a card and it
 expands in place with two tabs: **Tool** for the interactive version, **API** for
-a ready-to-paste snippet in curl, PowerShell, Python, JavaScript or Go.
+a ready-to-paste snippet in curl, Go, JavaScript, PowerShell, Python,
+Ruby or Rust.
 
 ## The tools
 
