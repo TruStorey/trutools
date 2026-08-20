@@ -2,11 +2,12 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { SearchX } from "lucide-react";
-import { Fragment, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 
 import { ToolCard } from "@/components/tools/tool-card";
 import { ToolDetail } from "@/components/tools/tool-detail";
 import { ToolSearch } from "@/components/tools/tool-search";
+import { ViewToggle, type ToolView } from "@/components/tools/view-toggle";
 import { chunk, useGridColumns } from "@/components/tools/use-grid-columns";
 import { Button } from "@/components/ui/button";
 import { filterTools } from "@/lib/tools/search";
@@ -16,6 +17,15 @@ type ToolGridProps = {
   tools: Tool[];
   sections: Section[];
 };
+
+/** How long the panel takes to open or close. */
+const PANEL_SECONDS = 0.28;
+
+/**
+ * Where the opened card comes to rest, measured from the top of the viewport:
+ * clear of the sticky navbar (h-16 in site-navbar.tsx) plus a little air.
+ */
+const CARD_REST_OFFSET = 80;
 
 /**
  * One section: a 4-up card grid where the open tool's panel is inserted as a
@@ -29,10 +39,14 @@ function SectionGrid({
   tools,
   expandedId,
   onToggle,
+  view,
+  onViewChange,
 }: {
   tools: Tool[];
   expandedId: string | null;
   onToggle: (id: string) => void;
+  view: ToolView;
+  onViewChange: (view: ToolView) => void;
 }) {
   const gridRef = useRef<HTMLDivElement>(null);
   const columns = useGridColumns(gridRef);
@@ -55,6 +69,7 @@ function SectionGrid({
             {row.map((tool) => (
               <ToolCard
                 key={tool.id}
+                id={`tool-card-${tool.id}`}
                 tool={tool}
                 expanded={expandedId === tool.id}
                 onToggle={() => onToggle(tool.id)}
@@ -74,12 +89,16 @@ function SectionGrid({
                       : { height: "auto", opacity: 1 }
                   }
                   exit={shouldReduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
-                  transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+                  transition={{ duration: PANEL_SECONDS, ease: [0.22, 1, 0.36, 1] }}
                 >
                   {/* Inner wrapper carries the spacing: animating height on a
                       box that also has margin makes the collapse jump. */}
                   <div className="pt-1 pb-1">
-                    <ToolDetail tool={openTool} />
+                    <ToolDetail
+                      tool={openTool}
+                      view={view}
+                      onViewChange={onViewChange}
+                    />
                   </div>
                 </motion.div>
               ) : null}
@@ -94,6 +113,69 @@ function SectionGrid({
 export function ToolGrid({ tools, sections }: ToolGridProps) {
   const [query, setQuery] = useState("");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [view, setView] = useState<ToolView>("tool");
+  const shouldReduceMotion = useReducedMotion();
+  const previousExpandedId = useRef<string | null>(null);
+
+  /*
+    Bring the card that just opened to the same spot every time, so opening
+    something near the bottom of the page does not leave its panel below the
+    fold. The card rather than the panel: scrolling the panel to the top would
+    push the card you just clicked off-screen.
+  */
+  useEffect(() => {
+    const previous = previousExpandedId.current;
+    previousExpandedId.current = expandedId;
+
+    if (!expandedId) return;
+
+    function rest() {
+      const card = document.getElementById(`tool-card-${expandedId}`);
+      if (!card) return;
+
+      // Document coordinates, so this is the same answer whether or not an
+      // earlier smooth scroll is still in flight.
+      const wanted = card.getBoundingClientRect().top + window.scrollY - CARD_REST_OFFSET;
+      const furthest = Math.max(document.documentElement.scrollHeight - window.innerHeight, 0);
+
+      window.scrollTo({
+        top: Math.min(wanted, furthest),
+        behavior: shouldReduceMotion ? "auto" : "smooth",
+      });
+    }
+
+    // A panel closing *above* this card drags it upward as it shrinks, so the
+    // scroll would land short by that panel's height. Wait it out in that case
+    // only — every other open starts moving straight away, with no dead pause.
+    const closing =
+      previous && previous !== expandedId
+        ? document.getElementById(`tool-detail-${previous}`)
+        : null;
+    const card = document.getElementById(`tool-card-${expandedId}`);
+    if (!card) return;
+
+    const shifts =
+      !shouldReduceMotion &&
+      closing !== null &&
+      closing.getBoundingClientRect().top < card.getBoundingClientRect().top;
+
+    const start = shifts ? PANEL_SECONDS * 1000 : 0;
+
+    /*
+      Twice, because the last row cannot reach the rest position until the
+      panel it just grew has finished growing: at the first pass the page is
+      still short, so the clamp pins the scroll partway and the panel trails
+      off below the fold. The second pass re-measures against the final page
+      height and carries it the rest of the way to the bottom. For every other
+      row both passes compute the same target, so the second is a no-op.
+    */
+    const timers = [
+      setTimeout(rest, start),
+      setTimeout(rest, start + PANEL_SECONDS * 1000),
+    ];
+
+    return () => timers.forEach(clearTimeout);
+  }, [expandedId, shouldReduceMotion]);
 
   const matches = useMemo(() => filterTools(tools, query), [tools, query]);
 
@@ -116,12 +198,15 @@ export function ToolGrid({ tools, sections }: ToolGridProps) {
 
   return (
     <div className="space-y-10">
-      <ToolSearch
-        value={query}
-        onChange={setQuery}
-        resultCount={matches.length}
-        totalCount={tools.length}
-      />
+      <div className="flex flex-col items-center gap-3">
+        <ToolSearch
+          value={query}
+          onChange={setQuery}
+          resultCount={matches.length}
+          totalCount={tools.length}
+        />
+        <ViewToggle value={view} onChange={setView} />
+      </div>
 
       {visibleSections.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border/60 px-6 py-16 text-center">
@@ -151,6 +236,8 @@ export function ToolGrid({ tools, sections }: ToolGridProps) {
                 tools={sectionTools}
                 expandedId={expandedId}
                 onToggle={toggle}
+                view={view}
+                onViewChange={setView}
               />
             </section>
           ))}

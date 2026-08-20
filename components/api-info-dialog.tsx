@@ -72,28 +72,33 @@ export function ApiInfoDialog({ siteHost, rateLimit }: ApiInfoDialogProps) {
         render={
           <button
             type="button"
-            aria-label="About the API"
             className={cn(
-              "inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full",
-              "text-foreground select-none outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
-              "transition-transform duration-150 active:scale-95 motion-reduce:transition-none",
-              glassVariantStyles.frosted,
+              "inline-flex shrink-0 cursor-pointer items-center rounded-lg px-2 py-1",
+              "text-xs font-medium tracking-wide text-muted-foreground uppercase select-none",
+              "transition-colors outline-none hover:text-foreground",
+              "focus-visible:ring-2 focus-visible:ring-ring/60",
             )}
           />
         }
       >
-        <span className="font-mono text-[0.65rem] leading-none">API</span>
+        API info
       </DialogTrigger>
 
       {/*
         The stock DialogContent is bg-popover, which is opaque and would sit on
         the page like a plain card. Overridden to the same frosted glass the
         rest of the chrome uses; tailwind-merge drops bg-popover for it.
+
+        The fill is then pushed well past what `frosted` carries. This dialog is
+        a wall of small text over a busy card grid, and at the shared 0.35 the
+        grid showed through it. Overridden here rather than in the variant,
+        which the navbar and search field share and which look right as they are.
       */}
       <DialogContent
         className={cn(
           "max-h-[85vh] max-w-lg overflow-y-auto rounded-2xl p-5 sm:max-w-lg",
           glassVariantStyles.frosted,
+          "dark:bg-black/[0.75]",
         )}
       >
         <DialogHeader>
@@ -177,10 +182,20 @@ export function ApiInfoDialog({ siteHost, rateLimit }: ApiInfoDialogProps) {
           </Section>
         </div>
 
+        {/*
+          Not target="_blank": the proxy serves this as a page in the site
+          chrome, so it is an ordinary navigation, not a raw text dump.
+
+          And deliberately an anchor rather than next/link. A client-side
+          navigation fetches the RSC payload without an HTML Accept header,
+          which is exactly how the proxy tells a script from a browser — so
+          Link would be handed text/plain and have nothing it could render. A
+          real document request carries a real Accept header, and negotiation
+          works.
+        */}
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
         <a
           href="/api/v1"
-          target="_blank"
-          rel="noreferrer"
           className="inline-flex items-center gap-1.5 self-start rounded-lg border border-white/15 bg-white/10 px-2.5 py-1.5 text-xs font-medium transition-colors hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none dark:bg-black/20 dark:hover:bg-black/30"
         >
           Full endpoint reference

@@ -20,6 +20,21 @@ const TOOL_IDS = new Set(TOOLS.map((tool) => tool.id));
  * through untouched and Next answers it exactly as it did before.
  */
 export function proxy(request: NextRequest) {
+  // The index is the one endpoint with a human audience as well as a machine
+  // one. A browser asking for HTML gets the page; everything else — curl,
+  // scripts, anything sending */* — falls through to the text/plain handler,
+  // so the URL people copy out of the docs keeps behaving exactly as it did.
+  if (request.nextUrl.pathname === "/api/v1") {
+    const wantsHtml =
+      request.method === "GET" && (request.headers.get("accept") ?? "").includes("text/html");
+
+    if (!wantsHtml) return NextResponse.next();
+
+    const url = request.nextUrl.clone();
+    url.pathname = "/api-reference";
+    return NextResponse.rewrite(url);
+  }
+
   const segment = request.nextUrl.pathname.slice(1);
 
   if (!TOOL_IDS.has(segment)) return NextResponse.next();
@@ -32,7 +47,12 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // Only single-segment paths can be a tool, and the framework's own routes
-  // never should be — skipping them keeps this off the asset path entirely.
-  matcher: ["/((?!api/|_next/|icon\\.svg|favicon\\.ico).*)"],
+  matcher: [
+    // Only single-segment paths can be a tool, and the framework's own routes
+    // never should be — skipping them keeps this off the asset path entirely.
+    "/((?!api/|_next/|icon\\.svg|favicon\\.ico).*)",
+    // Added back on its own, because the pattern above deliberately excludes
+    // everything under /api/.
+    "/api/v1",
+  ],
 };

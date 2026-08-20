@@ -16,10 +16,11 @@ import { checkMail } from "@/lib/tools/impl/server/mail";
 import { convertBandwidth } from "@/lib/tools/impl/bandwidth";
 import { explainCron } from "@/lib/tools/impl/cron";
 import { convertDuration } from "@/lib/tools/impl/duration";
-import { convertIpRange } from "@/lib/tools/impl/ip-range";
+import { planSubnets } from "@/lib/tools/impl/subnet-plan";
 import { inspectSshKey } from "@/lib/tools/impl/ssh-inspect";
 import { convertBase64, type Base64Mode } from "@/lib/tools/impl/base64";
 import { convertBytes } from "@/lib/tools/impl/bytes";
+import { calculateDiskSpace } from "@/lib/tools/impl/disk-space";
 import { convertCase, CASE_STYLES, type CaseStyle } from "@/lib/tools/impl/case-convert";
 import { generateHashes, HASH_ALGORITHMS, type HashAlgorithm } from "@/lib/tools/impl/hash";
 import { inspectJwt } from "@/lib/tools/impl/jwt";
@@ -221,7 +222,7 @@ export const HANDLERS: Record<string, ToolHandler> = {
       }),
     ),
 
-  "subnet-calculator": ({ params }) =>
+  "subnet-inspector": ({ params }) =>
     run(() => {
       const cidr = params.get("cidr") ?? params.get("q");
       if (!cidr) throw new BadRequestError("cidr is required, e.g. ?cidr=10.0.0.0/22");
@@ -243,10 +244,22 @@ export const HANDLERS: Record<string, ToolHandler> = {
         cidr,
         count: optionalInt("count"),
         prefix: optionalInt("prefix"),
-        divide: params.get("divide") ?? undefined,
         limit: intParam(params, "limit", DEFAULT_LIMIT),
         offset: intParam(params, "offset", 0),
       });
+    }),
+
+  "subnet-planner": ({ params }) =>
+    run(() => {
+      const cidr = params.get("cidr");
+      if (!cidr) throw new BadRequestError("cidr is required, e.g. ?cidr=10.0.0.0/16");
+
+      const need = params.get("need");
+      if (!need) {
+        throw new BadRequestError("need is required, e.g. ?need=pods:4000,mgmt:200,dmz:/26");
+      }
+
+      return planSubnets({ cidr, need });
     }),
 
   base64: (ctx) =>
@@ -272,6 +285,15 @@ export const HANDLERS: Record<string, ToolHandler> = {
       if (!token) throw new BadRequestError("token is required, e.g. ?token=eyJhbGci...");
       return inspectJwt(token);
     }),
+
+  "disk-space": ({ params }) =>
+    run(() =>
+      calculateDiskSpace({
+        capacity: params.get("capacity") ?? undefined,
+        used: params.get("used") ?? undefined,
+        percent: params.get("percent") ?? undefined,
+      }),
+    ),
 
   "bytes-converter": ({ params }) =>
     run(() => {
@@ -349,13 +371,6 @@ export const HANDLERS: Record<string, ToolHandler> = {
         count: intParam(params, "count", 5),
         timeZone: params.get("tz") ?? "UTC",
       });
-    }),
-
-  "ip-range": ({ params }) =>
-    run(() => {
-      const range = params.get("range") ?? params.get("cidr");
-      if (!range) throw new BadRequestError("range is required, e.g. ?range=10.0.0.5-10.0.0.30");
-      return convertIpRange({ input: range });
     }),
 
   duration: ({ params }) =>

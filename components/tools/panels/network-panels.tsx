@@ -6,7 +6,6 @@ import { Field, TextControl } from "@/components/tools/controls";
 import { ToolOutput } from "@/components/tools/tool-output";
 import { useToolRun } from "@/components/tools/use-tool-run";
 import { convertBandwidth } from "@/lib/tools/impl/bandwidth";
-import { convertIpRange } from "@/lib/tools/impl/ip-range";
 
 function Chips({
   values,
@@ -37,42 +36,6 @@ function Chips({
           {value}
         </button>
       ))}
-    </div>
-  );
-}
-
-export function IpRangePanel() {
-  const [input, setInput] = useState("10.0.0.5-10.0.0.30");
-  const { result, error, run } = useToolRun();
-
-  useEffect(() => {
-    if (!input.trim()) return;
-    run(() => convertIpRange({ input }));
-  }, [input, run]);
-
-  return (
-    <div className="space-y-4">
-      <Field label="Range or CIDR" hint="10.0.0.5-10.0.0.30, or 10.0.0.0/22">
-        <TextControl
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          autoComplete="off"
-          spellCheck={false}
-        />
-      </Field>
-
-      <Chips
-        values={[
-          "10.0.0.5-10.0.0.30",
-          "192.168.1.0/24",
-          "172.16.5.7-172.16.9.200",
-          "2001:db8::1-2001:db8::ff",
-        ]}
-        active={input}
-        onPick={setInput}
-      />
-
-      <ToolOutput result={result} error={error} />
     </div>
   );
 }

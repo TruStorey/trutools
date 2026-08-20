@@ -1,10 +1,9 @@
 "use client";
 
-import { Check, Copy, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { Field, TextControl } from "@/components/tools/controls";
-import { useIsland } from "@/components/island/island-provider";
 import { Button } from "@/components/ui/button";
 import {
   blockSize,
@@ -14,16 +13,12 @@ import {
   usableRange,
   type Family,
 } from "@/lib/tools/impl/ip";
-import {
-  serialiseTree,
-  type Node,
-} from "@/lib/tools/impl/subnet-split";
-import { API_BASE } from "@/lib/tools/snippets";
+import type { Node } from "@/lib/tools/impl/subnet-split";
 import { cn } from "@/lib/utils";
 
 /**
- * A port of Dave's Visual Subnet Calculator: divide any row in half, join a
- * divided pair back together.
+ * A port of Dave's Visual Subnet Calculator: split any row in half, join a
+ * split pair back together.
  *
  * The address maths comes from the same helpers the API handler uses
  * (`leaves`-style traversal, `usableRange`, `maskFor`), so the numbers here and
@@ -74,10 +69,8 @@ function updateAt(node: Node, path: number[], change: (node: Node) => Node): Nod
 }
 
 export function SubnetSplitterPanel() {
-  const { notify } = useIsland();
   const [cidr, setCidr] = useState("10.0.0.0/16");
   const [tree, setTree] = useState<Node>({});
-  const [copied, setCopied] = useState(false);
 
   const parsed = useMemo(() => {
     try {
@@ -93,26 +86,12 @@ export function SubnetSplitterPanel() {
     return buildRows(tree, network, prefix, family, []);
   }, [tree, parsed]);
 
-  const divideString = serialiseTree(tree);
   const maxPrefix = parsed.value?.family.size ?? 32;
   const isV6 = parsed.value?.isV6 ?? false;
 
   function reset(next?: string) {
     if (next !== undefined) setCidr(next);
     setTree({});
-  }
-
-  const curl = `curl '${API_BASE}/subnet-splitter?cidr=${cidr}&divide=${divideString}'`;
-
-  async function copyCurl() {
-    try {
-      await navigator.clipboard.writeText(curl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-      notify({ variant: "success", title: "Copied curl command", description: "Subnet Splitter" });
-    } catch {
-      notify({ variant: "error", title: "Could not copy" });
-    }
   }
 
   return (
@@ -169,7 +148,7 @@ export function SubnetSplitterPanel() {
                   const size = blockSize(family, row.prefix);
                   const usable = usableRange(row.network, row.prefix, family);
                   const last = row.network + size - 1n;
-                  const canDivide = row.prefix < maxPrefix;
+                  const canSplit = row.prefix < maxPrefix;
 
                   return (
                     <tr key={row.path.join("") || "root"} className="border-b border-white/5 last:border-0">
@@ -211,7 +190,7 @@ export function SubnetSplitterPanel() {
                           ) : null}
                           <button
                             type="button"
-                            disabled={!canDivide}
+                            disabled={!canSplit}
                             onClick={() =>
                               setTree((current) =>
                                 updateAt(current, row.path, () => ({
@@ -221,11 +200,11 @@ export function SubnetSplitterPanel() {
                             }
                             className={cn(
                               "rounded border border-white/15 bg-white/5 px-1.5 py-0.5 text-[0.7rem] transition-colors hover:bg-white/15 dark:bg-black/20",
-                              !canDivide && "cursor-not-allowed opacity-40 hover:bg-white/5",
+                              !canSplit && "cursor-not-allowed opacity-40 hover:bg-white/5",
                             )}
-                            title={canDivide ? undefined : `/${maxPrefix} cannot be divided further`}
+                            title={canSplit ? undefined : `/${maxPrefix} cannot be split further`}
                           >
-                            Divide
+                            Split
                           </button>
                         </span>
                       </td>
@@ -236,15 +215,10 @@ export function SubnetSplitterPanel() {
             </table>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
             <span>
-              {rows.length} subnet{rows.length === 1 ? "" : "s"} ·{" "}
-              <code className="font-mono">divide={divideString}</code>
+              {rows.length} subnet{rows.length === 1 ? "" : "s"}
             </span>
-            <Button variant="ghost" size="xs" onClick={copyCurl}>
-              {copied ? <Check /> : <Copy />}
-              {copied ? "Copied" : "Copy as curl"}
-            </Button>
           </div>
         </>
       ) : null}

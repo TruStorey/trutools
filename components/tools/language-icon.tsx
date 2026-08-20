@@ -1,15 +1,19 @@
+import { Cog, Gem } from "lucide-react";
+import type { ComponentType } from "react";
+
 import type { SnippetLanguage } from "@/lib/tools/snippets";
 
 /**
- * Brand marks for the snippet language picker.
+ * Marks for the snippet language picker.
  *
- * Path data is inlined from simple-icons (CC0, public domain) rather than
- * taking the package as a dependency — it unpacks to ~16 MB for what amounts
- * to four path strings.
+ * Brand path data is inlined from simple-icons (CC0, public domain) rather
+ * than taking the package as a dependency — it unpacks to ~16 MB for what
+ * amounts to four path strings.
  *
- * PowerShell is deliberately not a brand mark: simple-icons dropped it over
- * Microsoft's trademark terms, so it gets a generic prompt chevron instead,
- * which is what the language is recognised by anyway.
+ * The rest fall back to a suggestive lucide glyph instead of a brand mark:
+ * PowerShell to a prompt chevron (simple-icons dropped the mark over
+ * Microsoft's trademark terms, and the prompt is what the language is
+ * recognised by anyway), Ruby to a gem, Rust to a gear.
  */
 const BRAND_PATHS: Partial<Record<SnippetLanguage, string>> = {
   curl:
@@ -41,6 +45,12 @@ function PromptGlyph({ className }: { className?: string }) {
   );
 }
 
+/** Stand-ins for the languages with no inlined brand mark. */
+const FALLBACK_GLYPHS: Partial<Record<SnippetLanguage, ComponentType<{ className?: string }>>> = {
+  ruby: Gem,
+  rust: Cog,
+};
+
 export function LanguageIcon({
   language,
   className,
@@ -49,7 +59,10 @@ export function LanguageIcon({
   className?: string;
 }) {
   const path = BRAND_PATHS[language];
-  if (!path) return <PromptGlyph className={className} />;
+  if (!path) {
+    const Glyph = FALLBACK_GLYPHS[language] ?? PromptGlyph;
+    return <Glyph className={className} />;
+  }
 
   return (
     <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>

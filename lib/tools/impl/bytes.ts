@@ -34,6 +34,49 @@ FACTORS.set("bytes", 1);
 
 export const KNOWN_UNITS = [...DECIMAL, ...BINARY.slice(1)];
 
+/** Binary units only — "B" is in both tables and says nothing either way. */
+const BINARY_ONLY = new Set(BINARY.slice(1).map((unit) => unit.toLowerCase()));
+
+export type ParsedSize = { bytes: number; binary: boolean };
+
+/**
+ * A size written the way people write it: "100TB", "1.5 TiB", "512GiB". A bare
+ * number is bytes.
+ *
+ * The convention comes back alongside the value, because anything reporting a
+ * size should report it in the convention it was handed — answering a question
+ * asked in TiB with a number in TB is how you end up arguing about 931 GB.
+ */
+export function parseSize(input: string, field: string): ParsedSize {
+  const match = /^\s*(\d+(?:\.\d+)?)\s*([a-zA-Z]*)\s*$/.exec(input);
+  if (!match) {
+    throw new ToolInputError(`${field} must be a size like 100TB or 512GiB, got "${input}"`);
+  }
+
+  const [, amount, unit] = match;
+  const key = (unit || "B").toLowerCase();
+
+  const factor = FACTORS.get(key);
+  if (factor === undefined) {
+    throw new ToolInputError(
+      `${field}: unknown unit "${unit}" — try one of ${KNOWN_UNITS.join(", ")}`,
+    );
+  }
+
+  return { bytes: Number(amount) * factor, binary: BINARY_ONLY.has(key) };
+}
+
+/** The largest unit the value is still at least 1 of, in the given convention. */
+export function humanSize(bytes: number, binary: boolean): string {
+  const units = binary ? BINARY : DECIMAL;
+  const base = binary ? 1024 : 1000;
+
+  let power = 0;
+  while (bytes >= base ** (power + 1) && power < units.length - 1) power += 1;
+
+  return `${present(bytes / base ** power)} ${units[power]}`;
+}
+
 export type BytesOptions = {
   value: number;
   from: string;

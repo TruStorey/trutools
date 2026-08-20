@@ -19,7 +19,7 @@ lib/tools/
   result.ts           the ToolResult union, and plain-text rendering
   format.ts           text / json / xml rendering, and format negotiation
   search.ts           the search filter
-  snippets.ts         generates the curl/PowerShell/Python/JS/Go examples
+  snippets.ts         generates the code examples, one block per language
   impl/               the tools themselves, one file each
     server/           the four that genuinely need Node or the network
 

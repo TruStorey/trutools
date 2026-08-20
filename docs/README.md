@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| [tools.md](tools.md) | What each of the 27 tools does, and the edges worth knowing |
+| [tools.md](tools.md) | What each of the 28 tools does, and the edges worth knowing |
 | [api.md](api.md) | The API — formats, errors, rate limits, every endpoint |
 | [architecture.md](architecture.md) | How the codebase fits together, and why |
 | [self-hosting.md](self-hosting.md) | Running your own copy |
