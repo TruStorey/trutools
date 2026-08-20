@@ -3,7 +3,6 @@ import { Terminal } from "lucide-react";
 
 import { ApiInfoDialog } from "@/components/api-info-dialog";
 import { DynamicIsland } from "@/components/island/dynamic-island";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { describeWindow, rateLimitConfig } from "@/lib/api/rate-limit-config";
 import { SITE_HOST } from "@/lib/site";
 
@@ -39,7 +38,6 @@ export function SiteNavbar() {
             siteHost={SITE_HOST}
             rateLimit={{ max: limit.max, window: describeWindow(limit.windowSec) }}
           />
-          <ThemeToggle />
         </div>
       </nav>
     </header>

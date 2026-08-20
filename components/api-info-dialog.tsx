@@ -89,11 +89,17 @@ export function ApiInfoDialog({ siteHost, rateLimit }: ApiInfoDialogProps) {
         The stock DialogContent is bg-popover, which is opaque and would sit on
         the page like a plain card. Overridden to the same frosted glass the
         rest of the chrome uses; tailwind-merge drops bg-popover for it.
+
+        The fill is then pushed well past what `frosted` carries. This dialog is
+        a wall of small text over a busy card grid, and at the shared 0.35 the
+        grid showed through it. Overridden here rather than in the variant,
+        which the navbar and search field share and which look right as they are.
       */}
       <DialogContent
         className={cn(
           "max-h-[85vh] max-w-lg overflow-y-auto rounded-2xl p-5 sm:max-w-lg",
           glassVariantStyles.frosted,
+          "dark:bg-black/[0.75]",
         )}
       >
         <DialogHeader>
