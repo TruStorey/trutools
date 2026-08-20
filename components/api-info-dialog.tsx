@@ -72,17 +72,16 @@ export function ApiInfoDialog({ siteHost, rateLimit }: ApiInfoDialogProps) {
         render={
           <button
             type="button"
-            aria-label="About the API"
             className={cn(
-              "inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-full",
-              "text-foreground select-none outline-none focus-visible:ring-2 focus-visible:ring-ring/60",
-              "transition-transform duration-150 active:scale-95 motion-reduce:transition-none",
-              glassVariantStyles.frosted,
+              "inline-flex shrink-0 cursor-pointer items-center rounded-lg px-2 py-1",
+              "text-xs font-medium tracking-wide text-muted-foreground uppercase select-none",
+              "transition-colors outline-none hover:text-foreground",
+              "focus-visible:ring-2 focus-visible:ring-ring/60",
             )}
           />
         }
       >
-        <span className="font-mono text-[0.65rem] leading-none">API</span>
+        API info
       </DialogTrigger>
 
       {/*
