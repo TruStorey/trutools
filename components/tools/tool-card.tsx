@@ -11,6 +11,8 @@ type ToolCardProps = {
   tool: Tool;
   expanded: boolean;
   onToggle: () => void;
+  /** So the grid can find this card to scroll it into view when it opens. */
+  id?: string;
 };
 
 /**
@@ -18,7 +20,7 @@ type ToolCardProps = {
  * the grid inserts as a full-width row beneath this card's row — a 1/4-width
  * column is far too narrow for a subnet readout or a private key.
  */
-export function ToolCard({ tool, expanded, onToggle }: ToolCardProps) {
+export function ToolCard({ tool, expanded, onToggle, id }: ToolCardProps) {
   return (
     /*
       `liquid` is a pure-CSS glass variant. The `liquid-refract` default renders
@@ -26,6 +28,7 @@ export function ToolCard({ tool, expanded, onToggle }: ToolCardProps) {
       worth it across a grid of cards.
     */
     <GlassCard
+      id={id}
       glassVariant="liquid"
       className={cn(
         "glance glance-opacity-14 h-full gap-0 rounded-2xl py-0 transition-shadow",
