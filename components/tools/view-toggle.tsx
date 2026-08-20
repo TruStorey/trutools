@@ -1,6 +1,6 @@
 "use client";
 
-import { MousePointerClick, Terminal } from "lucide-react";
+import { AppWindow, Terminal } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 
 import { cn } from "@/lib/utils";
@@ -9,8 +9,8 @@ import { cn } from "@/lib/utils";
 export type ToolView = "tool" | "api";
 
 const OPTIONS = [
-  { value: "tool", label: "Click it", icon: MousePointerClick },
-  { value: "api", label: "Curl it", icon: Terminal },
+  { value: "tool", label: "Browser", icon: AppWindow },
+  { value: "api", label: "API", icon: Terminal },
 ] as const satisfies readonly { value: ToolView; label: string; icon: unknown }[];
 
 /**
@@ -18,8 +18,8 @@ const OPTIONS = [
  *
  * Deliberately global rather than per-card: someone who came here to script
  * something wants the API tab every time, not to flip it open tool by tool.
- * The button inside an open panel writes to this same state, so switching
- * there also sets what the next tool you open will show.
+ * The Browser/API button inside an open panel writes to this same state, so
+ * switching there also sets what the next tool you open will show.
  */
 export function ViewToggle({
   value,

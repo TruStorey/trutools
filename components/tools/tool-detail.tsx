@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, SlidersHorizontal, Terminal } from "lucide-react";
+import { AppWindow, Check, Copy, Terminal } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useState, type ReactNode } from "react";
 
@@ -132,24 +132,22 @@ function ApiTab({ tool }: { tool: Tool }) {
           />
         </div>
 
-        <div className="pb-4">
-          <CodeBlock
-            code={snippet}
-            language={language}
-            action={
-              <Button
-                variant="ghost"
-                size="xs"
-                onClick={copy}
-                aria-label={`Copy the ${LANGUAGE_LABELS[language]} snippet`}
-                className="border border-white/10 bg-black/30 backdrop-blur-sm hover:bg-black/50"
-              >
-                {copied ? <Check /> : <Copy />}
-                {copied ? "Copied" : "Copy"}
-              </Button>
-            }
-          />
-        </div>
+        <CodeBlock
+          code={snippet}
+          language={language}
+          action={
+            <Button
+              variant="ghost"
+              size="xs"
+              onClick={copy}
+              aria-label={`Copy the ${LANGUAGE_LABELS[language]} snippet`}
+              className="border border-white/10 bg-black/30 backdrop-blur-sm hover:bg-black/50"
+            >
+              {copied ? <Check /> : <Copy />}
+              {copied ? "Copied" : "Copy"}
+            </Button>
+          }
+        />
       </div>
 
       <div className="space-y-2">
@@ -231,7 +229,7 @@ export function ToolDetail({
           panel, so nothing is lost by dropping the X.
 
           It writes to the grid's shared view state, so flipping it here also
-          moves the Click it / Curl it toggle above the grid.
+          moves the Browser / API toggle above the grid.
         */}
         <button
           type="button"
@@ -239,7 +237,7 @@ export function ToolDetail({
           aria-label={
             showingTool
               ? `Show the API reference for ${tool.name}`
-              : `Show the ${tool.name} tool`
+              : `Show ${tool.name} in the browser`
           }
           className="flex shrink-0 items-center gap-1.5 rounded-lg border border-white/15 bg-white/10 px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-colors outline-none hover:bg-white/20 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 dark:bg-black/20 dark:hover:bg-black/30"
         >
@@ -250,8 +248,8 @@ export function ToolDetail({
             </>
           ) : (
             <>
-              <SlidersHorizontal className="size-3.5" />
-              Tool
+              <AppWindow className="size-3.5" />
+              Browser
             </>
           )}
         </button>
