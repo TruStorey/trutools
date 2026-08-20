@@ -60,8 +60,8 @@ Plain text by default. Ask for something parseable with `?format=`, or with an
 `Accept` header:
 
 ```console
-$ curl 'tools.truvibe.dev/subnet-calculator?cidr=10.0.0.0/22&format=json'
-$ curl -H 'Accept: application/xml' 'tools.truvibe.dev/subnet-calculator?cidr=10.0.0.0/22'
+$ curl 'tools.truvibe.dev/subnet-inspector?cidr=10.0.0.0/22&format=json'
+$ curl -H 'Accept: application/xml' 'tools.truvibe.dev/subnet-inspector?cidr=10.0.0.0/22'
 ```
 
 | `format` | Content-Type |
@@ -190,11 +190,11 @@ Parameters are optional unless marked **required**.
 | Endpoint | Parameters |
 |---|---|
 | `GET /ip` | none — returns your public address, nothing else |
-| `GET /subnet-calculator` | **`cidr`** e.g. `10.0.0.0/22`, v4 or v6 |
+| `GET /subnet-inspector` | **`cidr`** e.g. `10.0.0.0/22`, v4 or v6 |
 | `GET /subnet-splitter` | **`cidr`** · `count` equal subnets, rounded up to a power of two · `prefix` split down to this length · `divide` an explicit division tree · `limit` 1–4096, default 256 · `offset` |
+| `GET /subnet-planner` | **`cidr`** · **`need`** a `name:size` list, e.g. `pods:4000,mgmt:200,dmz:/26` — size is a host count or an explicit `/prefix` |
 | `GET /dns-lookup` | **`name`** · `type` `A`\|`AAAA`\|`CNAME`\|`MX`\|`TXT`\|`NS`\|`SOA`\|`SRV`\|`CAA`\|`PTR`\|`all` |
 | `GET /mail-check` | **`domain`** — a URL or email address is reduced to its domain |
-| `GET /ip-range` | **`range`** e.g. `10.0.0.5-10.0.0.30`, or a CIDR to see its range |
 | `GET /bandwidth` | **`rate`** · `unit` default `Gbps` · `size` · `sizeUnit` default `GiB` · `overhead` percent |
 
 ### Data Format

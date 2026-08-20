@@ -13,7 +13,7 @@ The point is that each one has **two front doors onto the same function**:
 $ curl tools.truvibe.dev/ip
 203.0.113.42
 
-$ curl 'tools.truvibe.dev/subnet-calculator?cidr=10.0.0.0/22'
+$ curl 'tools.truvibe.dev/subnet-inspector?cidr=10.0.0.0/22'
 Input            10.0.0.0/22
 Network          10.0.0.0/22
 Netmask          255.255.252.0 (/22)
@@ -49,11 +49,11 @@ a ready-to-paste snippet in curl, PowerShell, Python, JavaScript or Go.
 
 | Crypto | Networking | Data Format |
 |---|---|---|
-| Password Generator | Subnet Calculator | Base64 Encode / Decode |
+| Password Generator | Subnet Inspector | Base64 Encode / Decode |
 | UUID Generator | Subnet Splitter | Bytes Converter |
-| Token Generator | DNS Lookup | YAML / JSON Converter |
-| Hash Generator | Mail Check (SPF + DMARC) | Duration Converter |
-| JWT Decoder | IP Range to CIDR | Timestamp Converter |
+| Token Generator | Subnet Planner | YAML / JSON Converter |
+| Hash Generator | DNS Lookup | Duration Converter |
+| JWT Decoder | Mail Check (SPF + DMARC) | Timestamp Converter |
 | SSH Key Inspector | Bandwidth & Transfer Time | Beautify JSON |
 | SSH Keypair Generator | What Is My IP | |
 | Certificate Reader | | |

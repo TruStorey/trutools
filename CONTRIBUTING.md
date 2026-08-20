@@ -142,7 +142,7 @@ What is expected instead: **check a tool against the thing it is imitating.**
 ```bash
 printf 'hello world' | sha256sum          # vs /hash-generator?algo=sha256
 chmod 4755 f && stat -c '%a %A' f         # vs /file-permissions?mode=4755
-python3 -c 'import ipaddress; ...'        # vs /subnet-calculator
+python3 -c 'import ipaddress; ...'        # vs /subnet-inspector
 ```
 
 Most of these tools exist because a well-known utility already defines the right

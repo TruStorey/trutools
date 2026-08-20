@@ -322,8 +322,8 @@ export const TOOLS: Tool[] = [
 
   // ------------------------------------------------------------ networking
   {
-    id: "subnet-calculator",
-    name: "Subnet Calculator",
+    id: "subnet-inspector",
+    name: "Subnet Inspector",
     description:
       "Turn CIDR into the numbers you actually need: network, broadcast, usable range, mask and host count.",
     section: "networking",
@@ -337,7 +337,12 @@ export const TOOLS: Tool[] = [
       "network",
       "broadcast",
       "vlsm",
+      // The tool used to be called a calculator, and people still search for it
+      // that way — along with the other words for "tell me about this block".
       "calculator",
+      "inspector",
+      "info",
+      "lookup",
     ],
     api: {
       status: "live",
@@ -408,6 +413,45 @@ export const TOOLS: Tool[] = [
       ],
       resultKind: "rows",
       query: { cidr: "10.0.0.0/16", count: "4" },
+    },
+  },
+  {
+    id: "subnet-planner",
+    name: "Subnet Planner",
+    description:
+      "Carve a block into named subnets sized to what each one has to hold, and see what is left over.",
+    section: "networking",
+    icon: "list-tree",
+    keywords: [
+      "subnet",
+      "vlsm",
+      "plan",
+      "allocate",
+      "carve",
+      "cidr",
+      "ipam",
+      "vpc",
+      "vlan",
+      "design",
+    ],
+    api: {
+      status: "live",
+      method: "GET",
+      params: [
+        {
+          name: "cidr",
+          required: true,
+          description: "The block to plan inside, IPv4 or IPv6, e.g. 10.0.0.0/16.",
+        },
+        {
+          name: "need",
+          required: true,
+          description:
+            "Comma-separated name:size list, e.g. pods:4000,mgmt:200,dmz:/26. Size is a host count or an explicit /prefix; the name is optional.",
+        },
+      ],
+      resultKind: "rows",
+      query: { cidr: "10.0.0.0/16", need: "pods:4000,mgmt:200,dmz:/26" },
     },
   },
   {
@@ -486,28 +530,6 @@ export const TOOLS: Tool[] = [
       ],
       resultKind: "rows",
       query: { domain: "github.com" },
-    },
-  },
-  {
-    id: "ip-range",
-    name: "IP Range to CIDR",
-    description:
-      "Turn an arbitrary address range into the smallest set of CIDR blocks that covers it, or a CIDR back into its range.",
-    section: "networking",
-    icon: "list-tree",
-    keywords: ["cidr", "range", "summarize", "aggregate", "firewall", "acl", "ipv4", "ipv6", "supernet"],
-    api: {
-      status: "live",
-      method: "GET",
-      params: [
-        {
-          name: "range",
-          required: true,
-          description: 'A range like 10.0.0.5-10.0.0.30, or a CIDR to see the range it covers.',
-        },
-      ],
-      resultKind: "rows",
-      query: { range: "10.0.0.5-10.0.0.30" },
     },
   },
   {

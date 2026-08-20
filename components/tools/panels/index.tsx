@@ -10,9 +10,10 @@ import {
 } from "./crypto-panels";
 import { DurationPanel, JsonPanel, SubnetPanel, TextPanel, TimestampPanel } from "./data-panels";
 import { SubnetSplitterPanel } from "./subnet-splitter-panel";
+import { SubnetPlannerPanel } from "./subnet-planner-panel";
 import { DnsPanel } from "./dns-panel";
 import { MailPanel } from "./mail-panel";
-import { BandwidthPanel, IpRangePanel } from "./network-panels";
+import { BandwidthPanel } from "./network-panels";
 import {
   Base64Panel,
   BytesPanel,
@@ -36,8 +37,9 @@ const PANELS: Record<string, ComponentType> = {
   "token-generator": TokenPanel,
   "ssh-keypair-generator": SshKeypairPanel,
   "cert-reader": CertReaderPanel,
-  "subnet-calculator": SubnetPanel,
+  "subnet-inspector": SubnetPanel,
   "subnet-splitter": SubnetSplitterPanel,
+  "subnet-planner": SubnetPlannerPanel,
   ip: IpPanel,
   "dns-lookup": DnsPanel,
   "mail-check": MailPanel,
@@ -54,7 +56,6 @@ const PANELS: Record<string, ComponentType> = {
   "file-permissions": PermissionsPanel,
   "systemd-lint": SystemdPanel,
   "cron-explain": CronPanel,
-  "ip-range": IpRangePanel,
   bandwidth: BandwidthPanel,
   duration: DurationPanel,
   "ssh-key-inspect": SshKeyInspectPanel,
