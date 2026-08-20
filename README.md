@@ -14,7 +14,6 @@ $ curl tools.truvibe.dev/ip
 203.0.113.42
 
 $ curl 'tools.truvibe.dev/subnet-inspector?cidr=10.0.0.0/22'
-Input            10.0.0.0/22
 Network          10.0.0.0/22
 Netmask          255.255.252.0 (/22)
 Wildcard         0.0.3.255
