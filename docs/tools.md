@@ -1,6 +1,6 @@
 # The tools
 
-Twenty-seven of them, in five sections. This page is about **what each one does
+Twenty-eight of them, in five sections. This page is about **what each one does
 and where the interesting edges are** — the parameter lists live in
 [`api.md`](api.md), and `curl tools.truvibe.dev/api/v1` prints them too.
 
@@ -298,6 +298,20 @@ comma-separated string, or splitting a CSV row into lines, is one call.
 ---
 
 ## System
+
+### Disk Space Calculator
+
+Capacity, used and percentage are three views of one relationship, so **any two
+of them give you the third** — plus how much is free, which is the number you
+actually wanted. Quote a capacity and a percentage from a monitoring alert, or a
+capacity and a used figure from `df`, whichever end you happen to be holding.
+
+Sizes come back in the convention you asked in. Say `1TiB` and you get GiB back;
+say `1TB` and you get GB. Answering a question asked in one convention with a
+number in the other is how the 931 GB argument starts.
+
+All three at once is an error rather than a silent preference, because they can
+disagree — `100TB`, `40TB` and `70%` cannot all be true.
 
 ### File Permissions
 

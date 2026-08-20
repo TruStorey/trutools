@@ -117,7 +117,7 @@ export const SECTIONS: Section[] = [
   {
     id: "system",
     name: "System",
-    description: "Bits of Linux you have to look up every time.",
+    description: "The bits of running a machine you have to look up every time.",
   },
 ];
 
@@ -844,6 +844,53 @@ export const TOOLS: Tool[] = [
       query: { op: "join", sep: "," },
       bodyFile: "hosts.txt",
       bodySample: "web-01\nweb-02\ndb-01",
+    },
+  },
+  // ---------------------------------------------------------------- system
+  {
+    id: "disk-space",
+    name: "Disk Space Calculator",
+    description:
+      "Any two of capacity, used and percentage give you the third, plus how much is free.",
+    section: "system",
+    icon: "chart-pie",
+    keywords: [
+      "disk",
+      "space",
+      "storage",
+      "capacity",
+      "used",
+      "free",
+      "usage",
+      "percent",
+      "percentage",
+      "volume",
+      "drive",
+      "quota",
+    ],
+    api: {
+      status: "live",
+      method: "GET",
+      params: [
+        {
+          name: "capacity",
+          required: false,
+          description: "Total size, e.g. 100TB or 512GiB. Give two of the three.",
+        },
+        {
+          name: "used",
+          required: false,
+          description: "Space in use, e.g. 40TB. Give two of the three.",
+        },
+        {
+          name: "percent",
+          required: false,
+          description: "Percentage used, e.g. 70 or 70%. Give two of the three.",
+        },
+      ],
+      resultKind: "fields",
+      query: { capacity: "100TB", used: "40TB" },
+      sampleKey: "free",
     },
   },
   {

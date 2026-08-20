@@ -17,6 +17,7 @@ import { BandwidthPanel } from "./network-panels";
 import {
   Base64Panel,
   BytesPanel,
+  DiskSpacePanel,
   HashPanel,
   JwtPanel,
   YamlJsonPanel,
@@ -50,6 +51,7 @@ const PANELS: Record<string, ComponentType> = {
   "hash-generator": HashPanel,
   "jwt-decoder": JwtPanel,
   "bytes-converter": BytesPanel,
+  "disk-space": DiskSpacePanel,
   "yaml-json": YamlJsonPanel,
   "case-converter": CasePanel,
   "lorem-ipsum": LoremPanel,

@@ -20,6 +20,7 @@ import { planSubnets } from "@/lib/tools/impl/subnet-plan";
 import { inspectSshKey } from "@/lib/tools/impl/ssh-inspect";
 import { convertBase64, type Base64Mode } from "@/lib/tools/impl/base64";
 import { convertBytes } from "@/lib/tools/impl/bytes";
+import { calculateDiskSpace } from "@/lib/tools/impl/disk-space";
 import { convertCase, CASE_STYLES, type CaseStyle } from "@/lib/tools/impl/case-convert";
 import { generateHashes, HASH_ALGORITHMS, type HashAlgorithm } from "@/lib/tools/impl/hash";
 import { inspectJwt } from "@/lib/tools/impl/jwt";
@@ -284,6 +285,15 @@ export const HANDLERS: Record<string, ToolHandler> = {
       if (!token) throw new BadRequestError("token is required, e.g. ?token=eyJhbGci...");
       return inspectJwt(token);
     }),
+
+  "disk-space": ({ params }) =>
+    run(() =>
+      calculateDiskSpace({
+        capacity: params.get("capacity") ?? undefined,
+        used: params.get("used") ?? undefined,
+        percent: params.get("percent") ?? undefined,
+      }),
+    ),
 
   "bytes-converter": ({ params }) =>
     run(() => {

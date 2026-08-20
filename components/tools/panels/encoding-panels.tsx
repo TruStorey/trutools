@@ -7,6 +7,7 @@ import { ToolOutput } from "@/components/tools/tool-output";
 import { useToolRun } from "@/components/tools/use-tool-run";
 import { convertBase64, type Base64Mode } from "@/lib/tools/impl/base64";
 import { convertBytes } from "@/lib/tools/impl/bytes";
+import { calculateDiskSpace } from "@/lib/tools/impl/disk-space";
 import { generateHashes, HASH_ALGORITHMS, type HashAlgorithm } from "@/lib/tools/impl/hash";
 import { inspectJwt } from "@/lib/tools/impl/jwt";
 import { convertYamlJson, type YamlJsonDirection } from "@/lib/tools/impl/yaml-json";
@@ -99,6 +100,74 @@ export function HashPanel() {
       </p>
 
       {pending ? <p className="text-xs text-muted-foreground">Hashing…</p> : null}
+      <ToolOutput result={result} error={error} />
+    </div>
+  );
+}
+
+/**
+ * Three boxes, any two of which answer the question.
+ *
+ * No mode switch deciding which one is the output: fill in the two you have
+ * and the third arrives. Leaving all three filled is the only case that needs
+ * saying out loud, because then they can contradict each other.
+ */
+export function DiskSpacePanel() {
+  const [capacity, setCapacity] = useState("100TB");
+  const [used, setUsed] = useState("40TB");
+  const [percent, setPercent] = useState("");
+  const { result, error, run, reset } = useToolRun();
+
+  const filled = [capacity, used, percent].filter((field) => field.trim() !== "").length;
+
+  useEffect(() => {
+    if (filled !== 2) {
+      reset();
+      return;
+    }
+    run(() =>
+      calculateDiskSpace({
+        capacity: capacity || undefined,
+        used: used || undefined,
+        percent: percent || undefined,
+      }),
+    );
+  }, [capacity, used, percent, filled, run, reset]);
+
+  return (
+    <div className="space-y-4">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Field label="Capacity">
+          <TextControl
+            value={capacity}
+            placeholder="100TB"
+            onChange={(event) => setCapacity(event.target.value)}
+          />
+        </Field>
+        <Field label="Used">
+          <TextControl
+            value={used}
+            placeholder="40TB"
+            onChange={(event) => setUsed(event.target.value)}
+          />
+        </Field>
+        <Field label="Percent used">
+          <TextControl
+            value={percent}
+            placeholder="70%"
+            onChange={(event) => setPercent(event.target.value)}
+          />
+        </Field>
+      </div>
+
+      {filled === 2 ? null : (
+        <p className="text-xs text-muted-foreground">
+          {filled < 2
+            ? "Fill in any two and the third is worked out."
+            : "Clear one — with all three filled there is nothing left to work out, and they can disagree."}
+        </p>
+      )}
+
       <ToolOutput result={result} error={error} />
     </div>
   );

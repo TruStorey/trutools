@@ -243,6 +243,7 @@ optional)* may also be given without its name, as above.
 
 | Endpoint | Parameters |
 |---|---|
+| `GET /disk-space` | `capacity` e.g. `100TB` · `used` e.g. `40TB` · `percent` e.g. `70` — **any two of the three** |
 | `GET /file-permissions` | `mode` octal e.g. `755` or `4755` · `symbolic` e.g. `rwxr-xr-x` — one or the other |
 | `POST /systemd-lint` | **body** a unit file |
 | `GET /cron-explain` | **`expr`** *(name optional)* 5 fields or a macro like `@daily` · `count` 1–50 · `tz` IANA zone |

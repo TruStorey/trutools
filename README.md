@@ -3,7 +3,7 @@
 Simple IT tools, in the browser or over an API — at
 **[tools.truvibe.dev](https://tools.truvibe.dev)**.
 
-Twenty-seven small utilities of the sort you otherwise keep a browser tab, a
+Twenty-eight small utilities of the sort you otherwise keep a browser tab, a
 half-remembered `python3 -c` and a dubious ad-funded website open for. Subnet
 maths, timestamp conversion, hashes, SSH key inspection, cron explanations.
 
@@ -60,9 +60,10 @@ Ruby or Rust.
 
 | Text | System |
 |---|---|
-| Case Converter | File Permissions |
-| Lorem Ipsum | Systemd Unit Linter |
-| Text Tool | Cron Explainer |
+| Case Converter | Disk Space Calculator |
+| Lorem Ipsum | File Permissions |
+| Text Tool | Systemd Unit Linter |
+| | Cron Explainer |
 
 [`docs/tools.md`](docs/tools.md) covers what each one does and where the
 interesting edges are. `curl tools.truvibe.dev/api/v1` prints the same list with
