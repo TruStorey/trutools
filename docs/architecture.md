@@ -182,7 +182,8 @@ Two decisions worth knowing:
   limit of five.
 
 Without `REDIS_URL` there is an in-process fallback. It resets on restart and is
-per-replica — fine for `pnpm dev`, wrong for anything shared.
+per-replica — fine for `pnpm dev`, wrong for anything shared, which is why
+`docker-compose.yml` gives the deployed app a Redis of its own.
 
 ## Working out who is calling
 

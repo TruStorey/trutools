@@ -75,14 +75,17 @@ Node 24+ and pnpm.
 
 ```bash
 pnpm install
-docker compose up -d          # Redis on :6380, backing the rate limiter
 cp .env.example .env.local
 pnpm dev                      # binds 0.0.0.0, so it is reachable on the LAN
 ```
 
 Then <http://localhost:3000>. Without `REDIS_URL` the app falls back to an
 in-process limiter and says so in the log — fine for local work, wrong for
-anything shared, since it resets on restart and is per-replica.
+anything shared, since it resets on restart and is per-replica. Point
+`REDIS_URL` at any Redis you already have if you want the real path.
+
+`docker compose up -d` is **not** part of this: `docker-compose.yml` is the
+deployment stack, and running it builds the whole app image.
 
 ```bash
 pnpm build && pnpm start      # production build

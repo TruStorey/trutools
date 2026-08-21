@@ -1,18 +1,75 @@
-# Local development only — Coolify builds and runs the Dockerfile directly.
-# Gives `pnpm dev` a Redis to talk to so the rate limiter exercises the real
-# code path instead of the in-process fallback.
+# The deployment stack: the app plus the Redis backing its rate limiter.
 #
-#   docker compose up -d
-#   echo 'REDIS_URL=redis://localhost:6380' >> .env.local
+# Coolify runs this on the Docker Compose build pack, at the default Docker
+# Compose Location of /docker-compose.yml. It builds `app` from the Dockerfile
+# rather than pulling an image, because NEXT_PUBLIC_SITE_URL has to reach the
+# build as an argument and not only as a runtime variable.
 #
-# Published on 6380, not 6379: this machine already has another project's Redis
-# bound to 6379. Override with REDIS_HOST_PORT if 6380 is taken too.
+# Nothing is published: Redis is reachable only from `app`, over the network
+# Coolify creates for the stack, and `app` is reached through Coolify's proxy
+# rather than a host port. Running this outside Coolify therefore needs an
+# override that publishes one — see docs/self-hosting.md.
+#
+# `pnpm dev` does not use this file. It talks to whatever REDIS_URL in
+# .env.local points at, or falls back to an in-process limiter.
+#
+# Deliberately absent, because Coolify owns all three: `networks:`,
+# `container_name:` and `restart:`. A custom network is the dangerous one — it
+# puts containers on two networks at once and Traefik starts picking the wrong
+# address, which shows up as intermittent 504s.
 
 services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        # Next inlines NEXT_PUBLIC_* during `pnpm build`, so the origin has to
+        # be known here as well as in the runtime environment below. In Coolify
+        # this must be marked a *build* variable — set only at runtime, it
+        # leaves every generated snippet pointing at the default.
+        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://tools.truvibe.dev}
+    environment:
+      # Hands this service the stack's domain and the Traefik labels routing it
+      # to port 3000, which is why nothing here publishes ports itself.
+      - SERVICE_FQDN_APP_3000
+      - NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL:-https://tools.truvibe.dev}
+      # Service-name DNS on the stack network. The entire point of this file:
+      # without it the limiter falls back to a per-replica, per-restart Map.
+      - REDIS_URL=redis://redis:6379
+      # Bare names, so anything left unset in Coolify stays unset in the
+      # container and the defaults in lib/api/ stay the single source.
+      - RATE_LIMIT_MAX
+      - RATE_LIMIT_WINDOW_SEC
+      - CLIENT_IP_HEADER
+      - IP_DEBUG
+    depends_on:
+      redis:
+        condition: service_healthy
+    # The healthcheck comes from the Dockerfile. It hits /api/health, which does
+    # not touch Redis on purpose, so a sick Redis degrades rate limiting without
+    # the orchestrator killing the app.
+
   redis:
     image: redis:8-alpine
-    container_name: trutools-redis
-    command: ["redis-server", "--save", "", "--appendonly", "no"]
-    ports:
-      - "${REDIS_HOST_PORT:-6380}:6379"
-    restart: unless-stopped
+    command:
+      - redis-server
+      # Nothing here is worth persisting: losing the lot costs one window of
+      # rate limit state, so no volume and no disk writes.
+      - --save
+      - ""
+      - --appendonly
+      - "no"
+      # Keys already expire with their own window, so this is only a ceiling on
+      # a pathological spread of caller addresses. Evicting some costs a slice
+      # of limit state, which is the same fail-open trade the limiter makes.
+      - --maxmemory
+      - 128mb
+      - --maxmemory-policy
+      - allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s

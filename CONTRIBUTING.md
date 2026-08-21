@@ -13,7 +13,6 @@ Node 24+ and pnpm 10+.
 
 ```bash
 pnpm install
-docker compose up -d          # Redis on :6380 for the rate limiter
 cp .env.example .env.local
 pnpm dev
 ```
@@ -35,7 +34,12 @@ host ends up published in the repo. It has no effect on a production build.
 
 Redis is optional. Without `REDIS_URL` the limiter falls back to an in-process
 one and logs a warning; that is fine unless you are specifically working on rate
-limiting.
+limiting — point `REDIS_URL` at any Redis you have running and the real Lua path
+gets exercised instead. Keys are namespaced `trutools:rl:`, so sharing one Redis
+across projects is fine.
+
+`docker-compose.yml` is not for this. It is the deployment stack — app plus its
+own Redis — and `docker compose up -d` would build the whole image.
 
 Before opening anything:
 

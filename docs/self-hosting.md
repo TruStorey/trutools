@@ -30,6 +30,25 @@ that means marking it as a **build** variable, not just a runtime one.
 
 Everything else is read at request time and only needs a restart.
 
+### With Redis, in one stack
+
+`docker-compose.yml` builds the same image and puts a Redis beside it, already
+wired together. It publishes **no ports** — it expects a reverse proxy on the
+same Docker network, which is what Coolify provides. Standalone, add an override
+that publishes one:
+
+```bash
+cat > compose.override.yml <<'EOF'
+services:
+  app:
+    ports:
+      - "3000:3000"
+EOF
+
+NEXT_PUBLIC_SITE_URL=https://tools.example.com \
+  docker compose -f docker-compose.yml -f compose.override.yml up -d --build
+```
+
 ## Environment
 
 | Variable | Default | |
@@ -52,9 +71,20 @@ Without `REDIS_URL` the limiter falls back to an in-process one that **resets on
 restart and is per-replica** — so a rolling deploy clears everyone's budget, and
 two replicas mean double the limit. It logs a warning saying so.
 
-`docker-compose.yml` in the repo brings up Redis on **6380**, chosen because
-6379 is usually already taken on a developer machine. Override with
-`REDIS_HOST_PORT`.
+`docker-compose.yml` is the deployment stack and runs one for you, unpublished
+and reachable only from the app container as `redis://redis:6379`. It builds the
+app from the `Dockerfile` rather than pulling an image, because
+`NEXT_PUBLIC_SITE_URL` has to reach the build as an argument — still true under
+compose, and still the setting that fails silently.
+
+On Coolify that means the **Docker Compose** build pack, at the default Docker
+Compose Location of `/docker-compose.yml`. Leave the compose file's `networks:`
+alone — there isn't one, deliberately. A custom network puts containers on two
+networks and Traefik starts choosing the wrong address, which surfaces as
+intermittent 504s.
+
+`pnpm dev` does not use that stack. Point `REDIS_URL` at any Redis you already
+have, or leave it unset and take the fallback.
 
 Redis stores one sorted set per caller IP, holding recent request timestamps,
 expiring after the window. Addresses, no payloads. Nothing needs persisting —
