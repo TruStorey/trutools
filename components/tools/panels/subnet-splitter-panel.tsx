@@ -139,7 +139,7 @@ export function SubnetSplitterPanel() {
                   {!isV6 ? (
                     <th scope="col" className="px-3 py-2 text-left font-medium">Type</th>
                   ) : null}
-                  <th scope="col" className="px-3 py-2 text-right font-medium">Divide</th>
+                  <th scope="col" className="px-3 py-2 text-right font-medium">Split</th>
                 </tr>
               </thead>
               <tbody>
