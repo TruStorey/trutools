@@ -6,17 +6,27 @@ import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 
 import { ToolCard } from "@/components/tools/tool-card";
 import { ToolDetail } from "@/components/tools/tool-detail";
+import { GroupToggle, type ToolGrouping } from "@/components/tools/group-toggle";
 import { ToolSearch } from "@/components/tools/tool-search";
 import { ViewToggle, type ToolView } from "@/components/tools/view-toggle";
 import { chunk, useGridColumns } from "@/components/tools/use-grid-columns";
 import { Button } from "@/components/ui/button";
 import { filterTools } from "@/lib/tools/search";
-import type { Section, Tool } from "@/lib/tools/registry";
+import type { Section, Tool, Verb } from "@/lib/tools/registry";
 
 type ToolGridProps = {
   tools: Tool[];
   sections: Section[];
+  verbs: Verb[];
+  /**
+   * Off on a single-verb page, where grouping by verb would leave one heading
+   * that just repeats the page title.
+   */
+  showGroupToggle?: boolean;
 };
+
+/** A heading plus the tools under it — a section or a verb, the grid does not care. */
+type Group = { id: string; name: string; description: string; tools: Tool[] };
 
 /** How long the panel takes to open or close. */
 const PANEL_SECONDS = 0.28;
@@ -110,8 +120,9 @@ function SectionGrid({
   );
 }
 
-export function ToolGrid({ tools, sections }: ToolGridProps) {
+export function ToolGrid({ tools, sections, verbs, showGroupToggle = true }: ToolGridProps) {
   const [query, setQuery] = useState("");
+  const [grouping, setGrouping] = useState<ToolGrouping>("type");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [view, setView] = useState<ToolView>("tool");
   const shouldReduceMotion = useReducedMotion();
@@ -179,18 +190,22 @@ export function ToolGrid({ tools, sections }: ToolGridProps) {
 
   const matches = useMemo(() => filterTools(tools, query), [tools, query]);
 
-  const visibleSections = useMemo(
-    () =>
-      sections
-        .map((section) => ({
-          section,
-          tools: matches.filter((tool) => tool.section === section.id),
-        }))
-        // A section with nothing left in it should disappear entirely rather
-        // than leave a dangling heading.
-        .filter((group) => group.tools.length > 0),
-    [sections, matches],
-  );
+  const visibleGroups = useMemo<Group[]>(() => {
+    const groups =
+      grouping === "verb"
+        ? verbs.map((verb) => ({
+            ...verb,
+            tools: matches.filter((tool) => tool.verb === verb.id),
+          }))
+        : sections.map((section) => ({
+            ...section,
+            tools: matches.filter((tool) => tool.section === section.id),
+          }));
+
+    // A group with nothing left in it should disappear entirely rather than
+    // leave a dangling heading.
+    return groups.filter((group) => group.tools.length > 0);
+  }, [grouping, sections, verbs, matches]);
 
   function toggle(id: string) {
     setExpandedId((current) => (current === id ? null : id));
@@ -205,10 +220,13 @@ export function ToolGrid({ tools, sections }: ToolGridProps) {
           resultCount={matches.length}
           totalCount={tools.length}
         />
-        <ViewToggle value={view} onChange={setView} />
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <ViewToggle value={view} onChange={setView} />
+          {showGroupToggle ? <GroupToggle value={grouping} onChange={setGrouping} /> : null}
+        </div>
       </div>
 
-      {visibleSections.length === 0 ? (
+      {visibleGroups.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border/60 px-6 py-16 text-center">
           <SearchX className="size-6 text-muted-foreground" aria-hidden />
           <p className="text-sm text-muted-foreground">
@@ -220,20 +238,20 @@ export function ToolGrid({ tools, sections }: ToolGridProps) {
         </div>
       ) : (
         <div className="space-y-12">
-          {visibleSections.map(({ section, tools: sectionTools }) => (
-            <section key={section.id} aria-labelledby={`section-${section.id}`}>
+          {visibleGroups.map((group) => (
+            <section key={group.id} aria-labelledby={`section-${group.id}`}>
               <div className="mb-4">
                 <h2
-                  id={`section-${section.id}`}
+                  id={`section-${group.id}`}
                   className="text-sm font-semibold tracking-wider text-foreground/70 uppercase"
                 >
-                  {section.name}
+                  {group.name}
                 </h2>
-                <p className="mt-0.5 text-sm text-muted-foreground">{section.description}</p>
+                <p className="mt-0.5 text-sm text-muted-foreground">{group.description}</p>
               </div>
 
               <SectionGrid
-                tools={sectionTools}
+                tools={group.tools}
                 expandedId={expandedId}
                 onToggle={toggle}
                 view={view}

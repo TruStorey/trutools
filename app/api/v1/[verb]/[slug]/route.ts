@@ -5,21 +5,21 @@ export const dynamic = "force-dynamic";
 
 type RouteContext = {
   // Next 16: dynamic route params arrive as a Promise.
-  params: Promise<{ tool: string }>;
+  params: Promise<{ verb: string; slug: string }>;
 };
 
 /**
- * The versioned form. Kept alongside the short `/<tool>` alias so the original
- * shape never breaks and a future /v2 has an obvious place to live.
+ * The versioned form of /<verb>/<slug>. Kept alongside the short form so a
+ * future /v2 has an obvious place to live.
  */
 export async function GET(request: Request, context: RouteContext) {
-  const { tool } = await context.params;
-  return handleToolRequest(request, tool);
+  const { verb, slug } = await context.params;
+  return handleToolRequest(request, verb, slug);
 }
 
 export async function POST(request: Request, context: RouteContext) {
-  const { tool } = await context.params;
-  return handleToolRequest(request, tool);
+  const { verb, slug } = await context.params;
+  return handleToolRequest(request, verb, slug);
 }
 
 export async function OPTIONS() {

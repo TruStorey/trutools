@@ -4,7 +4,7 @@ Every tool on the site is also an HTTP endpoint. Plain text in, plain text out,
 no key, no account, no JSON envelope in the way.
 
 ```console
-$ curl tools.truvibe.dev/ip
+$ curl tools.truvibe.dev/lookup/ip
 203.0.113.42
 ```
 
@@ -15,17 +15,26 @@ That is the whole design: the answer, on stdout, ready to pipe.
 Each tool answers on **two paths**, which are the same endpoint:
 
 ```
-https://tools.truvibe.dev/<tool>            short form — what the snippets use
-https://tools.truvibe.dev/api/v1/<tool>     versioned form
+https://tools.truvibe.dev/<verb>/<tool>            short form — what the snippets use
+https://tools.truvibe.dev/api/v1/<verb>/<tool>     versioned form
 ```
 
-The short form is a rewrite handled in `proxy.ts`, matched against the known
-tool ids. The versioned form is kept so a future `/api/v2` has somewhere to live
-without breaking anything already written down in someone's script.
+The verb says what the tool does — `generate`, `decode`, `inspect`,
+`lookup`, `convert`, `format`, `explain`, `lint`, `calc` or `transform` — so the
+same noun can sit under more than one: `/generate/ssh-key` makes a key,
+`/inspect/ssh-key` reads one. A bare verb, `/generate`, lists the tools under
+it.
 
-It is deliberately **not** a root `[tool]` catch-all route. A catch-all would
-swallow every mistyped URL on the site and answer it with a plain-text API error
-instead of the 404 page.
+The old flat paths (`/dns-lookup`, `/api/v1/dns-lookup`) were removed when the
+verbs went in; they now 404.
+
+The short form is a rewrite handled in `proxy.ts`, matched against the known
+tool paths. The versioned form is kept so a future `/api/v2` has somewhere to
+live without breaking anything already written down in someone's script.
+
+It is deliberately **not** a root catch-all route. A catch-all would swallow
+every mistyped URL on the site and answer it with a plain-text API error instead
+of the 404 page.
 
 ```console
 $ curl tools.truvibe.dev/api/v1
@@ -40,6 +49,7 @@ this page.
 | | |
 |---|---|
 | `GET /api/v1` | Plain-text index of every endpoint and parameter |
+| `GET /<verb>` | The same, for one verb's tools |
 | `GET /api/health` | Liveness. Returns `ok`. **Not** rate limited |
 
 `/api/health` deliberately does not touch Redis — a Redis blip degrades rate
@@ -60,8 +70,8 @@ Plain text by default. Ask for something parseable with `?format=`, or with an
 `Accept` header:
 
 ```console
-$ curl 'tools.truvibe.dev/subnet-inspector?cidr=10.0.0.0/22&format=json'
-$ curl -H 'Accept: application/xml' 'tools.truvibe.dev/subnet-inspector?cidr=10.0.0.0/22'
+$ curl 'tools.truvibe.dev/inspect/subnet?cidr=10.0.0.0/22&format=json'
+$ curl -H 'Accept: application/xml' 'tools.truvibe.dev/inspect/subnet?cidr=10.0.0.0/22'
 ```
 
 | `format` | Content-Type |
@@ -97,7 +107,7 @@ In plain text the body is just the message — the status is in the status line,
 where it already was:
 
 ```console
-$ curl -i 'tools.truvibe.dev/file-permissions?mode=999'
+$ curl -i 'tools.truvibe.dev/convert/permissions?mode=999'
 HTTP/2 400
 content-type: text/plain; charset=utf-8
 
@@ -157,9 +167,9 @@ Eight tools take a document rather than query parameters. Send it as the **raw
 request body** — no form encoding, no JSON wrapper:
 
 ```console
-$ curl --data-binary @cert.pem tools.truvibe.dev/cert-reader
-$ curl --data-binary @app.service tools.truvibe.dev/systemd-lint
-$ printf 'hello world' | curl --data-binary @- 'tools.truvibe.dev/hash-generator?algo=sha256'
+$ curl --data-binary @cert.pem tools.truvibe.dev/inspect/cert
+$ curl --data-binary @app.service tools.truvibe.dev/lint/systemd
+$ printf 'hello world' | curl --data-binary @- 'tools.truvibe.dev/generate/hash?algo=sha256'
 ```
 
 Use `--data-binary`, not `-d`. Plain `-d` strips newlines, which quietly
@@ -174,20 +184,20 @@ Where a tool has one required parameter and that parameter's value can never
 contain `=`, `&` or `+`, you can leave the name off:
 
 ```console
-$ curl 'tools.truvibe.dev/dns-lookup?example.com&type=MX'
-$ curl 'tools.truvibe.dev/subnet-inspector?10.0.0.0/22'
-$ curl 'tools.truvibe.dev/duration?90m'
+$ curl 'tools.truvibe.dev/lookup/dns?example.com&type=MX'
+$ curl 'tools.truvibe.dev/inspect/subnet?10.0.0.0/22'
+$ curl 'tools.truvibe.dev/convert/duration?90m'
 ```
 
 Both forms mean the same thing, and an explicit `?name=` always wins. The
-shorthand works on `subnet-inspector`, `subnet-splitter`, `dns-lookup`,
-`mail-check`, `bandwidth`, `duration` and `cron-explain`, and they are marked
-in `/api/v1`.
+shorthand works on `/inspect/subnet`, `/calc/subnet-split`, `/lookup/dns`,
+`/lookup/mail`, `/calc/bandwidth`, `/convert/duration` and `/explain/cron`, and
+they are marked in `/api/v1`.
 
 It is deliberately not offered everywhere. A value given without its name has
 nothing delimiting it, so `=` would split it into a key and a value, `&` into
 two parameters, and `+` form-decodes to a space. That rules out anything
-token-shaped — `jwt-decoder` carries base64 padding and `case-converter` takes
+token-shaped — `/decode/jwt` carries base64 padding and `/convert/case` takes
 arbitrary text, so both keep their parameter names.
 
 ## Endpoint reference
@@ -195,68 +205,93 @@ arbitrary text, so both keep their parameter names.
 Parameters are optional unless marked **required**. One marked *(name
 optional)* may also be given without its name, as above.
 
-### Crypto
+### Generate
 
 | Endpoint | Parameters |
 |---|---|
-| `GET /password-generator` | `length` 4–256, default 24 · `count` 1–100 · `lowercase` · `uppercase` · `digits` · `symbols` · `exclude-ambiguous` |
-| `GET /uuid-generator` | `version` 4 or 7, default 4 · `count` 1–1000 · `uppercase` · `hyphens` |
-| `GET /token-generator` | `bytes` 8–256, default 32 · `encoding` `base64url`\|`hex`\|`base58` · `prefix` · `count` 1–100 |
-| `POST /hash-generator` | **body** the text · `algo` `md5`\|`sha1`\|`sha256`\|`sha512`, all four if omitted |
-| `GET /jwt-decoder` | **`token`** the JWT, three dot-separated parts |
-| `POST /ssh-key-inspect` | **body** a public key or `authorized_keys` line |
-| `GET /ssh-keypair-generator` | `type` `ed25519`\|`rsa` · `bits` 2048\|3072\|4096 · `comment` |
-| `POST /cert-reader` | **body** a PEM certificate |
+| `GET /generate/password` | `length` 4–256, default 24 · `count` 1–100 · `lowercase` · `uppercase` · `digits` · `symbols` · `exclude-ambiguous` |
+| `GET /generate/uuid` | `version` 4 or 7, default 4 · `count` 1–1000 · `uppercase` · `hyphens` |
+| `GET /generate/token` | `bytes` 8–256, default 32 · `encoding` `base64url`\|`hex`\|`base58` · `prefix` · `count` 1–100 |
+| `POST /generate/hash` | **body** the text · `algo` `md5`\|`sha1`\|`sha256`\|`sha512`, all four if omitted |
+| `GET /generate/ssh-key` | `type` `ed25519`\|`rsa` · `bits` 2048\|3072\|4096 · `comment` |
+| `GET /generate/lorem` | `unit` `paragraphs`\|`sentences`\|`words` · `count` · `classic` |
 
-### Networking
+### Decode
 
 | Endpoint | Parameters |
 |---|---|
-| `GET /ip` | none — returns your public address, nothing else |
-| `GET /subnet-inspector` | **`cidr`** *(name optional)* e.g. `10.0.0.0/22`, v4 or v6 |
-| `GET /subnet-splitter` | **`cidr`** *(name optional)* · `count` equal subnets, rounded up to a power of two · `prefix` split down to this length · `limit` 1–4096, default 256 · `offset` |
-| `GET /subnet-planner` | **`cidr`** · **`need`** a `name:size` list, e.g. `pods:4000,mgmt:200,dmz:/26` — size is a host count or an explicit `/prefix` |
-| `GET /dns-lookup` | **`name`** *(name optional)* · `type` `A`\|`AAAA`\|`CNAME`\|`MX`\|`TXT`\|`NS`\|`SOA`\|`SRV`\|`CAA`\|`PTR`\|`all` |
-| `GET /mail-check` | **`domain`** *(name optional)* — a URL or email address is reduced to its domain |
-| `GET /bandwidth` | **`rate`** *(name optional)* · `unit` default `Gbps` · `size` · `sizeUnit` default `GiB` · `overhead` percent |
+| `GET /decode/jwt` | **`token`** the JWT, three dot-separated parts |
 
-### Data Format
+### Inspect
 
 | Endpoint | Parameters |
 |---|---|
-| `POST /base64` | **body** · `mode` `auto`\|`encode`\|`decode` · `urlsafe` |
-| `GET /bytes-converter` | **`value`** · **`from`** e.g. `GB` or `GiB` · `to` a single unit, or the whole table |
-| `POST /yaml-json` | **body** · `to` `json`\|`yaml`\|`auto` · `indent` 0–8 |
-| `GET /duration` | **`value`** *(name optional)* seconds, or `1h30m`, `2h 30min`, `PT1H30M` |
-| `GET /timestamp-converter` | `value` epoch seconds, millis, ISO 8601 or `now` · `tz` IANA zone |
-| `POST /json-beautify` | **body** · `indent` 0–8, `0` minifies · `sort` sort keys |
+| `POST /inspect/cert` | **body** a PEM certificate |
+| `POST /inspect/ssh-key` | **body** a public key or `authorized_keys` line |
+| `GET /inspect/subnet` | **`cidr`** *(name optional)* e.g. `10.0.0.0/22`, v4 or v6 |
 
-### Text
+### Lookup
 
 | Endpoint | Parameters |
 |---|---|
-| `GET /case-converter` | **`text`** · `to` `camel`\|`pascal`\|`snake`\|`kebab`\|`constant`\|`title`\|`sentence`\|`dot`\|`path`\|`lower`\|`upper` |
-| `GET /lorem-ipsum` | `unit` `paragraphs`\|`sentences`\|`words` · `count` · `classic` |
-| `POST /text-tool` | **body** · `op` `join`\|`split`\|`trim`\|`dedupe`\|`sort`\|`reverse`\|`count` · `sep` supports `\n` and `\t` · `drop-empty` |
+| `GET /lookup/dns` | **`name`** *(name optional)* · `type` `A`\|`AAAA`\|`CNAME`\|`MX`\|`TXT`\|`NS`\|`SOA`\|`SRV`\|`CAA`\|`PTR`\|`all` |
+| `GET /lookup/mail` | **`domain`** *(name optional)* — a URL or email address is reduced to its domain |
+| `GET /lookup/ip` | none — returns your public address, nothing else |
 
-### System
+### Convert
 
 | Endpoint | Parameters |
 |---|---|
-| `GET /disk-space` | `capacity` e.g. `100TB` · `used` e.g. `40TB` · `percent` e.g. `70` — **any two of the three** |
-| `GET /file-permissions` | `mode` octal e.g. `755` or `4755` · `symbolic` e.g. `rwxr-xr-x` — one or the other |
-| `POST /systemd-lint` | **body** a unit file |
-| `GET /cron-explain` | **`expr`** *(name optional)* 5 fields or a macro like `@daily` · `count` 1–50 · `tz` IANA zone |
+| `POST /convert/base64` | **body** · `mode` `auto`\|`encode`\|`decode`, default `auto` · `urlsafe` |
+| `GET /convert/bytes` | **`value`** · **`from`** e.g. `GB` or `GiB` · `to` a single unit, or the whole table |
+| `GET /convert/duration` | **`value`** *(name optional)* seconds, or `1h30m`, `2h 30min`, `PT1H30M` |
+| `GET /convert/timestamp` | `value` epoch seconds, millis, ISO 8601 or `now` · `tz` IANA zone |
+| `POST /convert/yaml-json` | **body** · `to` `json`\|`yaml`\|`auto` · `indent` 0–8 |
+| `GET /convert/case` | **`text`** · `to` `camel`\|`pascal`\|`snake`\|`kebab`\|`constant`\|`title`\|`sentence`\|`dot`\|`path`\|`lower`\|`upper` |
+| `GET /convert/permissions` | `mode` octal e.g. `755` or `4755` · `symbolic` e.g. `rwxr-xr-x` — one or the other |
+
+### Format
+
+| Endpoint | Parameters |
+|---|---|
+| `POST /format/json` | **body** · `indent` 0–8, `0` minifies · `sort` sort keys |
+
+### Explain
+
+| Endpoint | Parameters |
+|---|---|
+| `GET /explain/cron` | **`expr`** *(name optional)* 5 fields or a macro like `@daily` · `count` 1–50 · `tz` IANA zone |
+
+### Lint
+
+| Endpoint | Parameters |
+|---|---|
+| `POST /lint/systemd` | **body** a unit file |
+
+### Calc
+
+| Endpoint | Parameters |
+|---|---|
+| `GET /calc/bandwidth` | **`rate`** *(name optional)* · `unit` default `Gbps` · `size` · `sizeUnit` default `GiB` · `overhead` percent |
+| `GET /calc/disk-space` | `capacity` e.g. `100TB` · `used` e.g. `40TB` · `percent` e.g. `70` — **any two of the three** |
+| `GET /calc/subnet-split` | **`cidr`** *(name optional)* · `count` equal subnets, rounded up to a power of two · `prefix` split down to this length · `limit` 1–4096, default 256 · `offset` |
+| `GET /calc/subnet-plan` | **`cidr`** · **`need`** a `name:size` list, e.g. `pods:4000,mgmt:200,dmz:/26` — size is a host count or an explicit `/prefix` |
+
+### Transform
+
+| Endpoint | Parameters |
+|---|---|
+| `POST /transform/text` | **body** · `op` `join`\|`split`\|`trim`\|`dedupe`\|`sort`\|`reverse`\|`count` · `sep` supports `\n` and `\t` · `drop-empty` |
 
 ## Two tools that answer more than you asked
 
-`hash-generator` and `case-converter` follow the same idea: **a bare call is the
+`/generate/hash` and `/convert/case` follow the same idea: **a bare call is the
 overview, an argument narrows it.** With no `?algo=` or `?to=`, you get every
 algorithm or every case as labelled fields. With one, you get that single value
 as bare text — so it pipes cleanly:
 
 ```console
-$ printf 'hello world' | curl -s --data-binary @- 'tools.truvibe.dev/hash-generator?algo=sha256'
+$ printf 'hello world' | curl -s --data-binary @- 'tools.truvibe.dev/generate/hash?algo=sha256'
 b94d27b9934d3e08a52e52d7da7dabfac484efe37a5380ee9088f7ace2efcde9
 ```
 

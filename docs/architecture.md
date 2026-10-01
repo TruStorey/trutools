@@ -34,15 +34,17 @@ lib/api/
 
 app/
   page.tsx            the card grid
+  [verb]/page.tsx     one verb's tools, for browsers at /<verb>
   api/v1/route.ts     the self-documenting index
-  api/v1/[tool]/route.ts   the versioned endpoint
+  api/v1/[verb]/route.ts          one verb's index, for curl at /<verb>
+  api/v1/[verb]/[slug]/route.ts   the versioned endpoint
   api/health/route.ts liveness
 
 components/tools/
   panels/             the interactive UI, grouped by section
   icon-map.tsx        string key -> lucide component
 
-proxy.ts              rewrites /<tool> onto /api/v1/<tool>
+proxy.ts              rewrites /<verb>/<tool> onto /api/v1/<verb>/<tool>
 ```
 
 ## The registry is the spine
@@ -53,10 +55,10 @@ later by `components/tools/icon-map.tsx`.
 
 That one file drives four things:
 
-- the card grid and its sections
+- the card grid, grouped by section or by verb
 - the search filter, including `keywords`
 - the `/api/v1` index, so the API documents itself
-- dispatch — `proxy.ts` matches incoming paths against the known ids
+- dispatch — `proxy.ts` matches incoming paths against `verb` + `slug`
 
 Add an entry and you get all four. That is why the registry entry, not the
 implementation, is step one when adding a tool.
@@ -94,16 +96,23 @@ curl .../ssh-keypair-generator | sed -n '/BEGIN/,/END/p' > id_ed25519
 ## Two URLs, one implementation
 
 ```
-/<tool>            short form, promoted by the snippets
-/api/v1/<tool>     versioned form
+/<verb>/<tool>            short form, promoted by the snippets
+/api/v1/<verb>/<tool>     versioned form
 ```
 
-`proxy.ts` — Next 16's replacement for the deprecated `middleware.ts` — rewrites
-the first onto the second, but **only for paths matching a known tool id**.
-Everything else falls through untouched, so a mistyped URL still gets the real
-404 page.
+A tool's internal `id` (`dns-lookup`) is never a URL. Its path is built from
+`verb` and `slug` in the registry (`/lookup/dns`), so the same slug can live
+under two verbs as two tools — `/generate/ssh-key` and `/inspect/ssh-key`. `VERBS` is a closed list: each one is a
+root-level path.
 
-This is deliberately not an `app/[tool]/route.ts` catch-all. A root-level
+`proxy.ts` — Next 16's replacement for the deprecated `middleware.ts` — rewrites
+the first onto the second, but **only for paths matching a known tool**, or for
+non-browser requests under a known verb (so `curl /generate` gets the text list
+and `curl /generate/typo` a plain-text 404). Everything else falls through
+untouched, so a mistyped URL in a browser still gets the real 404 page.
+`app/[verb]/page.tsx` sets `dynamicParams = false` for the same reason.
+
+This is deliberately not an `app/[verb]/[slug]/route.ts` catch-all. A root-level
 dynamic route would swallow every unmatched path on the site and answer it with
 a plain-text API error, and `notFound()` inside a Route Handler returns an empty
 body rather than rendering the 404 page — worse still.

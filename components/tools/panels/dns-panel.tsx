@@ -25,7 +25,7 @@ export function DnsPanel() {
     event?.preventDefault();
     if (!name.trim()) return;
     const params = new URLSearchParams({ name: name.trim(), type });
-    void runRemote(`/api/v1/dns-lookup?${params}`);
+    void runRemote(`/api/v1/lookup/dns?${params}`);
   }
 
   return (

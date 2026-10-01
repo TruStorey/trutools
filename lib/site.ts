@@ -17,8 +17,8 @@ export const SITE_URL = (
 export const SITE_HOST = SITE_URL.replace(/^https?:\/\//, "");
 
 /**
- * The short form the snippets promote: https://host/<tool>.
- * Tool ids therefore double as root-level URLs — see lib/tools/registry.ts.
+ * The short form the snippets promote: https://host/<verb>/<slug>.
+ * Verbs are therefore root-level URLs — see VERBS in lib/tools/registry.ts.
  */
 export const API_BASE = SITE_URL;
 

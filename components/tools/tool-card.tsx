@@ -4,7 +4,7 @@ import { ChevronDown } from "lucide-react";
 
 import { ToolIcon } from "@/components/tools/icon-map";
 import { GlassCard } from "@/components/ui/glasscn/glass-card";
-import type { Tool } from "@/lib/tools/registry";
+import { toolPath, type Tool } from "@/lib/tools/registry";
 import { cn } from "@/lib/utils";
 
 type ToolCardProps = {
@@ -67,6 +67,12 @@ export function ToolCard({ tool, expanded, onToggle, id }: ToolCardProps) {
 
         <span className="line-clamp-2 text-xs leading-snug text-muted-foreground">
           {tool.description}
+        </span>
+
+        {/* mt-auto pins it to the bottom, so paths line up across a row even
+            when one description wraps and its neighbour does not. */}
+        <span className="mt-auto truncate pt-0.5 font-mono text-[11px] text-foreground/50">
+          /{toolPath(tool)}
         </span>
       </button>
     </GlassCard>

@@ -154,7 +154,7 @@ async function runAsync(compute: () => Promise<ToolResult>): Promise<ToolResult>
  *
  * Each one calls exactly the same function the browser panel calls, so the two
  * surfaces cannot drift. Anything in the registry without an entry here is
- * served as a 501 by app/api/v1/[tool]/route.ts.
+ * served as a 501 by lib/api/tool-route.ts.
  */
 export const HANDLERS: Record<string, ToolHandler> = {
   // `text` rather than `lines`, so JSON yields "1.2.3.4" and not ["1.2.3.4"],

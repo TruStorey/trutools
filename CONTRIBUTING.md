@@ -107,9 +107,10 @@ demo rather than a minimal one.
 and dragging icon components into a server bundle buys nothing. Icons are string
 keys, resolved in `components/tools/icon-map.tsx` — add yours there.
 
-One trap: tool ids are **root-level URLs**. Next resolves static segments before
-dynamic ones, so a future page at `/search` would silently shadow a tool with
-that id. Pick ids that are unlikely to collide with a page.
+The URL is `/<verb>/<slug>`, from the entry's `verb` and `slug`; `id` is
+internal only. **Pick a verb from `VERBS`** rather than adding one — each verb is
+a root-level path, and a new verb with one tool under it makes every other tool
+harder to guess. A slug only has to be unique within its verb.
 
 ### 3. The API handler — `lib/api/handlers.ts`
 

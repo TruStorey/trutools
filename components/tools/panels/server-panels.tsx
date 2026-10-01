@@ -47,7 +47,7 @@ export function SshKeypairPanel() {
     const params = new URLSearchParams({ type });
     if (type === "rsa") params.set("bits", String(bits));
     if (comment.trim()) params.set("comment", comment.trim());
-    void runRemote(`/api/v1/ssh-keypair-generator?${params}`);
+    void runRemote(`/api/v1/generate/ssh-key?${params}`);
   }
 
   return (
@@ -106,7 +106,7 @@ export function CertReaderPanel() {
   const { result, error, pending, runRemote } = useToolRun();
 
   function read() {
-    void runRemote("/api/v1/cert-reader", {
+    void runRemote("/api/v1/inspect/cert", {
       method: "POST",
       headers: { "Content-Type": "text/plain" },
       body: pem,
@@ -138,7 +138,7 @@ export function IpPanel() {
 
   // The whole tool is one value, so fetch it as soon as the card opens.
   useEffect(() => {
-    void runRemote("/api/v1/ip");
+    void runRemote("/api/v1/lookup/ip");
   }, [runRemote]);
 
   return (
@@ -150,7 +150,7 @@ export function IpPanel() {
       <Button
         size="sm"
         variant="secondary"
-        onClick={() => void runRemote("/api/v1/ip")}
+        onClick={() => void runRemote("/api/v1/lookup/ip")}
         disabled={pending}
       >
         {pending ? <LoaderCircle className="animate-spin" /> : <RefreshCw />}

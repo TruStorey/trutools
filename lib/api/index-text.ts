@@ -1,6 +1,39 @@
-import { SECTIONS, TOOLS, toolsInSection } from "@/lib/tools/registry";
+import {
+  getVerb,
+  TOOLS,
+  toolPath,
+  toolsForVerb,
+  VERBS,
+  type Tool,
+  type VerbId,
+} from "@/lib/tools/registry";
 import { curlExample } from "@/lib/tools/snippets";
 import { SITE_URL } from "@/lib/site";
+
+/** One tool's entry, indented under its verb heading. */
+function toolBlock(tool: Tool): string[] {
+  const marker = tool.api.status === "live" ? "" : "  [not implemented yet]";
+  const lines = [`  ${tool.api.method} /${toolPath(tool)}${marker}`];
+  lines.push(`    ${tool.name} — ${tool.description}`);
+
+  for (const param of tool.api.params) {
+    const flag = param.required ? "required" : "optional";
+    const bare = tool.api.bareParam === param.name ? ", name optional" : "";
+    lines.push(`    - ${param.name} (${flag}${bare}): ${param.description}`);
+  }
+
+  lines.push(`    $ ${curlExample(tool)}`);
+  lines.push("");
+  return lines;
+}
+
+function verbBlock(verb: VerbId): string[] {
+  const tools = toolsForVerb(verb);
+  if (tools.length === 0) return [];
+
+  const name = getVerb(verb)?.name ?? verb;
+  return [`## ${name.toUpperCase()}`, "", ...tools.flatMap(toolBlock)];
+}
 
 /**
  * The self-documenting index, generated from the tool registry.
@@ -15,46 +48,39 @@ export function buildIndex(): string {
     "trutools API v1",
     SITE_URL,
     "",
-    "Every tool answers on a short path — /<tool> — and on the versioned",
-    "/api/v1/<tool>. Both are the same endpoint; the versioned form is kept so a",
-    "future /v2 can land without breaking anything.",
+    "Every tool answers on a short path — /<verb>/<tool> — and on the versioned",
+    "/api/v1/<verb>/<tool>. Both are the same endpoint; the versioned form is kept",
+    "so a future /v2 can land without breaking anything. A bare /<verb> lists the",
+    "tools under it.",
     "",
     "Plain text by default. Add ?format=json or ?format=xml for a machine-readable",
     "response, or send an Accept header of application/json or application/xml.",
     "Errors come back in the same format you asked for.",
     "",
     "Some tools let you drop the name of their one required parameter, so",
-    "/dns-lookup?example.com reads the same as /dns-lookup?name=example.com.",
+    "/lookup/dns?example.com reads the same as /lookup/dns?name=example.com.",
     "Those parameters are marked below.",
     "",
     "Rate limited per IP; check X-RateLimit-Remaining and Retry-After.",
     "",
   ];
 
-  for (const section of SECTIONS) {
-    const tools = toolsInSection(section.id);
-    if (tools.length === 0) continue;
-
-    lines.push(`## ${section.name.toUpperCase()}`, "");
-
-    for (const tool of tools) {
-      const marker = tool.api.status === "live" ? "" : "  [not implemented yet]";
-      lines.push(`  ${tool.api.method} /${tool.id}${marker}`);
-      lines.push(`    ${tool.name} — ${tool.description}`);
-
-      for (const param of tool.api.params) {
-        const flag = param.required ? "required" : "optional";
-        const bare = tool.api.bareParam === param.name ? ", name optional" : "";
-        lines.push(`    - ${param.name} (${flag}${bare}): ${param.description}`);
-      }
-
-      lines.push(`    $ ${curlExample(tool)}`);
-      lines.push("");
-    }
-  }
+  for (const verb of VERBS) lines.push(...verbBlock(verb.id));
 
   const live = TOOLS.filter((tool) => tool.api.status === "live").length;
   lines.push(`${live} of ${TOOLS.length} endpoints implemented.`);
 
   return lines.join("\n");
+}
+
+/** What a bare /<verb> answers with. */
+export function buildVerbIndex(verb: VerbId): string {
+  const description = getVerb(verb)?.description ?? "";
+  return [
+    `trutools — /${verb}`,
+    description,
+    `Full list: ${SITE_URL}/api/v1`,
+    "",
+    ...verbBlock(verb),
+  ].join("\n").trimEnd() + "\n";
 }

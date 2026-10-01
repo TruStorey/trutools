@@ -2,13 +2,31 @@
  * The single source of truth for trutools.
  *
  * This module drives the card grid, the search filter, the /api/v1 discovery
- * index and the /api/v1/[tool] dispatch. Keep it free of React and lucide
+ * index and the /api/v1/[verb]/[slug] dispatch. Keep it free of React and lucide
  * imports — the route handlers import it, and dragging icon components into a
  * server bundle buys nothing. Icons are referenced by string key and resolved
  * in components/tools/icon-map.tsx.
  */
 
 export type SectionId = "crypto" | "networking" | "data-format" | "text" | "system";
+
+/**
+ * The first segment of every tool URL: /<verb>/<slug>.
+ *
+ * A closed list on purpose — each verb is a root-level path, and every new one
+ * makes the next tool's home less obvious. Fit new tools into these first.
+ */
+export type VerbId =
+  | "generate"
+  | "decode"
+  | "inspect"
+  | "lookup"
+  | "convert"
+  | "format"
+  | "explain"
+  | "lint"
+  | "calc"
+  | "transform";
 
 export type ToolStatus = "live" | "planned";
 
@@ -28,14 +46,14 @@ export const HASH_WEAK_ALGORITHM_NOTE =
 
 export type Tool = {
   /**
-   * The path segment, served at both /<id> and /api/v1/<id>.
-   *
-   * Because ids are root-level URLs, they share a namespace with any page the
-   * site might add. Next resolves static segments before dynamic ones, so a
-   * page at /search would silently shadow a tool with that id — pick ids that
-   * are unlikely to collide.
+   * Internal and stable: keys the API handlers, the panels and DOM ids. Never
+   * part of a URL — that is built from `verb` and `slug`, see toolPath().
    */
   id: string;
+  /** What the tool does, and the first segment of its URL. */
+  verb: VerbId;
+  /** The noun after the verb. Unique per verb, not globally: ssh-key is under two. */
+  slug: string;
   name: string;
   description: string;
   section: SectionId;
@@ -121,6 +139,25 @@ export const SECTIONS: Section[] = [
   },
 ];
 
+export type Verb = {
+  id: VerbId;
+  name: string;
+  description: string;
+};
+
+export const VERBS: Verb[] = [
+  { id: "generate", name: "Generate", description: "Make something new: secrets, keys, identifiers, filler." },
+  { id: "decode", name: "Decode", description: "Turn an encoded value back into something readable." },
+  { id: "inspect", name: "Inspect", description: "Take apart something you already have and show what is in it." },
+  { id: "lookup", name: "Lookup", description: "Ask the network a question and report the answer." },
+  { id: "convert", name: "Convert", description: "Same value, different unit or notation." },
+  { id: "format", name: "Format", description: "Same data, laid out to be read." },
+  { id: "explain", name: "Explain", description: "Say in plain English what something means." },
+  { id: "lint", name: "Lint", description: "Check a file for mistakes before it bites." },
+  { id: "calc", name: "Calc", description: "Work out a number, a size or a layout." },
+  { id: "transform", name: "Transform", description: "Reshape text: join, split, sort, dedupe." },
+];
+
 export const TOOLS: Tool[] = [
   // ---------------------------------------------------------------- crypto
   {
@@ -129,6 +166,8 @@ export const TOOLS: Tool[] = [
     description:
       "Build strong random passwords with control over length and which character classes are in play.",
     section: "crypto",
+    verb: "generate",
+    slug: "password",
     icon: "key-round",
     keywords: ["password", "passphrase", "random", "secret", "entropy", "generator"],
     api: {
@@ -157,6 +196,8 @@ export const TOOLS: Tool[] = [
     description:
       "Mint UUIDs on demand. Version 4 for pure randomness, version 7 when you want them to sort by time.",
     section: "crypto",
+    verb: "generate",
+    slug: "uuid",
     icon: "fingerprint",
     keywords: ["uuid", "guid", "v4", "v7", "identifier", "unique", "ulid", "rfc9562"],
     api: {
@@ -178,6 +219,8 @@ export const TOOLS: Tool[] = [
     description:
       "Cryptographically random tokens with an optional prefix, so a leaked key is obvious in a log.",
     section: "crypto",
+    verb: "generate",
+    slug: "token",
     icon: "key-square",
     keywords: ["token", "api key", "apikey", "bearer", "secret", "nonce", "base64", "hex", "base58"],
     api: {
@@ -203,6 +246,8 @@ export const TOOLS: Tool[] = [
     description:
       "MD5, SHA-1, SHA-256 and SHA-512 of any text, all four at once or one at a time.",
     section: "crypto",
+    verb: "generate",
+    slug: "hash",
     icon: "hash",
     keywords: ["hash", "md5", "sha1", "sha256", "sha512", "checksum", "digest", "sum"],
     bodyInput: true,
@@ -230,6 +275,8 @@ export const TOOLS: Tool[] = [
     description:
       "Read the header, payload and expiry of a JSON Web Token. Inspection only — nothing is verified.",
     section: "crypto",
+    verb: "decode",
+    slug: "jwt",
     icon: "badge-check",
     keywords: ["jwt", "token", "bearer", "claims", "oauth", "oidc", "decode", "exp"],
     api: {
@@ -252,6 +299,8 @@ export const TOOLS: Tool[] = [
     description:
       "Read a public key or authorized_keys line: type, size, both fingerprints, comment and any forced options.",
     section: "crypto",
+    verb: "inspect",
+    slug: "ssh-key",
     icon: "file-key",
     keywords: [
       "ssh",
@@ -287,6 +336,8 @@ export const TOOLS: Tool[] = [
     description:
       "Produce an OpenSSH keypair — ed25519 or RSA. Generated in your browser, so the private key never leaves the page.",
     section: "crypto",
+    verb: "generate",
+    slug: "ssh-key",
     icon: "terminal",
     keywords: [
       "ssh",
@@ -321,6 +372,8 @@ export const TOOLS: Tool[] = [
     description:
       "Paste a PEM certificate and read back the subject, issuer, SANs, validity window and fingerprints.",
     section: "crypto",
+    verb: "inspect",
+    slug: "cert",
     icon: "file-badge",
     keywords: ["certificate", "cert", "x509", "pem", "tls", "ssl", "san", "fingerprint", "expiry"],
     serverOnly: true,
@@ -349,6 +402,8 @@ export const TOOLS: Tool[] = [
     description:
       "Turn CIDR into the numbers you actually need: network, broadcast, usable range, mask and host count.",
     section: "networking",
+    verb: "inspect",
+    slug: "subnet",
     icon: "network",
     keywords: [
       "subnet",
@@ -388,6 +443,8 @@ export const TOOLS: Tool[] = [
     description:
       "Carve a block into smaller ones. Split and join like a whiteboard, or ask for a set number of equal subnets.",
     section: "networking",
+    verb: "calc",
+    slug: "subnet-split",
     icon: "split",
     keywords: [
       "subnet",
@@ -438,6 +495,8 @@ export const TOOLS: Tool[] = [
     description:
       "Carve a block into named subnets sized to what each one has to hold, and see what is left over.",
     section: "networking",
+    verb: "calc",
+    slug: "subnet-plan",
     icon: "list-tree",
     keywords: [
       "subnet",
@@ -477,6 +536,8 @@ export const TOOLS: Tool[] = [
     description:
       "Look up A, AAAA, MX, TXT, NS and more through Cloudflare's resolver, with TTLs and DNSSEC status.",
     section: "networking",
+    verb: "lookup",
+    slug: "dns",
     icon: "radio-tower",
     keywords: [
       "dns",
@@ -522,6 +583,8 @@ export const TOOLS: Tool[] = [
     description:
       "SPF and DMARC for a domain, including whether SPF is over the ten-lookup budget receivers enforce.",
     section: "networking",
+    verb: "lookup",
+    slug: "mail",
     icon: "mail-check",
     keywords: [
       "spf",
@@ -557,6 +620,8 @@ export const TOOLS: Tool[] = [
     description:
       "Convert between Mbps and MB/s, and work out how long a transfer takes — including the decimal/binary gap.",
     section: "networking",
+    verb: "calc",
+    slug: "bandwidth",
     icon: "gauge",
     keywords: [
       "bandwidth",
@@ -595,6 +660,8 @@ export const TOOLS: Tool[] = [
     description:
       "Echo back the public IP address the request arrived from. Plain text, nothing else — pipe it straight into a script.",
     section: "networking",
+    verb: "lookup",
+    slug: "ip",
     icon: "globe",
     keywords: ["ip", "icanhazip", "address", "public ip", "myip", "whatismyip", "egress"],
     serverOnly: true,
@@ -613,6 +680,8 @@ export const TOOLS: Tool[] = [
     description:
       "Encode text to base64 or decode it back. Works out which way round you meant, or you can say.",
     section: "data-format",
+    verb: "convert",
+    slug: "base64",
     icon: "binary",
     keywords: ["base64", "encode", "decode", "b64", "base64url", "atob", "btoa"],
     bodyInput: true,
@@ -645,6 +714,8 @@ export const TOOLS: Tool[] = [
     description:
       "Convert between B, kB, MB, GB and up, showing both the 1000-based and 1024-based answer.",
     section: "data-format",
+    verb: "convert",
+    slug: "bytes",
     icon: "hard-drive",
     keywords: ["bytes", "kb", "mb", "gb", "tb", "kib", "mib", "gib", "size", "units", "convert"],
     api: {
@@ -669,6 +740,8 @@ export const TOOLS: Tool[] = [
     description:
       "Convert YAML to JSON or back again, with the parse error and its line if it will not parse.",
     section: "data-format",
+    verb: "convert",
+    slug: "yaml-json",
     icon: "file-code",
     keywords: ["yaml", "json", "yml", "convert", "kubernetes", "compose", "manifest"],
     bodyInput: true,
@@ -695,6 +768,8 @@ export const TOOLS: Tool[] = [
     description:
       "Move between seconds, 1h30m, systemd time spans and ISO 8601 — whichever form the config file wants.",
     section: "data-format",
+    verb: "convert",
+    slug: "duration",
     icon: "hourglass",
     keywords: ["duration", "seconds", "timespan", "systemd", "iso8601", "humanise", "timeout", "interval"],
     api: {
@@ -719,6 +794,8 @@ export const TOOLS: Tool[] = [
     description:
       "Move between Unix epoch, ISO 8601 and human-readable dates without opening a REPL to do it.",
     section: "data-format",
+    verb: "convert",
+    slug: "timestamp",
     icon: "clock",
     keywords: ["timestamp", "epoch", "unix", "iso8601", "date", "time", "utc", "convert", "tz"],
     api: {
@@ -743,6 +820,8 @@ export const TOOLS: Tool[] = [
     description:
       "Reformat minified JSON into something readable, or minify it back down. Reports the parse error if it will not parse.",
     section: "data-format",
+    verb: "format",
+    slug: "json",
     icon: "braces",
     keywords: ["json", "beautify", "pretty", "format", "minify", "indent", "validate", "prettify"],
     bodyInput: true,
@@ -768,6 +847,8 @@ export const TOOLS: Tool[] = [
     description:
       "camelCase, PascalCase, snake_case, kebab-case, CONSTANT_CASE and more, all at once or one at a time.",
     section: "text",
+    verb: "convert",
+    slug: "case",
     icon: "case-sensitive",
     keywords: ["case", "camel", "pascal", "snake", "kebab", "constant", "title", "slug", "identifier"],
     api: {
@@ -792,6 +873,8 @@ export const TOOLS: Tool[] = [
     name: "Lorem Ipsum",
     description: "Placeholder text by paragraph, sentence or word count.",
     section: "text",
+    verb: "generate",
+    slug: "lorem",
     icon: "pilcrow",
     keywords: ["lorem", "ipsum", "placeholder", "filler", "dummy", "text", "mock"],
     api: {
@@ -820,6 +903,8 @@ export const TOOLS: Tool[] = [
     description:
       "Join lines into one, split one into many, trim whitespace, drop duplicates, sort, or just count what is there.",
     section: "text",
+    verb: "transform",
+    slug: "text",
     icon: "text-quote",
     keywords: ["text", "join", "split", "lines", "trim", "dedupe", "sort", "count", "csv", "list"],
     bodyInput: true,
@@ -853,6 +938,8 @@ export const TOOLS: Tool[] = [
     description:
       "Any two of capacity, used and percentage give you the third, plus how much is free.",
     section: "system",
+    verb: "calc",
+    slug: "disk-space",
     icon: "chart-pie",
     keywords: [
       "disk",
@@ -899,6 +986,8 @@ export const TOOLS: Tool[] = [
     description:
       "Convert between 755 and rwxr-xr-x in either direction, with the owner, group and other breakdown.",
     section: "system",
+    verb: "convert",
+    slug: "permissions",
     icon: "shield",
     keywords: ["chmod", "permissions", "octal", "symbolic", "umask", "setuid", "setgid", "sticky", "rwx"],
     api: {
@@ -919,6 +1008,8 @@ export const TOOLS: Tool[] = [
     description:
       "Check a unit file for structural mistakes: unknown sections, misplaced directives, a Service with no ExecStart.",
     section: "system",
+    verb: "lint",
+    slug: "systemd",
     icon: "server-cog",
     keywords: ["systemd", "unit", "service", "timer", "socket", "lint", "validate", "execstart"],
     bodyInput: true,
@@ -939,6 +1030,8 @@ export const TOOLS: Tool[] = [
     description:
       "Say what a cron expression means in English and when it next runs — including the day-of-month/day-of-week trap.",
     section: "system",
+    verb: "explain",
+    slug: "cron",
     icon: "calendar-clock",
     keywords: ["cron", "crontab", "schedule", "expression", "next run", "timer", "@daily", "quartz"],
     api: {
@@ -957,8 +1050,25 @@ export const TOOLS: Tool[] = [
   },
 ];
 
-export function getTool(id: string): Tool | undefined {
-  return TOOLS.find((tool) => tool.id === id);
+/** "generate/password" — no leading slash, so callers can prefix a base. */
+export function toolPath(tool: Tool): string {
+  return `${tool.verb}/${tool.slug}`;
+}
+
+export function isVerb(value: string): value is VerbId {
+  return VERBS.some((verb) => verb.id === value);
+}
+
+export function getVerb(id: VerbId): Verb | undefined {
+  return VERBS.find((verb) => verb.id === id);
+}
+
+export function getToolByPath(verb: string, slug: string): Tool | undefined {
+  return TOOLS.find((tool) => tool.verb === verb && tool.slug === slug);
+}
+
+export function toolsForVerb(id: VerbId): Tool[] {
+  return TOOLS.filter((tool) => tool.verb === id);
 }
 
 export function getSection(id: SectionId): Section | undefined {

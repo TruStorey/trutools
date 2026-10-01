@@ -10,10 +10,10 @@ maths, timestamp conversion, hashes, SSH key inspection, cron explanations.
 The point is that each one has **two front doors onto the same function**:
 
 ```console
-$ curl tools.truvibe.dev/ip
+$ curl tools.truvibe.dev/lookup/ip
 203.0.113.42
 
-$ curl 'tools.truvibe.dev/subnet-inspector?cidr=10.0.0.0/22'
+$ curl 'tools.truvibe.dev/inspect/subnet?cidr=10.0.0.0/22'
 Network          10.0.0.0/22
 Netmask          255.255.252.0 (/22)
 Wildcard         0.0.3.255
@@ -24,7 +24,7 @@ Usable hosts     1,022
 Total addresses  1,024
 Type             Private (RFC 1918)
 
-$ curl 'tools.truvibe.dev/file-permissions?mode=4755'
+$ curl 'tools.truvibe.dev/convert/permissions?mode=4755'
 Octal          4755
 Octal (short)  755
 Symbolic       rwsr-xr-x
@@ -36,11 +36,15 @@ Special bits   setuid
 chmod          chmod 755 <file>
 ```
 
+Every URL is `/<verb>/<tool>` — `/generate/password`, `/lookup/dns`,
+`/inspect/cert` — and a bare verb like `/generate` lists what is under it.
+
 No account, no key, no JSON envelope you have to unwrap before you can use the
 answer. Plain text in, plain text out, rate limited per IP — the model
 [icanhazip](https://icanhazip.com) has been quietly proving for years.
 
-The browser side is the same tools as a filterable card grid. Open a card and it
+The browser side is the same tools as a filterable card grid, grouped by type or
+by verb. Open a card and it
 expands in place with two tabs: **Tool** for the interactive version, **API** for
 a ready-to-paste snippet in curl, Go, JavaScript, PowerShell, Python,
 Ruby or Rust.

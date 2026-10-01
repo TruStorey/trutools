@@ -1,4 +1,4 @@
-import { SECTIONS, type Tool } from "./registry";
+import { SECTIONS, toolPath, type Tool } from "./registry";
 
 const SECTION_NAMES = new Map(SECTIONS.map((section) => [section.id, section.name]));
 
@@ -11,6 +11,8 @@ function haystack(tool: Tool): string {
     tool.name,
     tool.description,
     tool.id,
+    // Paths, so pasting "/lookup/dns" or typing "generate" finds the tool.
+    `/${toolPath(tool)}`,
     SECTION_NAMES.get(tool.section) ?? "",
     ...tool.keywords,
   ]
