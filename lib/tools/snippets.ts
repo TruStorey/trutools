@@ -1,6 +1,6 @@
 import { API_BASE } from "../site";
 import type { ApiFormat } from "./format";
-import type { Tool } from "./registry";
+import { toolPath, type Tool } from "./registry";
 
 export { API_BASE };
 
@@ -234,7 +234,7 @@ function queryString(tool: Tool, format: ApiFormat): string {
 }
 
 function url(tool: Tool, shape: OutputShape): string {
-  return `${API_BASE}/${tool.id}${queryString(tool, wireFormat(shape))}`;
+  return `${API_BASE}/${toolPath(tool)}${queryString(tool, wireFormat(shape))}`;
 }
 
 function sampleKey(tool: Tool): string {
@@ -310,12 +310,12 @@ function pythonSnippet(tool: Tool, shape: OutputShape): string {
   const call = tool.api.bodyFile
     ? `with open(${JSON.stringify(tool.api.bodyFile)}) as handle:\n` +
       `    response = requests.post(\n` +
-      `        "${API_BASE}/${tool.id}",\n` +
+      `        "${API_BASE}/${toolPath(tool)}",\n` +
       `        params={\n${entries("            ")}\n        },\n` +
       `        data=handle.read(),\n` +
       `    )`
     : `response = requests.get(\n` +
-      `    "${API_BASE}/${tool.id}",\n` +
+      `    "${API_BASE}/${toolPath(tool)}",\n` +
       `    params={\n${entries("        ")}\n    },\n` +
       `)`;
 
@@ -364,13 +364,13 @@ function javascriptSnippet(tool: Tool, shape: OutputShape): string {
     call =
       `// In Node, read it from disk instead: readFile(path, "utf8").\n` +
       `const body = \`${sample}\`;\n\n` +
-      `const response = await fetch(\`${API_BASE}/${tool.id}?\${params}\`, {\n` +
+      `const response = await fetch(\`${API_BASE}/${toolPath(tool)}?\${params}\`, {\n` +
       `  method: "POST",\n` +
       `  headers: { "Content-Type": "text/plain" },\n` +
       `  body,\n` +
       `});`;
   } else {
-    call = `const response = await fetch(\`${API_BASE}/${tool.id}?\${params}\`);`;
+    call = `const response = await fetch(\`${API_BASE}/${toolPath(tool)}?\${params}\`);`;
   }
 
   const head = `${paramsBlock}${call}\n\n`;
@@ -468,8 +468,8 @@ function rubySnippet(tool: Tool, shape: OutputShape): string {
     .join("\n");
 
   const uri = entries
-    ? `uri = URI("${API_BASE}/${tool.id}")\nuri.query = URI.encode_www_form(\n${entries}\n)`
-    : `uri = URI("${API_BASE}/${tool.id}")`;
+    ? `uri = URI("${API_BASE}/${toolPath(tool)}")\nuri.query = URI.encode_www_form(\n${entries}\n)`
+    : `uri = URI("${API_BASE}/${toolPath(tool)}")`;
 
   const request = tool.api.bodyFile
     ? `body = File.read(${JSON.stringify(tool.api.bodyFile)})\n` +

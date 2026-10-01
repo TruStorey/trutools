@@ -20,7 +20,7 @@ export function MailPanel() {
   function check(event?: FormEvent) {
     event?.preventDefault();
     if (!domain.trim()) return;
-    void runRemote(`/api/v1/mail-check?domain=${encodeURIComponent(domain.trim())}`);
+    void runRemote(`/api/v1/lookup/mail?domain=${encodeURIComponent(domain.trim())}`);
   }
 
   return (

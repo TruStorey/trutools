@@ -1,5 +1,5 @@
 import { ToolGrid } from "@/components/tools/tool-grid";
-import { SECTIONS, TOOLS } from "@/lib/tools/registry";
+import { SECTIONS, TOOLS, VERBS } from "@/lib/tools/registry";
 
 export default function Home() {
   return (
@@ -14,7 +14,7 @@ export default function Home() {
         </p>
       </div>
 
-      <ToolGrid tools={TOOLS} sections={SECTIONS} />
+      <ToolGrid tools={TOOLS} sections={SECTIONS} verbs={VERBS} />
     </div>
   );
 }

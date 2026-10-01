@@ -12,7 +12,7 @@ import { ToolPanelFor } from "@/components/tools/panels";
 import type { ToolView } from "@/components/tools/view-toggle";
 import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glasscn/glass-card";
-import type { Tool } from "@/lib/tools/registry";
+import { toolPath, type Tool } from "@/lib/tools/registry";
 import {
   defaultOutput,
   isOutputAvailable,
@@ -153,7 +153,7 @@ function ApiTab({ tool }: { tool: Tool }) {
       <div className="space-y-2">
         <h4 className={FIELD_LABEL}>Endpoint</h4>
         <p className="font-mono text-xs text-foreground/90">
-          {tool.api.method} /{tool.id}
+          {tool.api.method} /{toolPath(tool)}
         </p>
       </div>
 

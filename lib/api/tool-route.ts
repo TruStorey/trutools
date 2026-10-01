@@ -1,5 +1,5 @@
 import { resolveFormat } from "@/lib/tools/format";
-import { getTool, type Tool } from "@/lib/tools/registry";
+import { getToolByPath, type Tool } from "@/lib/tools/registry";
 import { SITE_URL } from "@/lib/site";
 
 import { rateLimitKey } from "./client-ip";
@@ -45,17 +45,21 @@ function promoteBareParam(params: URLSearchParams, tool: Tool): URLSearchParams 
 }
 
 /**
- * The tool dispatch, shared by both routes that expose it:
+ * The tool dispatch, shared by both paths that expose it:
  *
- *   /<tool>          the short form the snippets promote, rewritten onto the
- *                    route below by proxy.ts
- *   /api/v1/<tool>   the versioned form, kept so a future /v2 has somewhere to
- *                    live and the old shape never breaks
+ *   /<verb>/<slug>          the short form the snippets promote, rewritten
+ *                           onto the route below by proxy.ts
+ *   /api/v1/<verb>/<slug>   the versioned form, kept so a future /v2 has
+ *                           somewhere to live
  *
  * The rewrite means there is one implementation, so rate limiting, formats and
  * error bodies cannot drift between the two paths.
  */
-export async function handleToolRequest(request: Request, id: string): Promise<Response> {
+export async function handleToolRequest(
+  request: Request,
+  verb: string,
+  slug: string,
+): Promise<Response> {
   const url = new URL(request.url);
 
   // Resolved before anything else can fail, so even a 429 or a 404 comes back
@@ -67,16 +71,17 @@ export async function handleToolRequest(request: Request, id: string): Promise<R
   const rate = await rateLimit(rateLimitKey(request.headers));
   if (!rate.ok) return tooManyRequests(rate, format);
 
-  const tool = getTool(id);
+  const tool = getToolByPath(verb, slug);
   if (!tool) {
     return failure(
-      `No tool named "${id}". See ${SITE_URL}/api/v1 for the list of endpoints.`,
+      `No tool at "/${verb}/${slug}". See ${SITE_URL}/api/v1 for the list of endpoints.`,
       404,
       format,
       rate,
     );
   }
 
+  const id = tool.id;
   const handler = HANDLERS[id];
   if (!handler) {
     return failure(

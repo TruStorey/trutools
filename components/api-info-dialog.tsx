@@ -115,9 +115,13 @@ export function ApiInfoDialog({ siteHost, rateLimit }: ApiInfoDialogProps) {
         <div className="space-y-4">
           <Section title="Endpoints">
             <p>
-              <Code>{siteHost}/&lt;tool&gt;</Code> — or the versioned{" "}
-              <Code>/api/v1/&lt;tool&gt;</Code>, which is the same endpoint and
-              will keep working if a <Code>/v2</Code> ever appears.
+              <Code>{siteHost}/&lt;verb&gt;/&lt;tool&gt;</Code>, like{" "}
+              <Code>/generate/password</Code> or <Code>/lookup/dns</Code> — or the
+              versioned <Code>/api/v1/&lt;verb&gt;/&lt;tool&gt;</Code>, which is the
+              same endpoint and will keep working if a <Code>/v2</Code> ever appears.
+            </p>
+            <p>
+              A bare verb such as <Code>/generate</Code> lists the tools under it.
             </p>
             <p>
               Most tools are <Code>GET</Code> with query parameters. The three that

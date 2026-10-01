@@ -123,7 +123,7 @@ for management, something big enough for four thousand pods, a small DMZ". Say
 that directly and get the allocation back:
 
 ```console
-$ curl 'tools.truvibe.dev/subnet-planner?cidr=10.0.0.0/16&need=pods:4000,mgmt:200,dmz:/26'
+$ curl 'tools.truvibe.dev/calc/subnet-plan?cidr=10.0.0.0/16&need=pods:4000,mgmt:200,dmz:/26'
 Name  Subnet        Netmask          Usable range             Hosts  Needed
 pods  10.0.0.0/20   255.255.240.0    10.0.0.1 - 10.0.15.254   4,094  4000
 mgmt  10.0.16.0/24  255.255.255.0    10.0.16.1 - 10.0.16.254  254    200
@@ -198,7 +198,7 @@ The public address your request arrived from. Plain text, nothing else, so it
 pipes straight into a script — the [icanhazip](https://icanhazip.com) model.
 
 ```console
-$ curl tools.truvibe.dev/ip
+$ curl tools.truvibe.dev/lookup/ip
 203.0.113.42
 ```
 
