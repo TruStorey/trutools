@@ -124,9 +124,10 @@ export function ApiInfoDialog({ siteHost, rateLimit }: ApiInfoDialogProps) {
               A bare verb such as <Code>/generate</Code> lists the tools under it.
             </p>
             <p>
-              Most tools are <Code>GET</Code> with query parameters. The three that
-              take a document — certificate reader, JSON beautifier and text tool —
-              want it <Code>POST</Code>ed as the raw request body.
+              Most tools are <Code>GET</Code> with query parameters. The ones that
+              work on a document, such as a certificate, a JSON or YAML file or a
+              unit file, want it <Code>POST</Code>ed as the raw request body. The
+              full reference marks which.
             </p>
           </Section>
 
@@ -160,9 +161,9 @@ export function ApiInfoDialog({ siteHost, rateLimit }: ApiInfoDialogProps) {
 
           <Section title="From an agent">
             <p>
-              Everything here is also an MCP server at <Code>{siteHost}/mcp</Code>, so an
-              agent can call the tools directly. The MCP button in the navbar has the setup
-              for each client.
+              Every tool except IP lookup is also on the MCP server at{" "}
+              <Code>{siteHost}/mcp</Code>, so an agent can call them directly. The MCP
+              button in the navbar has the setup for each client.
             </p>
           </Section>
 

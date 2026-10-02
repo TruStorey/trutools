@@ -1,7 +1,8 @@
 # MCP server
 
-Every tool is also an [MCP](https://modelcontextprotocol.io) tool, so an agent
-can call `lookup_dns` directly instead of guessing a curl URL.
+Every tool except `/lookup/ip` is also an [MCP](https://modelcontextprotocol.io)
+tool, so an agent can call `lookup_dns` directly instead of guessing a curl
+URL.
 
 ```
 https://tools.truvibe.dev/mcp
@@ -43,8 +44,10 @@ defaults and validation. Tools that take a request body over HTTP take it as a
 stringified and parsed exactly as `?length=32` would be, so an error reads the
 same as the one curl gets.
 
-`/lookup/ip` is left out. Over MCP, the caller is the client's host, not the
-person asking.
+`/lookup/ip` is left out. It reports the address a request came from. A local
+client like Claude Code would get your address, but a hosted connector such as
+claude.ai or ChatGPT calls from the provider's servers. The model would then
+report that address as yours. Use `curl tools.truvibe.dev/lookup/ip` instead.
 
 ## Results
 

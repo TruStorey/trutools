@@ -1,13 +1,14 @@
 # trutools
 
-Simple IT tools, in the browser or over an API — at
+Simple IT tools, in the browser, over an API or from an AI agent — at
 **[tools.truvibe.dev](https://tools.truvibe.dev)**.
 
 Twenty-eight small utilities of the sort you otherwise keep a browser tab, a
 half-remembered `python3 -c` and a dubious ad-funded website open for. Subnet
 maths, timestamp conversion, hashes, SSH key inspection, cron explanations.
 
-The point is that each one has **two front doors onto the same function**:
+The point is that each one has **several front doors onto the same function**.
+The plainest is `curl`:
 
 ```console
 $ curl tools.truvibe.dev/lookup/ip
@@ -43,11 +44,20 @@ No account, no key, no JSON envelope you have to unwrap before you can use the
 answer. Plain text in, plain text out, rate limited per IP — the model
 [icanhazip](https://icanhazip.com) has been quietly proving for years.
 
-The browser side is the same tools as a filterable card grid, grouped by type or
-by verb. Open a card and it
-expands in place with two tabs: **Tool** for the interactive version, **API** for
-a ready-to-paste snippet in curl, Go, JavaScript, PowerShell, Python,
-Ruby or Rust.
+The browser side is the same tools as a filterable card grid, grouped by
+category or by action. Open a card and it expands in place with two tabs:
+**Browser** for the interactive version, **API** for a ready-to-paste snippet in
+curl, Go, JavaScript, PowerShell, Python, Ruby or Rust.
+
+And an agent can call them over MCP. Every tool except the IP echo is an MCP
+tool at `tools.truvibe.dev/mcp`:
+
+```console
+$ claude mcp add --transport http trutools https://tools.truvibe.dev/mcp
+```
+
+The **MCP** button on the site has the setup for other clients, and
+[`docs/mcp.md`](docs/mcp.md) has the details.
 
 ## The tools
 
@@ -113,11 +123,11 @@ Next.js 16 (App Router) · React 19 · Tailwind v4 · shadcn with
 [`@glasscn`](https://glasscn-components.vercel.app) on Base UI · Motion ·
 ioredis.
 
-One idea holds the whole thing up: **a tool is a function, and both front doors
-call it.** `lib/tools/impl/` holds the logic, the browser panel imports it
-directly, the route handler imports the same thing. The browser and `curl`
-cannot disagree about what a tool does, because there is only one
-implementation to disagree with.
+One idea holds the whole thing up: **a tool is a function, and every front door
+calls it.** `lib/tools/impl/` holds the logic, the browser panel imports it
+directly, and the route handler and the MCP server import the same thing. The
+browser, `curl` and an agent cannot disagree about what a tool does, because
+there is only one implementation to disagree with.
 
 Most tools therefore run entirely in the page — nothing is sent anywhere.
 Four cannot: the certificate reader needs `node:crypto` for X.509, DNS lookup

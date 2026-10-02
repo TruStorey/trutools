@@ -2,12 +2,13 @@
 
 One idea holds the whole thing up:
 
-> **A tool is a function. Both front doors call it.**
+> **A tool is a function. Every front door calls it.**
 
 `lib/tools/impl/<tool>.ts` exports a function. The browser panel imports it and
 calls it directly. The API route handler imports the same function and calls it
-too. The browser and `curl` cannot disagree about what a tool does, because
-there is only one implementation to disagree with.
+too, and so does the MCP server. The browser, `curl` and an agent cannot
+disagree about what a tool does, because there is only one implementation to
+disagree with.
 
 Everything below is in service of that.
 
@@ -58,14 +59,16 @@ proxy.ts              rewrites /<verb>/<tool> onto /api/v1/<verb>/<tool>
 drag a UI framework into a server bundle. Icons are **string keys**, resolved
 later by `components/tools/icon-map.tsx`.
 
-That one file drives four things:
+That one file drives five things:
 
-- the card grid, grouped by section or by verb
+- the card grid, grouped by section or by verb (labelled Category and Action in
+  the UI)
 - the search filter, including `keywords`
 - the `/api/v1` index, so the API documents itself
 - dispatch — `proxy.ts` matches incoming paths against `verb` + `slug`
+- the MCP tool list, named `<verb>_<slug>`
 
-Add an entry and you get all four. That is why the registry entry, not the
+Add an entry and you get all five. That is why the registry entry, not the
 implementation, is step one when adding a tool.
 
 ## ToolResult
@@ -149,8 +152,9 @@ curl. Results carry both `renderText` output and the `?format=json` shape.
 It is **stateless** Streamable HTTP (`app/mcp/route.ts`). Every POST gets a
 fresh server and transport and JSON rather than SSE, so there is no session to
 pin to one replica behind the proxy. One POST is one hit on the shared rate
-limiter. `ip` is excluded, because over MCP it would answer with the client
-host's address.
+limiter. `ip` is excluded. It reports the address a request came from, and a
+hosted connector (claude.ai, ChatGPT) calls from the provider's servers, so a
+model would report that address as the user's.
 
 ## Client and server
 
