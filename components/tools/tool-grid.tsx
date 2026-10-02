@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { SearchX } from "lucide-react";
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import { ToolCard } from "@/components/tools/tool-card";
 import { ToolDetail } from "@/components/tools/tool-detail";
@@ -13,6 +13,7 @@ import { chunk, useGridColumns } from "@/components/tools/use-grid-columns";
 import { Button } from "@/components/ui/button";
 import { filterTools } from "@/lib/tools/search";
 import type { Section, Tool, Verb } from "@/lib/tools/registry";
+import { cn } from "@/lib/utils";
 
 type ToolGridProps = {
   tools: Tool[];
@@ -120,6 +121,52 @@ function SectionGrid({
   );
 }
 
+/**
+ * The small uppercase caption over each control in the toolbar row. On wide
+ * screens it is lifted out of the flow (the row's top padding makes room for
+ * it), so the controls themselves line up on the search input.
+ */
+function Caption({ label }: { label: string }) {
+  return (
+    <span
+      aria-hidden
+      className="text-[0.65rem] font-medium tracking-[0.2em] whitespace-nowrap text-muted-foreground uppercase select-none lg:absolute lg:bottom-full lg:mb-1.5"
+    >
+      {label}
+    </span>
+  );
+}
+
+/**
+ * A caption over one of the grid's toggles. Purely visual: each toggle names
+ * itself with the same words in its own aria-label, so the caption is hidden
+ * from screen readers rather than read twice.
+ *
+ * On wide screens the wrapper is h-11, the search input's height, which
+ * centres the toggle on it.
+ */
+function ControlLabel({
+  label,
+  className,
+  children,
+}: {
+  label: string;
+  className?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      className={cn(
+        "relative flex flex-col items-center gap-1.5 lg:h-11 lg:justify-center",
+        className,
+      )}
+    >
+      <Caption label={label} />
+      {children}
+    </div>
+  );
+}
+
 export function ToolGrid({ tools, sections, verbs, showGroupToggle = true }: ToolGridProps) {
   const [query, setQuery] = useState("");
   const [grouping, setGrouping] = useState<ToolGrouping>("type");
@@ -213,17 +260,36 @@ export function ToolGrid({ tools, sections, verbs, showGroupToggle = true }: Too
 
   return (
     <div className="space-y-10">
-      <div className="flex flex-col items-center gap-3">
-        <ToolSearch
-          value={query}
-          onChange={setQuery}
-          resultCount={matches.length}
-          totalCount={tools.length}
-        />
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <ViewToggle value={view} onChange={setView} />
-          {showGroupToggle ? <GroupToggle value={grouping} onChange={setGrouping} /> : null}
+      {/*
+        One row on wide screens: Method, search, Group by. The outer columns are
+        1fr each so the search stays centred whether or not Group by is shown.
+        Narrower, the search takes the full width and the toggles sit under it.
+      */}
+      <div className="grid grid-cols-2 items-start gap-x-4 gap-y-4 lg:grid-cols-[1fr_minmax(0,36rem)_1fr] lg:gap-x-6 lg:pt-5">
+        {/* No h-11 here: the result count hangs below the input. */}
+        <div className="relative col-span-2 flex flex-col items-center gap-1.5 lg:order-2 lg:col-span-1">
+          <Caption label="Search" />
+          <ToolSearch
+            value={query}
+            onChange={setQuery}
+            resultCount={matches.length}
+            totalCount={tools.length}
+          />
         </div>
+        <ControlLabel
+          label="Method"
+          className={cn(
+            "lg:order-1 lg:justify-self-end",
+            showGroupToggle ? "justify-self-end" : "col-span-2 justify-self-center lg:col-span-1",
+          )}
+        >
+          <ViewToggle value={view} onChange={setView} />
+        </ControlLabel>
+        {showGroupToggle ? (
+          <ControlLabel label="Group by" className="justify-self-start lg:order-3">
+            <GroupToggle value={grouping} onChange={setGrouping} />
+          </ControlLabel>
+        ) : null}
       </div>
 
       {visibleGroups.length === 0 ? (

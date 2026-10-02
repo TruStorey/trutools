@@ -32,7 +32,7 @@ export function ViewToggle({
       options={OPTIONS}
       value={value}
       onChange={onChange}
-      label="How to use the tools"
+      label="Method"
       layoutId="view-toggle-indicator"
     />
   );

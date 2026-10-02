@@ -58,7 +58,6 @@ export function ToolSearch({ value, onChange, resultCount, totalCount }: ToolSea
               event.currentTarget.blur();
             }
           }}
-          placeholder="Search tools…"
           aria-label="Search tools"
           className="h-11 pr-20 pl-10 text-base"
         />

@@ -11,8 +11,8 @@ import { SegmentedToggle, type SegmentedOption } from "@/components/tools/segmen
 export type ToolGrouping = "type" | "verb";
 
 const OPTIONS: readonly SegmentedOption<ToolGrouping>[] = [
-  { value: "type", label: "Type", icon: Shapes },
-  { value: "verb", label: "Verb", icon: Zap },
+  { value: "type", label: "Category", icon: Shapes },
+  { value: "verb", label: "Action", icon: Zap },
 ];
 
 export function GroupToggle({
@@ -27,7 +27,7 @@ export function GroupToggle({
       options={OPTIONS}
       value={value}
       onChange={onChange}
-      label="Group tools by"
+      label="Group by"
       layoutId="group-toggle-indicator"
     />
   );
