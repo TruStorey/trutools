@@ -23,7 +23,7 @@ const LINKS: AboutLink[] = [
   {
     label: "Source on GitHub",
     href: "https://github.com/TruStorey/trutools",
-    description: "Every tool, the API, and the docs.",
+    description: "Every tool, the API, the MCP server, and the docs.",
   },
   {
     label: "icanhazip.com",
@@ -101,9 +101,10 @@ export function AboutDialog() {
               or a half-remembered note somewhere.
             </p>
             <p>
-              Each tool has two front doors onto the same function. Click it in
-              the browser, or curl it from a terminal — same tool, same answer,
-              no difference in what you get back.
+              Each tool has three front doors onto the same function. Click it
+              in the browser, curl it from a terminal, or chat with it through
+              your AI assistant over MCP — same tool, same answer, no difference
+              in what you get back.
             </p>
             <p>
               Available in many languages for you to use in your scripts or
@@ -139,8 +140,8 @@ export function AboutDialog() {
             </p>
             <p>
               So nothing here asks who you are. Everything runs in your browser
-              where it can, and the API is rate limited per IP rather than gated
-              behind a signup.
+              where it can, and the API and MCP server are rate limited per IP
+              rather than gated behind a signup.
             </p>
           </Section>
 
