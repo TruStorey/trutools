@@ -8,6 +8,7 @@ import {
   type VerbId,
 } from "@/lib/tools/registry";
 import { curlExample } from "@/lib/tools/snippets";
+import { MCP_URL } from "@/lib/mcp/names";
 import { SITE_URL } from "@/lib/site";
 
 /** One tool's entry, indented under its verb heading. */
@@ -62,6 +63,10 @@ export function buildIndex(): string {
     "Those parameters are marked below.",
     "",
     "Rate limited per IP; check X-RateLimit-Remaining and Retry-After.",
+    "",
+    `Also an MCP server, at ${MCP_URL} (Streamable HTTP).`,
+    "Each tool below is an MCP tool named <verb>_<tool>, like lookup_dns, taking",
+    "the same parameters.",
     "",
   ];
 
