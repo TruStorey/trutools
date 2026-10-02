@@ -30,6 +30,21 @@ export function slugify(label: string): string {
   return /^[0-9]/.test(slug) ? `_${slug}` : slug || "field";
 }
 
+/**
+ * Slugs for a set of labels, suffixed where they repeat: ["Unit", "Unit"] ->
+ * ["unit", "unit_2"]. JSON object keys must be unique, and a repeated key
+ * silently drops every value but the last.
+ */
+function uniqueSlugs(labels: string[]): string[] {
+  const seen = new Map<string, number>();
+  return labels.map((label) => {
+    const slug = slugify(label);
+    const count = (seen.get(slug) ?? 0) + 1;
+    seen.set(slug, count);
+    return count === 1 ? slug : `${slug}_${count}`;
+  });
+}
+
 function escapeXml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -51,7 +66,7 @@ function toJson(tool: string, result: ToolResult): string {
       payload = result.text;
       break;
     case "rows": {
-      const keys = result.columns.map(slugify);
+      const keys = uniqueSlugs(result.columns);
       payload = result.rows.map((row) =>
         Object.fromEntries(keys.map((key, index) => [key, row[index] ?? ""])),
       );
@@ -59,11 +74,10 @@ function toJson(tool: string, result: ToolResult): string {
       break;
     }
     case "fields": {
-      const object: Record<string, string> = {};
-      for (const field of result.fields) {
-        object[slugify(field.label)] = field.value;
-      }
-      payload = object;
+      const keys = uniqueSlugs(result.fields.map((field) => field.label));
+      payload = Object.fromEntries(
+        result.fields.map((field, index) => [keys[index], field.value]),
+      );
       break;
     }
   }
