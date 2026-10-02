@@ -9,8 +9,10 @@ import { SITE_URL } from "@/lib/site";
 export const MCP_URL = `${SITE_URL}/mcp`;
 
 /**
- * Tools that make no sense over MCP. `ip` answers with the caller's address,
- * and the caller here is the MCP client's host — not the person asking.
+ * Tools left off the MCP server. `ip` answers with the address the request
+ * came from. From a local client (Claude Code, Cursor) that is the user's, but
+ * a hosted connector (claude.ai, ChatGPT) calls from the provider's servers,
+ * and a model would report that address as the user's without knowing better.
  */
 const EXCLUDED = new Set(["ip"]);
 

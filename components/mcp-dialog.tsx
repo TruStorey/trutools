@@ -291,7 +291,8 @@ export function McpDialog({ rateLimit }: McpDialogProps) {
             Connect an agent
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Every tool here is also an MCP tool. One URL, no key, no account.
+            Every tool here except IP lookup is also an MCP tool. One URL, no key, no
+            account.
           </DialogDescription>
         </DialogHeader>
 

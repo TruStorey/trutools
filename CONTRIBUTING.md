@@ -77,8 +77,8 @@ export function describeThing(input: string): ToolResult {
 ```
 
 **Keep it isomorphic.** No `node:` imports, no `window`. The same function runs
-in the browser panel and in the route handler, and that is the entire point —
-it is why the two front doors cannot disagree. If a tool genuinely needs Node
+in the browser panel and in the route handler (which the MCP server reuses), and
+that is the entire point — it is why the front doors cannot disagree. If a tool genuinely needs Node
 (X.509 parsing) or the network (a resolver), put it in `lib/tools/impl/server/`
 and mark the tool `serverOnly` in the registry; its panel will call the API
 instead of computing locally.

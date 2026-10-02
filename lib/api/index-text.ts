@@ -65,8 +65,8 @@ export function buildIndex(): string {
     "Rate limited per IP; check X-RateLimit-Remaining and Retry-After.",
     "",
     `Also an MCP server, at ${MCP_URL} (Streamable HTTP).`,
-    "Each tool below is an MCP tool named <verb>_<tool>, like lookup_dns, taking",
-    "the same parameters.",
+    "Each tool below except /lookup/ip is an MCP tool named <verb>_<tool>, like",
+    "lookup_dns, taking the same parameters.",
     "",
   ];
 
