@@ -23,6 +23,9 @@ lib/tools/
   impl/               the tools themselves, one file each
     server/           the four that genuinely need Node or the network
 
+lib/mcp/
+  server.ts           the registry, registered as MCP tools
+
 lib/api/
   tool-route.ts       shared dispatch for both API paths
   handlers.ts         query-param parsing, one entry per tool
@@ -33,12 +36,14 @@ lib/api/
   client-ip.ts        working out who is calling
 
 app/
+  mcp/route.ts        the MCP endpoint, stateless Streamable HTTP
   page.tsx            the card grid
   [verb]/page.tsx     one verb's tools, for browsers at /<verb>
   api/v1/route.ts     the self-documenting index
   api/v1/[verb]/route.ts          one verb's index, for curl at /<verb>
   api/v1/[verb]/[slug]/route.ts   the versioned endpoint
   api/health/route.ts liveness
+  api/health/mcp/route.ts  MCP liveness: a real tools/list, in-process
 
 components/tools/
   panels/             the interactive UI, grouped by section
@@ -131,6 +136,21 @@ The order inside it is deliberate:
 **Tool ids share a namespace with pages.** Next resolves static segments before
 dynamic ones, so a page at `/search` would silently shadow a tool with that id.
 Worth remembering before adding either.
+
+## The MCP server
+
+A third front door, at `POST /mcp`. `lib/mcp/server.ts` walks the registry and
+registers every live tool that has a handler, as `<verb>_<slug>`. Each call
+builds a `URLSearchParams` from the arguments and calls the same
+`HANDLERS[id]` the HTTP route does. So the parsing, validation and error
+messages are not duplicated, and an agent cannot get a different answer from
+curl. Results carry both `renderText` output and the `?format=json` shape.
+
+It is **stateless** Streamable HTTP (`app/mcp/route.ts`). Every POST gets a
+fresh server and transport and JSON rather than SSE, so there is no session to
+pin to one replica behind the proxy. One POST is one hit on the shared rate
+limiter. `ip` is excluded, because over MCP it would answer with the client
+host's address.
 
 ## Client and server
 
@@ -231,8 +251,10 @@ for a submit button. `useToolRun` provides `run` for synchronous tools and
 The navbar island is adapted from `@smoothui/dynamic-island`. The registry ships
 a demo — fixed height, hardcoded scenes, view-switcher buttons — so only its
 motion recipe survived; see `components/island/dynamic-island.tsx`. It doubles
-as the toast surface and as the API health indicator, polling `/api/health` and
-showing the real status code.
+as the toast surface and as the tools health indicator. It polls `/api/health`
+and `/api/health/mcp` and shows both real status codes. The MCP check runs a
+`tools/list` through `serveMcp()` in-process, rather than POSTing to `/mcp`,
+which would spend the visitor's own rate limit on every poll.
 
 Glass styling comes from [`@glasscn`](https://glasscn-components.vercel.app),
 which is built on **Base UI**, not Radix — worth knowing before reaching for a
