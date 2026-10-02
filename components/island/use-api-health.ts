@@ -19,14 +19,14 @@ const DEFAULT_INTERVAL_MS = 30_000;
 const REQUEST_TIMEOUT_MS = 5_000;
 
 /**
- * Polls /api/health so the island can show whether the API is reachable, and
- * what it actually said.
+ * Polls a healthcheck so the island can show whether it is reachable, and
+ * what it actually said. Used for /api/health and /api/health/mcp.
  *
- * /api/health is deliberately exempt from rate limiting and does not touch
- * Redis, so polling it costs nothing and a Redis blip does not show up here as
- * a false outage.
+ * Both are deliberately exempt from rate limiting and do not touch Redis, so
+ * polling them costs nothing and a Redis blip does not show up here as a false
+ * outage.
  */
-export function useApiHealth(intervalMs = DEFAULT_INTERVAL_MS): ApiHealthState {
+export function useHealth(url: string, intervalMs = DEFAULT_INTERVAL_MS): ApiHealthState {
   const [state, setState] = useState<ApiHealthState>({ status: "checking", code: null });
 
   useEffect(() => {
@@ -52,7 +52,7 @@ export function useApiHealth(intervalMs = DEFAULT_INTERVAL_MS): ApiHealthState {
       const abortTimer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
       try {
-        const response = await fetch("/api/health", {
+        const response = await fetch(url, {
           cache: "no-store",
           signal: controller.signal,
         });
@@ -86,7 +86,7 @@ export function useApiHealth(intervalMs = DEFAULT_INTERVAL_MS): ApiHealthState {
       if (timer) clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [intervalMs]);
+  }, [url, intervalMs]);
 
   return state;
 }
@@ -112,18 +112,33 @@ const STATUS_TEXT: Record<number, string> = {
   504: "Gateway Timeout",
 };
 
-/** e.g. "API: 200 OK", "API: 502 Bad Gateway", "API unreachable". */
-export function healthLabel({ status, code }: ApiHealthState): string {
-  if (status === "checking") return "Checking API status";
-  if (code === null) return "API unreachable";
+/** e.g. "API: 200 OK", "MCP: 503 Service Unavailable", "API unreachable". */
+export function healthLabel(name: string, { status, code }: ApiHealthState): string {
+  if (status === "checking") return `Checking ${name} status`;
+  if (code === null) return `${name} unreachable`;
 
   const text = STATUS_TEXT[code];
-  return text ? `API: ${code} ${text}` : `API: ${code}`;
+  return text ? `${name}: ${code} ${text}` : `${name}: ${code}`;
 }
 
-export function healthDetail({ status, code }: ApiHealthState): string {
-  if (status === "checking") return "Asking /api/health…";
-  if (code === null) return "/api/health did not respond";
-  if (status === "up") return "All endpoints reachable";
-  return `/api/health returned ${code}`;
+export function healthDetail(
+  url: string,
+  upText: string,
+  { status, code }: ApiHealthState,
+): string {
+  if (status === "checking") return `Asking ${url}…`;
+  if (code === null) return `${url} did not respond`;
+  if (status === "up") return upText;
+  return `${url} returned ${code}`;
+}
+
+/**
+ * One state for several checks: down if any is down, checking until all have
+ * answered, up only when everything is. The pill has one dot, so it has to
+ * show the worst case.
+ */
+export function combinedHealth(states: ApiHealthState[]): ApiHealth {
+  if (states.some((state) => state.status === "down")) return "down";
+  if (states.some((state) => state.status === "checking")) return "checking";
+  return "up";
 }

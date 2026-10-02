@@ -158,6 +158,14 @@ export function ApiInfoDialog({ siteHost, rateLimit }: ApiInfoDialogProps) {
             </p>
           </Section>
 
+          <Section title="From an agent">
+            <p>
+              Everything here is also an MCP server at <Code>{siteHost}/mcp</Code>, so an
+              agent can call the tools directly. The MCP button in the navbar has the setup
+              for each client.
+            </p>
+          </Section>
+
           <Section title="From a browser">
             <p>
               CORS is open (<Code>Access-Control-Allow-Origin: *</Code>), so you can

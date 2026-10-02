@@ -4,6 +4,7 @@ import { Terminal } from "lucide-react";
 import { AboutDialog } from "@/components/about-dialog";
 import { ApiInfoDialog } from "@/components/api-info-dialog";
 import { DynamicIsland } from "@/components/island/dynamic-island";
+import { McpDialog } from "@/components/mcp-dialog";
 import { describeWindow, rateLimitConfig } from "@/lib/api/rate-limit-config";
 import { SITE_HOST } from "@/lib/site";
 
@@ -40,6 +41,7 @@ export function SiteNavbar() {
             siteHost={SITE_HOST}
             rateLimit={{ max: limit.max, window: describeWindow(limit.windowSec) }}
           />
+          <McpDialog rateLimit={{ max: limit.max, window: describeWindow(limit.windowSec) }} />
         </div>
       </nav>
     </header>

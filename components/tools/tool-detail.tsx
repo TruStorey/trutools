@@ -2,12 +2,13 @@
 
 import { AppWindow, Check, Copy, Terminal } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 
 import { useIsland } from "@/components/island/island-provider";
 import { CodeBlock } from "@/components/tools/code-block";
 import { ToolIcon } from "@/components/tools/icon-map";
 import { LanguageIcon } from "@/components/tools/language-icon";
+import { PillGroup } from "@/components/tools/pill-group";
 import { ToolPanelFor } from "@/components/tools/panels";
 import type { ToolView } from "@/components/tools/view-toggle";
 import { Button } from "@/components/ui/button";
@@ -23,49 +24,9 @@ import {
   type OutputShape,
   type SnippetLanguage,
 } from "@/lib/tools/snippets";
-import { cn } from "@/lib/utils";
 
 /** The small caption that sits above each section of the API tab. */
 const FIELD_LABEL = "block text-[0.7rem] text-muted-foreground/70";
-
-/** A row of small pills used for both the language and the format choice. */
-function PillGroup<T extends string>({
-  label,
-  options,
-  value,
-  onChange,
-}: {
-  label: string;
-  options: { value: T; label: string; icon?: ReactNode }[];
-  value: T;
-  onChange: (value: T) => void;
-}) {
-  return (
-    <div role="radiogroup" aria-label={label} className="flex flex-wrap gap-1">
-      {options.map((option) => {
-        const selected = option.value === value;
-        return (
-          <button
-            key={option.value}
-            type="button"
-            role="radio"
-            aria-checked={selected}
-            onClick={() => onChange(option.value)}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-              selected
-                ? "bg-foreground/90 text-background"
-                : "border border-white/15 bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground dark:bg-black/20 dark:hover:bg-black/30",
-            )}
-          >
-            {option.icon}
-            {option.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 
 /** The API reference tab: a snippet in your language, the parameters, the caveats. */
 function ApiTab({ tool }: { tool: Tool }) {
@@ -156,6 +117,7 @@ function ApiTab({ tool }: { tool: Tool }) {
           {tool.api.method} /{toolPath(tool)}
         </p>
       </div>
+
 
       {tool.api.params.length > 0 ? (
         <div className="space-y-2">

@@ -9,9 +9,10 @@ import { cn } from "@/lib/utils";
 
 import { useIsland, type IslandVariant } from "./island-provider";
 import {
+  combinedHealth,
   healthDetail,
   healthLabel,
-  useApiHealth,
+  useHealth,
   type ApiHealth,
   type ApiHealthState,
 } from "./use-api-health";
@@ -41,6 +42,14 @@ const VARIANT_STYLES: Record<IslandVariant, { icon: typeof Info; tint: string }>
   loading: { icon: LoaderCircle, tint: "text-amber-400" },
 };
 
+/** The two front doors the pill reports on. */
+type Check = { name: string; url: string; upText: string; state: ApiHealthState };
+
+/** Both checks in one screen-reader sentence, e.g. "API: 200 OK. MCP: 200 OK." */
+function checksLabel(checks: Check[]): string {
+  return checks.map((check) => `${healthLabel(check.name, check.state)}.`).join(" ");
+}
+
 const HEALTH_DOT: Record<ApiHealth, string> = {
   checking: "bg-white/40",
   up: "bg-emerald-400",
@@ -48,37 +57,40 @@ const HEALTH_DOT: Record<ApiHealth, string> = {
   down: "bg-rose-500 animate-pulse motion-reduce:animate-none",
 };
 
-function IdlePill({ health }: { health: ApiHealthState }) {
+function IdlePill({ checks }: { checks: Check[] }) {
+  const status = combinedHealth(checks.map((check) => check.state));
+
   return (
     <div className="flex items-center gap-2 px-4 py-1.5">
       {/* No `title` here — the native tooltip would race the glass one. */}
-      <span
-        className={cn("size-1.5 shrink-0 rounded-full", HEALTH_DOT[health.status])}
-        aria-hidden
-      />
+      <span className={cn("size-1.5 shrink-0 rounded-full", HEALTH_DOT[status])} aria-hidden />
       <span className="font-mono text-xs tracking-[0.2em] text-white/70 select-none">
-        API STATUS
+        TOOLS STATUS
       </span>
-      <span className="sr-only">{healthLabel(health)}</span>
+      <span className="sr-only">{checksLabel(checks)}</span>
     </div>
   );
 }
 
-/** What the glass tooltip shows on hover: the status code, spelled out. */
-function HealthTooltip({ health }: { health: ApiHealthState }) {
+/** What the glass tooltip shows on hover: each status code, spelled out. */
+function HealthTooltip({ checks }: { checks: Check[] }) {
   return (
-    <div className="flex items-start gap-2">
-      <span
-        className={cn("mt-1 size-1.5 shrink-0 rounded-full", HEALTH_DOT[health.status])}
-        aria-hidden
-      />
-      <div className="space-y-0.5">
-        <p className="font-medium">{healthLabel(health)}</p>
-        <p className="text-muted-foreground">{healthDetail(health)}</p>
-        <p className="pt-0.5 font-mono text-[0.65rem] text-muted-foreground/70">
-          checked every 30s
-        </p>
-      </div>
+    <div className="space-y-2">
+      {checks.map((check) => (
+        <div key={check.name} className="flex items-start gap-2">
+          <span
+            className={cn("mt-1 size-1.5 shrink-0 rounded-full", HEALTH_DOT[check.state.status])}
+            aria-hidden
+          />
+          <div className="space-y-0.5">
+            <p className="font-medium">{healthLabel(check.name, check.state)}</p>
+            <p className="text-muted-foreground">
+              {healthDetail(check.url, check.upText, check.state)}
+            </p>
+          </div>
+        </div>
+      ))}
+      <p className="font-mono text-[0.65rem] text-muted-foreground/70">checked every 30s</p>
     </div>
   );
 }
@@ -88,7 +100,12 @@ export function DynamicIsland({ className }: { className?: string }) {
   const shouldReduceMotion = useReducedMotion();
   // Polled here rather than inside IdlePill: the pill unmounts on every toast,
   // which would restart the poll each time a message came and went.
-  const health = useApiHealth();
+  const api = useHealth("/api/health");
+  const mcp = useHealth("/api/health/mcp");
+  const checks: Check[] = [
+    { name: "API", url: "/api/health", upText: "All endpoints reachable", state: api },
+    { name: "MCP", url: "/api/health/mcp", upText: "tools/list answered", state: mcp },
+  ];
 
   const view = current ? current.id : "idle";
   const bounce = current ? BOUNCE.toMessage : BOUNCE.toIdle;
@@ -108,7 +125,7 @@ export function DynamicIsland({ className }: { className?: string }) {
       */}
       <TooltipTrigger
         render={<div className="mx-auto w-fit" />}
-        aria-label={healthLabel(health)}
+        aria-label={checksLabel(checks)}
       >
         <motion.div
           layout
@@ -185,7 +202,7 @@ export function DynamicIsland({ className }: { className?: string }) {
                     </div>
                   </div>
                 ) : (
-                  <IdlePill health={health} />
+                  <IdlePill checks={checks} />
                 )}
               </motion.div>
             </AnimatePresence>
@@ -194,7 +211,7 @@ export function DynamicIsland({ className }: { className?: string }) {
       </TooltipTrigger>
 
       <GlassTooltipContent side="bottom" sideOffset={10}>
-        <HealthTooltip health={health} />
+        <HealthTooltip checks={checks} />
       </GlassTooltipContent>
     </Tooltip>
   );
