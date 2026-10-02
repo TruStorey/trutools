@@ -100,6 +100,7 @@ function ApiTab({ tool }: { tool: Tool }) {
             <Button
               variant="ghost"
               size="xs"
+              data-ui="copy"
               onClick={copy}
               aria-label={`Copy the ${LANGUAGE_LABELS[language]} snippet`}
               className="border border-white/10 bg-black/30 backdrop-blur-sm hover:bg-black/50"
@@ -159,7 +160,10 @@ function ApiTab({ tool }: { tool: Tool }) {
         </p>
       ) : null}
 
-      <div className="flex items-start gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-muted-foreground">
+      <div
+        data-ui="well"
+        className="flex items-start gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-muted-foreground"
+      >
         <Terminal className="mt-0.5 size-3.5 shrink-0" aria-hidden />
         <div className="space-y-1">
           <p>
@@ -195,9 +199,18 @@ export function ToolDetail({
   return (
     // Same pure-CSS `liquid` glass as the cards, so the panel reads as part of
     // the same surface rather than a plain box that opened underneath them.
-    <GlassCard glassVariant="liquid" className="gap-0 rounded-2xl p-5 py-5">
+    <GlassCard
+      glassVariant="liquid"
+      data-surface="panel"
+      // Tinted and Sticky colour the panel by its section (globals.css).
+      data-section={tool.section}
+      className="gap-0 rounded-2xl p-5 py-5"
+    >
       <div className="mb-4 flex items-start gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-foreground/8 text-foreground/80">
+        <span
+          data-ui="icon-chip"
+          className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-foreground/8 text-foreground/80"
+        >
           <ToolIcon name={tool.icon} className="size-4.5" />
         </span>
 
@@ -216,6 +229,7 @@ export function ToolDetail({
         */}
         <button
           type="button"
+          data-ui="chip"
           onClick={() => onViewChange(showingTool ? "api" : "tool")}
           aria-label={
             showingTool

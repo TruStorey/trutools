@@ -220,6 +220,7 @@ function CopyButton({ text, title, label }: { text: string; title: string; label
     <Button
       variant="ghost"
       size="xs"
+      data-ui="copy"
       onClick={copy}
       aria-label={label}
       className="border border-white/10 bg-black/30 backdrop-blur-sm hover:bg-black/50"

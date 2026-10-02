@@ -122,7 +122,7 @@ export function SubnetSplitterPanel() {
 
       {parsed.value ? (
         <>
-          <div className="overflow-x-auto rounded-lg border border-white/10 bg-black/15 backdrop-blur-sm dark:bg-black/25">
+          <div data-ui="well" className="overflow-x-auto rounded-lg border border-white/10 bg-black/15 backdrop-blur-sm dark:bg-black/25">
             <table className="w-full border-collapse font-mono text-xs">
               <thead>
                 <tr className="border-b border-white/10 text-muted-foreground">

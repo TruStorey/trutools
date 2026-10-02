@@ -17,6 +17,14 @@ export function ToolSearch({ value, onChange, resultCount, totalCount }: ToolSea
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
+      // ⌘K / Ctrl+K works from anywhere, even mid-typing.
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        inputRef.current?.focus();
+        inputRef.current?.select();
+        return;
+      }
+
       if (event.key !== "/") return;
 
       // Don't steal the keystroke from someone already typing somewhere.
@@ -49,6 +57,7 @@ export function ToolSearch({ value, onChange, resultCount, totalCount }: ToolSea
         <GlassInput
           ref={inputRef}
           glassVariant="frosted"
+          data-surface="input"
           type="search"
           value={value}
           onChange={(event) => onChange(event.target.value)}
@@ -75,7 +84,10 @@ export function ToolSearch({ value, onChange, resultCount, totalCount }: ToolSea
             <X className="size-4" />
           </button>
         ) : (
-          <kbd className="pointer-events-none absolute top-1/2 right-3 z-10 hidden -translate-y-1/2 rounded border border-border/60 bg-background/60 px-1.5 py-0.5 font-mono text-[0.7rem] text-muted-foreground sm:block">
+          <kbd
+            data-ui="kbd"
+            className="pointer-events-none absolute top-1/2 right-3 z-10 hidden -translate-y-1/2 rounded border border-border/60 bg-background/60 px-1.5 py-0.5 font-mono text-[0.7rem] text-muted-foreground sm:block"
+          >
             /
           </kbd>
         )}

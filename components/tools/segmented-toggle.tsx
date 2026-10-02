@@ -38,6 +38,7 @@ export function SegmentedToggle<T extends string>({
     <div
       role="radiogroup"
       aria-label={label}
+      data-ui="segmented"
       className="inline-flex items-center gap-1 rounded-xl border border-white/15 bg-white/5 p-1 dark:bg-black/20"
     >
       {options.map((option) => {
@@ -66,6 +67,7 @@ export function SegmentedToggle<T extends string>({
             {selected ? (
               <motion.span
                 layoutId={layoutId}
+                data-ui="indicator"
                 className="absolute inset-0 rounded-lg bg-foreground/90"
                 transition={
                   shouldReduceMotion

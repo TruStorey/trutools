@@ -3,9 +3,11 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 import { IslandProvider } from "@/components/island/island-provider";
+import { SiteStyleProvider } from "@/components/site-style/site-style-provider";
 import { SiteNavbar } from "@/components/site-navbar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SITE_URL } from "@/lib/site";
+import { DEFAULT_STYLE, SITE_STYLE_SCRIPT } from "@/lib/site-style";
 
 // globals.css maps --color-* onto --font-sans / --font-geist-mono, so the CSS
 // variable names here have to match what @theme inline expects.
@@ -44,14 +46,22 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       className={`dark ${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      data-style={DEFAULT_STYLE}
+      // The pre-paint script below swaps data-style for the stored choice.
+      suppressHydrationWarning
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: SITE_STYLE_SCRIPT }} />
+      </head>
       <body className="flex min-h-full flex-col">
         {/* delay so the tooltip does not flash when the cursor merely
             crosses the island on its way somewhere else. */}
         <TooltipProvider delay={250}>
           <IslandProvider>
-            <SiteNavbar />
-            <main className="flex-1">{children}</main>
+            <SiteStyleProvider>
+              <SiteNavbar />
+              <main className="flex-1">{children}</main>
+            </SiteStyleProvider>
           </IslandProvider>
         </TooltipProvider>
       </body>

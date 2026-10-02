@@ -35,14 +35,14 @@ export function TextControl({
   className,
   ...props
 }: React.ComponentProps<"input">) {
-  return <input className={cn(CONTROL_CLASS, "font-mono", className)} {...props} />;
+  return <input data-ui="control" className={cn(CONTROL_CLASS, "font-mono", className)} {...props} />;
 }
 
 export function SelectControl({
   className,
   ...props
 }: React.ComponentProps<"select">) {
-  return <select className={cn(CONTROL_CLASS, "cursor-pointer", className)} {...props} />;
+  return <select data-ui="control" className={cn(CONTROL_CLASS, "cursor-pointer", className)} {...props} />;
 }
 
 export function TextAreaControl({
@@ -51,6 +51,7 @@ export function TextAreaControl({
 }: React.ComponentProps<"textarea">) {
   return (
     <textarea
+      data-ui="control"
       spellCheck={false}
       className={cn(
         "min-h-32 w-full resize-y rounded-lg border border-white/15 bg-white/10 p-3 font-mono text-xs leading-relaxed outline-none transition-colors focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/30 dark:bg-black/20",
@@ -82,6 +83,7 @@ export function Segmented<T extends string | number>({
       <div
         role="radiogroup"
         aria-label={label}
+        data-ui="segmented"
         className="inline-flex w-fit rounded-lg border border-white/15 bg-white/10 p-0.5 dark:bg-black/20"
       >
         {options.map((option) => {
@@ -92,6 +94,7 @@ export function Segmented<T extends string | number>({
               type="button"
               role="radio"
               aria-checked={selected}
+              data-ui="segment"
               onClick={() => onChange(option.value)}
               className={cn(
                 "rounded-[7px] px-2.5 py-1 text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",

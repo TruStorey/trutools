@@ -1,7 +1,9 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
+import type { PointerEvent } from "react";
 
+import { useSiteStyle } from "@/components/site-style/site-style-provider";
 import { ToolIcon } from "@/components/tools/icon-map";
 import { GlassCard } from "@/components/ui/glasscn/glass-card";
 import { toolPath, type Tool } from "@/lib/tools/registry";
@@ -16,11 +18,26 @@ type ToolCardProps = {
 };
 
 /**
+ * Feeds the Spotlight style's pointer-centred glow (see globals.css). A no-op
+ * visually in every other style, so it is only attached in that one.
+ */
+function trackPointer(event: PointerEvent<HTMLElement>) {
+  const rect = event.currentTarget.getBoundingClientRect();
+  event.currentTarget.style.setProperty("--mx", `${event.clientX - rect.left}px`);
+  event.currentTarget.style.setProperty("--my", `${event.clientY - rect.top}px`);
+}
+
+/**
  * A card is just the trigger. The tool itself renders in <ToolDetail>, which
  * the grid inserts as a full-width row beneath this card's row — a 1/4-width
  * column is far too narrow for a subnet readout or a private key.
+ *
+ * Always a GlassCard in the markup: the other site styles restyle it from
+ * globals.css via data-surface, so the look is right before hydration.
  */
 export function ToolCard({ tool, expanded, onToggle, id }: ToolCardProps) {
+  const { style } = useSiteStyle();
+
   return (
     /*
       `liquid` is a pure-CSS glass variant. The `liquid-refract` default renders
@@ -30,6 +47,11 @@ export function ToolCard({ tool, expanded, onToggle, id }: ToolCardProps) {
     <GlassCard
       id={id}
       glassVariant="liquid"
+      data-surface="card"
+      data-expanded={expanded || undefined}
+      // Tinted style colours each card by its section (globals.css).
+      data-section={tool.section}
+      onPointerMove={style === "spotlight" ? trackPointer : undefined}
       className={cn(
         "glance glance-opacity-14 h-full gap-0 rounded-2xl py-0 transition-shadow",
         expanded && "ring-2 ring-ring/40",
@@ -40,10 +62,13 @@ export function ToolCard({ tool, expanded, onToggle, id }: ToolCardProps) {
         onClick={onToggle}
         aria-expanded={expanded}
         aria-controls={`tool-detail-${tool.id}`}
-        className="flex h-full w-full flex-col items-start gap-1.5 rounded-2xl p-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset"
+        className="relative z-2 flex h-full w-full flex-col items-start gap-1.5 rounded-[inherit] p-3 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring/60 focus-visible:ring-inset"
       >
         <span className="flex w-full items-center gap-2">
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-foreground/8 text-foreground/80">
+          <span
+            data-ui="icon-chip"
+            className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-foreground/8 text-foreground/80"
+          >
             <ToolIcon name={tool.icon} className="size-3.5" />
           </span>
 
@@ -71,7 +96,10 @@ export function ToolCard({ tool, expanded, onToggle, id }: ToolCardProps) {
 
         {/* mt-auto pins it to the bottom, so paths line up across a row even
             when one description wraps and its neighbour does not. */}
-        <span className="mt-auto truncate pt-0.5 font-mono text-[11px] text-foreground/50">
+        <span
+          data-ui="path"
+          className="mt-auto truncate pt-0.5 font-mono text-[11px] text-foreground/50"
+        >
           /{toolPath(tool)}
         </span>
       </button>
