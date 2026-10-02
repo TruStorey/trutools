@@ -147,8 +147,7 @@ export function AboutDialog() {
 
           <Section title="The Philosophy">
             <p>
-              Free forever, and as simple as possible. As the saying goes
-              &ldquo;Keep It Simple Stupid&rdquo;.
+              Free and simple forever.
             </p>
           </Section>
 
