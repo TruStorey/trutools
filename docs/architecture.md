@@ -27,6 +27,8 @@ lib/tools/
 lib/mcp/
   server.ts           the registry, registered as MCP tools
 
+lib/site-style.ts     the site styles, and the pre-paint script that applies one
+
 lib/api/
   tool-route.ts       shared dispatch for both API paths
   handlers.ts         query-param parsing, one entry per tool
@@ -49,6 +51,10 @@ app/
 components/tools/
   panels/             the interactive UI, grouped by section
   icon-map.tsx        string key -> lucide component
+
+components/site-style/
+  site-style-provider.tsx  the chosen style, for the parts React has to know
+  style-switcher.tsx       the palette menu in the navbar
 
 proxy.ts              rewrites /<verb>/<tool> onto /api/v1/<verb>/<tool>
 ```
@@ -263,3 +269,10 @@ which would spend the visitor's own rate limit on every poll.
 Glass styling comes from [`@glasscn`](https://glasscn-components.vercel.app),
 which is built on **Base UI**, not Radix — worth knowing before reaching for a
 Radix-shaped API in a component.
+
+The other nine site styles do not change the markup. They restyle it from
+`app/globals.css`, keyed on a `data-style` attribute that an inline script sets
+before first paint, and find their way in through `data-surface` and `data-ui`
+hooks on the elements. A new piece of UI that should follow the styles needs
+the matching hook. [styles.md](styles.md) has the hooks, the palette variables
+and the gotchas.

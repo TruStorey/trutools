@@ -178,6 +178,11 @@ Some specifics:
   it.
 - Plain-text output is the primary format. If it doesn't read well in a
   terminal, it isn't finished.
+- New UI should follow the site styles. Reuse the existing pieces
+  (`PillGroup`, `Segmented`, `CodeBlock`, the `controls.tsx` inputs), which
+  already carry the `data-ui` hooks the styles key on. If you build something
+  new, add the matching hook and look at it in a few styles, not just Glass.
+  See [`docs/styles.md`](docs/styles.md).
 
 ## Commits
 
