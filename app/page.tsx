@@ -10,7 +10,7 @@ export default function Home() {
         </h1>
         <p className="text-muted-foreground">
           A collection of tools to make the fiddly stuff less, well fiddly. All tools are
-          available via an API, MCP Server or directly in the Browser. No account needed.
+          available via an API, MCP Server or directly in the Browser. No account needed, forever..
         </p>
       </div>
 
