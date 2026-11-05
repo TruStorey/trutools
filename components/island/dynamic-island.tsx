@@ -129,6 +129,7 @@ export function DynamicIsland({ className }: { className?: string }) {
       >
         <motion.div
           layout
+          data-ui="island"
           className={cn(
             "w-fit min-w-[132px] cursor-default overflow-hidden bg-black shadow-lg",
             "ring-1 ring-white/10",
@@ -190,7 +191,9 @@ export function DynamicIsland({ className }: { className?: string }) {
                           "animate-spin motion-reduce:animate-none",
                       )}
                     />
-                    <div className="min-w-0">
+                    {/* Same face as the idle "TOOLS STATUS" label, so the
+                        island reads as one voice whichever state it is in. */}
+                    <div className="min-w-0 font-mono">
                       <p className="truncate text-sm leading-tight font-medium text-white">
                         {current.title}
                       </p>

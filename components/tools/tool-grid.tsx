@@ -130,6 +130,7 @@ function Caption({ label }: { label: string }) {
   return (
     <span
       aria-hidden
+      data-ui="caption"
       className="text-[0.65rem] font-medium tracking-[0.2em] whitespace-nowrap text-muted-foreground uppercase select-none lg:absolute lg:bottom-full lg:mb-1.5"
     >
       {label}
@@ -309,6 +310,8 @@ export function ToolGrid({ tools, sections, verbs, showGroupToggle = true }: Too
               <div className="mb-4">
                 <h2
                   id={`section-${group.id}`}
+                  data-ui="section-title"
+                  data-section={group.id}
                   className="text-sm font-semibold tracking-wider text-foreground/70 uppercase"
                 >
                   {group.name}

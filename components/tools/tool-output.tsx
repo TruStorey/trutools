@@ -62,7 +62,12 @@ export function ToolOutput({
         <span className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
           Output
         </span>
-        <Button variant="ghost" size="xs" onClick={() => copy(everything, "Copied all output")}>
+        <Button
+          variant="ghost"
+          size="xs"
+          data-ui="copy"
+          onClick={() => copy(everything, "Copied all output")}
+        >
           {copied ? <Check /> : <Copy />}
           {copied ? "Copied" : "Copy all"}
         </Button>
@@ -80,6 +85,7 @@ export function ToolOutput({
                 type="button"
                 onClick={() => copy(line)}
                 aria-label={`Copy value ${index + 1}`}
+                data-ui="copy-icon"
                 className="shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
               >
                 <Copy className="size-3.5" />
@@ -90,7 +96,7 @@ export function ToolOutput({
       ) : null}
 
       {result.kind === "fields" ? (
-        <dl className="divide-y divide-white/10 overflow-hidden rounded-lg border border-white/10 bg-black/15 backdrop-blur-sm dark:bg-black/25">
+        <dl data-ui="well" className="divide-y divide-white/10 overflow-hidden rounded-lg border border-white/10 bg-black/15 backdrop-blur-sm dark:bg-black/25">
           {result.fields.map((field) => (
             <div
               key={field.label}
@@ -107,7 +113,8 @@ export function ToolOutput({
                   type="button"
                   onClick={() => copy(field.value, `Copied ${field.label.toLowerCase()}`)}
                   aria-label={`Copy ${field.label}`}
-                  className="shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
+                  data-ui="copy-icon"
+                className="shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:outline-none"
                 >
                   <Copy className="size-3.5" />
                 </button>
@@ -118,7 +125,7 @@ export function ToolOutput({
       ) : null}
 
       {result.kind === "rows" ? (
-        <div className="overflow-x-auto rounded-lg border border-white/10 bg-black/15 backdrop-blur-sm dark:bg-black/25">
+        <div data-ui="well" className="overflow-x-auto rounded-lg border border-white/10 bg-black/15 backdrop-blur-sm dark:bg-black/25">
           <table className="w-full border-collapse font-mono text-xs">
             <thead>
               <tr className="border-b border-white/10">
@@ -154,7 +161,7 @@ export function ToolOutput({
       ) : null}
 
       {result.kind === "text" ? (
-        <pre className="max-h-80 overflow-auto rounded-lg border border-white/10 bg-black/15 p-3 font-mono text-xs leading-relaxed backdrop-blur-sm dark:bg-black/25">
+        <pre data-ui="well" className="max-h-80 overflow-auto rounded-lg border border-white/10 bg-black/15 p-3 font-mono text-xs leading-relaxed backdrop-blur-sm dark:bg-black/25">
           <code>{result.text}</code>
         </pre>
       ) : null}

@@ -36,8 +36,8 @@ export default async function VerbPage({ params }: PageProps) {
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16">
       <div className="mx-auto mb-10 max-w-2xl space-y-3 text-center">
-        <h1 className="font-mono text-3xl font-semibold tracking-tight sm:text-4xl">
-          /{found.id}
+        <h1 className="hero-title font-mono text-3xl font-semibold tracking-tight sm:text-4xl">
+          /<span className="hero-accent">{found.id}</span>
         </h1>
         <p className="text-muted-foreground">{found.description}</p>
         <p className="text-sm">

@@ -26,6 +26,7 @@ export function PillGroup<T extends string>({
             type="button"
             role="radio"
             aria-checked={selected}
+            data-ui="pill"
             onClick={() => onChange(option.value)}
             className={cn(
               "inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",

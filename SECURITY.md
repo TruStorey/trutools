@@ -89,8 +89,8 @@ connection problems. An error thrown deep inside a parser could in principle
 carry a fragment of the input in its message, so this is "not logged on
 purpose", not a cryptographic guarantee. There is no analytics and no request
 body persistence. The site sets **no cookies at all** — the only thing it keeps
-in your browser is the light/dark preference, in `localStorage`, via
-`next-themes`.
+in your browser is which site style you picked, in `localStorage` under
+`trutools:style`. It is never sent anywhere.
 
 **What Redis stores.** One sorted set per caller IP, holding the timestamps of
 that IP's recent requests, expiring after the rate limit window (60 seconds by

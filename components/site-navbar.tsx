@@ -5,6 +5,7 @@ import { AboutDialog } from "@/components/about-dialog";
 import { ApiInfoDialog } from "@/components/api-info-dialog";
 import { DynamicIsland } from "@/components/island/dynamic-island";
 import { McpDialog } from "@/components/mcp-dialog";
+import { StyleSwitcher } from "@/components/site-style/style-switcher";
 import { describeWindow, rateLimitConfig } from "@/lib/api/rate-limit-config";
 import { SITE_HOST } from "@/lib/site";
 
@@ -14,7 +15,7 @@ export function SiteNavbar() {
   const limit = rateLimitConfig();
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-background/50 backdrop-blur-xl backdrop-saturate-150">
+    <header data-ui="navbar" className="sticky top-0 z-50 border-b border-white/10 bg-background/50 backdrop-blur-xl backdrop-saturate-150">
       {/*
         Three columns with an `auto` middle: the island grows and shrinks as
         toasts come and go, and the 1fr side columns absorb the change so the
@@ -24,6 +25,7 @@ export function SiteNavbar() {
         <div className="flex items-center">
           <Link
             href="/"
+            data-ui="wordmark"
             className="flex items-center gap-2 rounded-lg px-1 py-1 outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           >
             <Terminal className="size-5 text-foreground/80" aria-hidden />
@@ -42,6 +44,7 @@ export function SiteNavbar() {
             rateLimit={{ max: limit.max, window: describeWindow(limit.windowSec) }}
           />
           <McpDialog rateLimit={{ max: limit.max, window: describeWindow(limit.windowSec) }} />
+          <StyleSwitcher />
         </div>
       </nav>
     </header>

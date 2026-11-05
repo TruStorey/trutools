@@ -146,7 +146,7 @@ export function SubnetPlannerPanel() {
 
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
         <code className="font-mono">need={need || "…"}</code>
-        <Button variant="ghost" size="xs" onClick={copyCurl} disabled={!need}>
+        <Button variant="ghost" size="xs" data-ui="copy" onClick={copyCurl} disabled={!need}>
           {copied ? <Check /> : <Copy />}
           {copied ? "Copied" : "Copy as curl"}
         </Button>

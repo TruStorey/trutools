@@ -113,6 +113,44 @@
     @apply font-sans;
   }
 
+  /* Thin, translucent scrollbars for the scrolling boxes inside the page
+     (code blocks, result tables, outputs). The page's own scrollbar is left
+     to the browser. Standard properties first; Chromium and Firefox use them. */
+  body * {
+    scrollbar-width: thin;
+    scrollbar-color: oklch(1 0 0 / 0.18) transparent;
+  }
+
+  body *:hover {
+    scrollbar-color: oklch(1 0 0 / 0.32) transparent;
+  }
+
+  /* Safari has no scrollbar-color yet, so it falls back to the WebKit
+     pseudo-elements. Chromium ignores these once scrollbar-color is set. */
+  @supports not (scrollbar-color: auto) {
+    body *::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    body *::-webkit-scrollbar-track,
+    body *::-webkit-scrollbar-corner {
+      background: transparent;
+    }
+
+    /* A transparent border plus padding-box clip leaves a gap around the
+       thumb, so it floats inside the box's rounded edge. */
+    body *::-webkit-scrollbar-thumb {
+      background: oklch(1 0 0 / 0.18) padding-box;
+      border: 2px solid transparent;
+      border-radius: 9999px;
+    }
+
+    body *::-webkit-scrollbar-thumb:hover {
+      background-color: oklch(1 0 0 / 0.32);
+    }
+  }
+
   /* Glass surfaces need something behind them to refract, otherwise every
      card reads as flat grey. This is a fixed ambient mesh that scrolls
      independently of content. */
@@ -177,4 +215,1605 @@
 
 @utility glance-angle-* {
     --glance-angle: calc(--value(number) * 1deg);
+}
+
+/*
+  ─── Site styles ───────────────────────────────────────────────────────────
+  The style switcher sets data-style on <html> (the pre-paint script in
+  layout.tsx sets it before first paint). Markup never changes by style:
+  tool surfaces carry data-surface="card|panel|input" and the surrounding UI
+  carries data-ui="…" hooks. These rules are deliberately *unlayered* so they
+  beat the Tailwind utility classes without !important.
+
+  `glass` has no rules here at all — it is the markup's own look.
+
+  Each style sets a small palette of --ui-* variables; the shared block below
+  applies them to the navbar, island, toggles, pills, form controls, code
+  wells, popovers and scrollbars. Per-style sections then add what a palette
+  cannot express (shapes, fonts, glows).
+*/
+
+/* ── Shared: tool surfaces ── */
+:root:not([data-style="glass"]) [data-surface] {
+  backdrop-filter: none;
+  animation: none;
+  background-image: none;
+  will-change: auto;
+}
+
+:root:not([data-style="glass"]) [data-surface="card"]::after {
+  display: none;
+}
+
+:root:not([data-style="glass"]) .hero-accent {
+  background-image: linear-gradient(100deg, oklch(0.82 0.12 250), oklch(0.8 0.14 320) 55%, oklch(0.85 0.1 190));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* ── Shared: the rest of the UI, driven by --ui-* ── */
+:root:not([data-style="glass"]) [data-ui="navbar"] {
+  background-color: var(--ui-bar);
+  border-bottom-color: var(--ui-bar-border);
+}
+
+:root:not([data-style="glass"]) [data-ui="island"] {
+  background: var(--ui-island);
+  color: var(--ui-island-fg);
+  box-shadow: var(--ui-island-shadow);
+}
+
+:root:not([data-style="glass"]) [data-ui="island"] .text-white {
+  color: var(--ui-island-fg);
+}
+
+:root:not([data-style="glass"]) [data-ui="island"] :is(.text-white\/60, .text-white\/70) {
+  color: color-mix(in oklab, var(--ui-island-fg) 68%, transparent);
+}
+
+:root:not([data-style="glass"]) [data-ui="segmented"] {
+  background-color: var(--ui-surface);
+  border-color: var(--ui-border);
+  border-radius: var(--ui-radius);
+}
+
+:root:not([data-style="glass"]) :is([data-ui="indicator"], [data-ui="segment"][aria-checked="true"], [data-ui="pill"][aria-checked="true"]) {
+  background: var(--ui-accent);
+  color: var(--ui-accent-fg);
+  border-radius: var(--ui-radius-inner);
+}
+
+:root:not([data-style="glass"]) [data-ui="segmented"] [aria-checked="true"] {
+  color: var(--ui-accent-fg);
+}
+
+:root:not([data-style="glass"]) :is([data-ui="pill"][aria-checked="false"], [data-ui="chip"], [data-ui="kbd"]) {
+  background-color: var(--ui-control);
+  border-color: var(--ui-control-border);
+  border-radius: var(--ui-radius-inner);
+}
+
+:root:not([data-style="glass"]) [data-ui="control"] {
+  background-color: var(--ui-control);
+  border-color: var(--ui-control-border);
+  border-radius: var(--ui-radius-inner);
+}
+
+:root:not([data-style="glass"]) [data-ui="control"]:focus-visible {
+  border-color: var(--ui-focus);
+  background-color: var(--ui-control);
+}
+
+:root:not([data-style="glass"]) [data-ui="well"] {
+  background-color: var(--ui-well);
+  border-color: var(--ui-well-border);
+  border-radius: var(--ui-radius-inner);
+  backdrop-filter: none;
+}
+
+:root:not([data-style="glass"]) :is([data-slot="dialog-content"], [data-slot="select-content"], [data-slot="glass-tooltip-content"]) {
+  background: var(--ui-popover);
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-lg);
+  box-shadow: var(--ui-popover-shadow);
+  backdrop-filter: none;
+}
+
+:root:not([data-style="glass"]) [data-ui="section-title"] {
+  color: var(--ui-heading);
+}
+
+:root:not([data-style="glass"]) [data-ui="caption"] {
+  color: var(--ui-caption);
+}
+
+:root:not([data-style="glass"]) [data-ui="icon-chip"] {
+  background-color: var(--ui-chip);
+  color: var(--ui-chip-fg);
+}
+
+:root:not([data-style="glass"]) ::selection {
+  background-color: var(--ui-accent);
+  color: var(--ui-accent-fg);
+}
+
+:root:not([data-style="glass"]) body * {
+  scrollbar-color: var(--ui-scroll) transparent;
+}
+
+/* ═══ Spotlight ═══ violet light on near-black */
+:root[data-style="spotlight"] {
+  --ring: oklch(0.7 0.16 285);
+  --ui-bar: oklch(0.12 0.01 280 / 0.7);
+  --ui-bar-border: oklch(0.7 0.16 285 / 0.18);
+  --ui-island: oklch(0.1 0.01 280);
+  --ui-island-fg: oklch(0.97 0 0);
+  --ui-island-shadow: 0 0 0 1px oklch(0.7 0.16 285 / 0.35), 0 8px 30px -8px oklch(0.6 0.2 285 / 0.6);
+  --ui-surface: oklch(0.16 0.01 280 / 0.85);
+  --ui-border: oklch(1 0 0 / 0.1);
+  --ui-radius: 0.875rem;
+  --ui-radius-inner: 0.625rem;
+  --ui-radius-lg: 1rem;
+  --ui-accent: linear-gradient(135deg, oklch(0.68 0.18 280), oklch(0.66 0.2 320));
+  --ui-accent-fg: oklch(1 0 0);
+  --ui-control: oklch(0.13 0.01 280 / 0.9);
+  --ui-control-border: oklch(1 0 0 / 0.1);
+  --ui-focus: oklch(0.7 0.16 285);
+  --ui-well: oklch(0.1 0.01 280 / 0.9);
+  --ui-well-border: oklch(1 0 0 / 0.08);
+  --ui-popover: oklch(0.15 0.012 280 / 0.97);
+  --ui-popover-shadow: 0 0 0 1px oklch(0.7 0.16 285 / 0.12), 0 24px 60px -20px oklch(0.55 0.2 285 / 0.5);
+  --ui-heading: oklch(0.85 0.06 285);
+  --ui-caption: oklch(0.65 0.08 285);
+  --ui-chip: oklch(0.7 0.16 285 / 0.14);
+  --ui-chip-fg: oklch(0.88 0.08 285);
+  --ui-scroll: oklch(0.7 0.16 285 / 0.4);
+}
+
+:root[data-style="spotlight"] ::selection {
+  background: oklch(0.68 0.18 280);
+}
+
+:root[data-style="spotlight"] [data-ui="navbar"] {
+  /* A faint lit seam along the bottom edge. */
+  background-image: linear-gradient(90deg, transparent, oklch(0.7 0.16 285 / 0.5), transparent);
+  background-size: 100% 1px;
+  background-position: bottom;
+  background-repeat: no-repeat;
+}
+
+:root[data-style="spotlight"] [data-ui="section-title"]::before {
+  content: "";
+  display: inline-block;
+  width: 0.4rem;
+  height: 0.4rem;
+  margin-right: 0.5rem;
+  border-radius: 9999px;
+  vertical-align: middle;
+  background: oklch(0.72 0.17 285);
+  box-shadow: 0 0 10px oklch(0.72 0.17 285);
+}
+
+:root[data-style="spotlight"] [data-surface] {
+  position: relative;
+  background-color: oklch(0.21 0.008 265 / 0.85);
+  border: 1px solid oklch(1 0 0 / 0.07);
+  box-shadow: 0 1px 2px 0 oklch(0 0 0 / 0.5);
+  border-radius: 1rem;
+}
+
+:root[data-style="spotlight"] [data-surface="card"] {
+  background-image: radial-gradient(
+    320px circle at var(--mx, 50%) var(--my, -100%),
+    oklch(0.75 0.12 260 / 0.1),
+    transparent 60%
+  );
+}
+
+/* The lit border: a 1px ring masked down to the border box, painted with the
+   same pointer-centred gradient but much brighter. inset 0 rather than -1px:
+   the card clips its overflow, so the ring sits over the border. */
+:root[data-style="spotlight"] [data-surface="card"]::after {
+  display: block;
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  transform: none;
+  border-radius: inherit;
+  padding: 1px;
+  pointer-events: none;
+  background: radial-gradient(
+    220px circle at var(--mx, 50%) var(--my, -100%),
+    oklch(0.85 0.12 260 / 0.85),
+    oklch(0.75 0.14 320 / 0.35) 40%,
+    transparent 70%
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  opacity: 0;
+  transition: opacity 200ms;
+}
+
+:root[data-style="spotlight"] [data-surface="card"]:hover::after,
+:root[data-style="spotlight"] [data-surface="card"][data-expanded]::after {
+  opacity: 1;
+}
+
+:root[data-style="spotlight"] [data-surface="card"][data-expanded]::after {
+  background: linear-gradient(
+    135deg,
+    oklch(0.82 0.12 250 / 0.9),
+    oklch(0.78 0.15 320 / 0.6),
+    oklch(0.85 0.1 190 / 0.9)
+  );
+}
+
+:root[data-style="spotlight"] [data-surface="panel"] {
+  border-color: oklch(1 0 0 / 0.1);
+  box-shadow:
+    0 0 0 1px oklch(0.75 0.12 260 / 0.12),
+    0 20px 60px -20px oklch(0.55 0.19 265 / 0.35);
+}
+
+:root[data-style="spotlight"] [data-surface="input"] {
+  background-color: oklch(0.16 0.01 280 / 0.9);
+  border-color: oklch(1 0 0 / 0.1);
+}
+
+:root[data-style="spotlight"] [data-surface="input"]:focus-visible {
+  border-color: oklch(0.7 0.16 285 / 0.7);
+  box-shadow: 0 0 0 4px oklch(0.7 0.16 285 / 0.15), 0 0 30px -6px oklch(0.6 0.2 285 / 0.5);
+}
+
+:root[data-style="spotlight"] .hero-title {
+  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-style="spotlight"] [data-surface="card"]::after {
+    transition: none;
+  }
+}
+
+/* ═══ Clay ═══ soft lavender, everything rounded and raised */
+:root[data-style="clay"] {
+  --foreground: oklch(0.97 0.01 300);
+  --muted-foreground: oklch(0.78 0.03 290);
+  --ring: oklch(0.8 0.1 300);
+  --clay-raised:
+    inset 0 2px 1px 0 oklch(1 0 0 / 0.12),
+    inset 0 -6px 12px -4px oklch(0 0 0 / 0.35),
+    0 14px 28px -12px oklch(0 0 0 / 0.6);
+  --clay-pressed:
+    inset 0 4px 10px 0 oklch(0 0 0 / 0.4),
+    inset 0 -1px 0 0 oklch(1 0 0 / 0.08);
+  --ui-bar: oklch(0.24 0.03 285 / 0.75);
+  --ui-bar-border: transparent;
+  --ui-island: oklch(0.34 0.05 290);
+  --ui-island-fg: oklch(0.98 0.01 300);
+  --ui-island-shadow: var(--clay-raised);
+  --ui-surface: oklch(0.24 0.03 285);
+  --ui-border: transparent;
+  --ui-radius: 9999px;
+  --ui-radius-inner: 9999px;
+  --ui-radius-lg: 1.75rem;
+  --ui-accent: oklch(0.82 0.09 300);
+  --ui-accent-fg: oklch(0.25 0.05 290);
+  --ui-control: oklch(0.22 0.03 285);
+  --ui-control-border: transparent;
+  --ui-focus: oklch(0.82 0.09 300);
+  --ui-well: oklch(0.21 0.03 285);
+  --ui-well-border: transparent;
+  --ui-popover: oklch(0.3 0.03 285);
+  --ui-popover-shadow: var(--clay-raised);
+  --ui-heading: oklch(0.88 0.06 300);
+  --ui-caption: oklch(0.72 0.05 295);
+  --ui-chip: oklch(0.38 0.06 295);
+  --ui-chip-fg: oklch(0.95 0.03 300);
+  --ui-scroll: oklch(0.8 0.08 300 / 0.45);
+}
+
+:root[data-style="clay"] [data-ui="navbar"] {
+  box-shadow: 0 10px 30px -14px oklch(0 0 0 / 0.6);
+}
+
+:root[data-style="clay"] :is([data-ui="segmented"], [data-ui="control"], [data-ui="well"]) {
+  box-shadow: var(--clay-pressed);
+}
+
+/* Multi-line boxes cannot be pills. */
+:root[data-style="clay"] :is(textarea[data-ui="control"], [data-ui="well"]) {
+  border-radius: 1.25rem;
+}
+
+:root[data-style="clay"] :is([data-ui="indicator"], [data-ui="segment"][aria-checked="true"], [data-ui="pill"], [data-ui="chip"]) {
+  box-shadow: var(--clay-raised);
+}
+
+:root[data-style="clay"] [data-ui="pill"][aria-checked="false"],
+:root[data-style="clay"] [data-ui="chip"] {
+  background-color: oklch(0.32 0.04 290);
+}
+
+:root[data-style="clay"] [data-surface] {
+  background-color: oklch(0.29 0.02 280 / 0.92);
+  border: 0;
+  border-radius: 1.5rem;
+  box-shadow: var(--clay-raised);
+}
+
+:root[data-style="clay"] [data-surface="input"] {
+  border-radius: 9999px;
+  background-color: oklch(0.22 0.03 285);
+  box-shadow: var(--clay-pressed);
+}
+
+:root[data-style="clay"] [data-surface="card"] {
+  transition:
+    transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 200ms;
+}
+
+:root[data-style="clay"] [data-surface="card"]:hover {
+  transform: translateY(-3px) scale(1.01);
+  background-color: oklch(0.32 0.03 280 / 0.95);
+}
+
+:root[data-style="clay"] [data-surface="card"][data-expanded] {
+  background-color: oklch(0.36 0.06 280 / 0.95);
+}
+
+:root[data-style="clay"] [data-ui="icon-chip"] {
+  border-radius: 9999px;
+  box-shadow: inset 0 1px 0 0 oklch(1 0 0 / 0.15);
+}
+
+:root[data-style="clay"] .hero-accent {
+  background-image: linear-gradient(100deg, oklch(0.85 0.1 300), oklch(0.85 0.1 20));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-style="clay"] [data-surface="card"]:hover {
+    transform: none;
+  }
+}
+
+/* ═══ Terminal ═══ green phosphor, monospace everything */
+:root[data-style="terminal"] {
+  --term: oklch(0.86 0.2 145);
+  --foreground: oklch(0.88 0.17 145);
+  --muted-foreground: oklch(0.68 0.12 145);
+  --border: oklch(0.86 0.2 145 / 0.25);
+  --input: oklch(0.86 0.2 145 / 0.3);
+  --ring: oklch(0.86 0.2 145);
+  --primary: oklch(0.86 0.2 145);
+  --primary-foreground: oklch(0.12 0.02 150);
+  --popover-foreground: oklch(0.88 0.17 145);
+  --card-foreground: oklch(0.88 0.17 145);
+  --ui-bar: oklch(0.08 0.02 150 / 0.85);
+  --ui-bar-border: oklch(0.86 0.2 145 / 0.3);
+  --ui-island: oklch(0.07 0.02 150);
+  --ui-island-fg: var(--term);
+  --ui-island-shadow: 0 0 0 1px oklch(0.86 0.2 145 / 0.5), 0 0 20px -4px oklch(0.86 0.2 145 / 0.45);
+  --ui-surface: oklch(0.08 0.02 150 / 0.9);
+  --ui-border: oklch(0.86 0.2 145 / 0.35);
+  --ui-radius: 0.125rem;
+  --ui-radius-inner: 0;
+  --ui-radius-lg: 0.125rem;
+  --ui-accent: var(--term);
+  --ui-accent-fg: oklch(0.1 0.02 150);
+  --ui-control: oklch(0.06 0.02 150 / 0.9);
+  --ui-control-border: oklch(0.86 0.2 145 / 0.35);
+  --ui-focus: var(--term);
+  --ui-well: oklch(0.05 0.015 150 / 0.92);
+  --ui-well-border: oklch(0.86 0.2 145 / 0.25);
+  --ui-popover: oklch(0.07 0.02 150 / 0.97);
+  --ui-popover-shadow: 0 0 24px -6px oklch(0.86 0.2 145 / 0.4);
+  --ui-heading: var(--term);
+  --ui-caption: oklch(0.68 0.12 145);
+  --ui-chip: oklch(0.86 0.2 145 / 0.12);
+  --ui-chip-fg: var(--term);
+  --ui-scroll: oklch(0.86 0.2 145 / 0.45);
+}
+
+:root[data-style="terminal"] body {
+  font-family: var(--font-mono);
+}
+
+:root[data-style="terminal"] [data-ui="island"] {
+  border-radius: 0.125rem !important; /* motion sets borderRadius inline */
+}
+
+:root[data-style="terminal"] [data-ui="section-title"]::before {
+  content: "$ ls ";
+  color: var(--muted-foreground);
+}
+
+:root[data-style="terminal"] [data-ui="caption"]::before {
+  content: "# ";
+}
+
+:root[data-style="terminal"] [data-ui="wordmark"] {
+  text-shadow: 0 0 8px oklch(0.86 0.2 145 / 0.6);
+}
+
+:root[data-style="terminal"] [data-surface] {
+  background-color: oklch(0.1 0.02 150 / 0.92);
+  background-image: repeating-linear-gradient(
+    0deg,
+    oklch(0.86 0.2 145 / 0.035) 0 1px,
+    transparent 1px 3px
+  );
+  border: 1px solid oklch(0.86 0.2 145 / 0.3);
+  border-radius: 0.125rem;
+  box-shadow: 0 0 16px -8px oklch(0.86 0.2 145 / 0.4);
+}
+
+:root[data-style="terminal"] [data-surface="card"]:hover,
+:root[data-style="terminal"] [data-surface="card"][data-expanded] {
+  border-color: var(--term);
+  box-shadow: 0 0 20px -4px oklch(0.86 0.2 145 / 0.55);
+}
+
+:root[data-style="terminal"] [data-surface="card"][data-expanded] {
+  background-color: oklch(0.86 0.2 145 / 0.12);
+}
+
+:root[data-style="terminal"] [data-surface="input"] {
+  caret-color: var(--term);
+}
+
+:root[data-style="terminal"] [data-ui="path"] {
+  color: oklch(0.86 0.2 145 / 0.55);
+}
+
+:root[data-style="terminal"] .hero-accent {
+  background: none;
+  color: var(--term);
+  text-shadow: 0 0 10px oklch(0.86 0.2 145 / 0.6);
+}
+
+:root[data-style="terminal"] .hero-accent::after {
+  content: "▋";
+  margin-left: 0.1em;
+  animation: term-blink 1s steps(1) infinite;
+}
+
+@keyframes term-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-style="terminal"] .hero-accent::after {
+    animation: none;
+  }
+}
+
+/* ═══ Tinted ═══ a hue per section; the chrome carries all five */
+:root[data-style="tinted"] {
+  --tint-strip: linear-gradient(90deg, oklch(0.75 0.14 300), oklch(0.75 0.13 230), oklch(0.78 0.13 165), oklch(0.82 0.13 75), oklch(0.75 0.15 25));
+  --ui-bar: oklch(0.14 0.01 265 / 0.6);
+  --ui-bar-border: transparent;
+  --ui-island:
+    linear-gradient(oklch(0.1 0.01 265), oklch(0.1 0.01 265)) padding-box,
+    var(--tint-strip) border-box;
+  --ui-island-fg: oklch(0.97 0 0);
+  --ui-island-shadow: 0 8px 24px -10px oklch(0 0 0 / 0.7);
+  --ui-surface: oklch(0.18 0.01 265 / 0.85);
+  --ui-border: oklch(1 0 0 / 0.12);
+  --ui-radius: 0.875rem;
+  --ui-radius-inner: 0.625rem;
+  --ui-radius-lg: 1rem;
+  --ui-accent: linear-gradient(110deg, oklch(0.8 0.12 300), oklch(0.8 0.12 230) 50%, oklch(0.83 0.12 165));
+  --ui-accent-fg: oklch(0.18 0.03 265);
+  --ui-control: oklch(0.15 0.01 265 / 0.85);
+  --ui-control-border: oklch(1 0 0 / 0.12);
+  --ui-focus: oklch(0.78 0.12 230);
+  --ui-well: oklch(0.12 0.01 265 / 0.85);
+  --ui-well-border: oklch(1 0 0 / 0.1);
+  --ui-popover: oklch(0.17 0.015 265 / 0.97);
+  --ui-popover-shadow: 0 20px 50px -20px oklch(0 0 0 / 0.7);
+  --ui-heading: oklch(0.92 0 0);
+  --ui-caption: oklch(0.7 0.02 265);
+  --ui-chip: oklch(0.75 0.14 var(--hue, 265) / 0.2);
+  --ui-chip-fg: oklch(0.88 0.1 var(--hue, 265));
+  --ui-scroll: oklch(1 0 0 / 0.25);
+}
+
+/* The section hues, shared by cards and their headings. */
+:root[data-style="tinted"] [data-section="crypto"] { --hue: 300; }
+:root[data-style="tinted"] [data-section="networking"] { --hue: 230; }
+:root[data-style="tinted"] [data-section="data-format"] { --hue: 165; }
+:root[data-style="tinted"] [data-section="text"] { --hue: 75; }
+:root[data-style="tinted"] [data-section="system"] { --hue: 25; }
+
+:root[data-style="tinted"] [data-ui="navbar"] {
+  background-image: var(--tint-strip);
+  background-size: 100% 2px;
+  background-position: bottom;
+  background-repeat: no-repeat;
+}
+
+:root[data-style="tinted"] [data-ui="island"] {
+  border: 1.5px solid transparent;
+}
+
+:root[data-style="tinted"] [data-ui="section-title"] {
+  color: oklch(0.85 0.12 var(--hue, 265));
+}
+
+:root[data-style="tinted"] [data-ui="section-title"]::before {
+  content: "";
+  display: inline-block;
+  width: 0.9rem;
+  height: 0.35rem;
+  margin-right: 0.5rem;
+  border-radius: 9999px;
+  vertical-align: middle;
+  background: oklch(0.75 0.14 var(--hue, 265));
+}
+
+:root[data-style="tinted"] [data-surface] {
+  --hue: 265;
+  background-color: oklch(0.22 0.04 var(--hue) / 0.85);
+  background-image: linear-gradient(
+    160deg,
+    oklch(0.7 0.14 var(--hue) / 0.16),
+    transparent 60%
+  );
+  border: 1px solid oklch(0.75 0.12 var(--hue) / 0.25);
+  border-radius: 1rem;
+  box-shadow: inset 0 1px 0 0 oklch(1 0 0 / 0.06);
+}
+
+/* Re-declared after the default above so a card's own section hue wins. */
+:root[data-style="tinted"] [data-surface][data-section="crypto"] { --hue: 300; }
+:root[data-style="tinted"] [data-surface][data-section="networking"] { --hue: 230; }
+:root[data-style="tinted"] [data-surface][data-section="data-format"] { --hue: 165; }
+:root[data-style="tinted"] [data-surface][data-section="text"] { --hue: 75; }
+:root[data-style="tinted"] [data-surface][data-section="system"] { --hue: 25; }
+
+:root[data-style="tinted"] [data-surface="input"] {
+  background-color: oklch(0.17 0.015 265 / 0.9);
+  background-image: none;
+  border-color: oklch(1 0 0 / 0.12);
+}
+
+/* The open tool takes its section's hue, and so does everything inside it.
+   The --ui-* overrides are declared here, on the panel, so var(--hue)
+   resolves against the panel's own section. */
+:root[data-style="tinted"] [data-surface="panel"] {
+  --ring: oklch(0.8 0.13 var(--hue));
+  --ui-surface: oklch(0.15 0.03 var(--hue) / 0.85);
+  --ui-border: oklch(0.75 0.12 var(--hue) / 0.3);
+  --ui-accent: oklch(0.82 0.12 var(--hue));
+  --ui-accent-fg: oklch(0.2 0.04 var(--hue));
+  --ui-control: oklch(0.15 0.03 var(--hue) / 0.85);
+  --ui-control-border: oklch(0.75 0.12 var(--hue) / 0.3);
+  --ui-focus: oklch(0.82 0.13 var(--hue));
+  --ui-well: oklch(0.13 0.03 var(--hue) / 0.9);
+  --ui-well-border: oklch(0.75 0.12 var(--hue) / 0.25);
+  background-color: oklch(0.2 0.045 var(--hue) / 0.92);
+  background-image: linear-gradient(
+    170deg,
+    oklch(0.7 0.14 var(--hue) / 0.14),
+    transparent 45%
+  );
+  border-color: oklch(0.78 0.13 var(--hue) / 0.45);
+  box-shadow: 0 20px 50px -24px oklch(0.6 0.15 var(--hue) / 0.55);
+}
+
+:root[data-style="tinted"] [data-surface="panel"] ::selection {
+  background-color: oklch(0.82 0.12 var(--hue));
+  color: oklch(0.2 0.04 var(--hue));
+}
+
+:root[data-style="tinted"] [data-surface="card"] {
+  transition: border-color 150ms, background-color 150ms;
+}
+
+:root[data-style="tinted"] [data-surface="card"]:hover {
+  background-color: oklch(0.26 0.06 var(--hue) / 0.9);
+  border-color: oklch(0.8 0.13 var(--hue) / 0.5);
+}
+
+:root[data-style="tinted"] [data-surface="card"][data-expanded] {
+  border-color: oklch(0.85 0.14 var(--hue) / 0.85);
+  box-shadow: 0 0 0 3px oklch(0.75 0.14 var(--hue) / 0.18);
+}
+
+:root[data-style="tinted"] .hero-accent {
+  background-image: var(--tint-strip);
+}
+
+/* ═══ Blueprint ═══ drafting blue, white linework */
+:root[data-style="blueprint"] {
+  --bp: oklch(0.36 0.11 255);
+  --bp-deep: oklch(0.24 0.08 255);
+  --bp-grid:
+    linear-gradient(oklch(1 0 0 / 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(1 0 0 / 0.07) 1px, transparent 1px);
+  --foreground: oklch(0.97 0.01 240);
+  --muted-foreground: oklch(0.82 0.05 240);
+  --border: oklch(1 0 0 / 0.35);
+  --ring: oklch(0.97 0.01 240);
+  --ui-bar: oklch(0.3 0.1 255 / 0.85);
+  --ui-bar-border: oklch(1 0 0 / 0.5);
+  --ui-island: var(--bp-deep);
+  --ui-island-fg: oklch(0.97 0.01 240);
+  --ui-island-shadow: 0 0 0 1px oklch(1 0 0 / 0.6);
+  --ui-surface: var(--bp-deep);
+  --ui-border: oklch(1 0 0 / 0.5);
+  --ui-radius: 0;
+  --ui-radius-inner: 0;
+  --ui-radius-lg: 0;
+  --ui-accent: oklch(0.97 0.01 240);
+  --ui-accent-fg: oklch(0.3 0.1 255);
+  --ui-control: oklch(0.2 0.07 255 / 0.9);
+  --ui-control-border: oklch(1 0 0 / 0.45);
+  --ui-focus: oklch(0.97 0.01 240);
+  --ui-well: oklch(0.18 0.06 255 / 0.92);
+  --ui-well-border: oklch(1 0 0 / 0.35);
+  --ui-popover: oklch(0.28 0.09 255 / 0.98);
+  --ui-popover-shadow: 6px 6px 0 0 oklch(0.15 0.05 255 / 0.8);
+  --ui-heading: oklch(0.97 0.01 240);
+  --ui-caption: oklch(0.85 0.05 240);
+  --ui-chip: transparent;
+  --ui-chip-fg: oklch(0.97 0.01 240);
+  --ui-scroll: oklch(1 0 0 / 0.45);
+}
+
+:root[data-style="blueprint"] [data-ui="navbar"] {
+  border-bottom-style: dashed;
+  background-image: var(--bp-grid);
+  background-size: 16px 16px;
+}
+
+:root[data-style="blueprint"] [data-ui="island"] {
+  border-radius: 0 !important; /* motion sets borderRadius inline */
+  font-family: var(--font-mono);
+}
+
+:root[data-style="blueprint"] :is([data-slot="dialog-content"], [data-slot="select-content"]) {
+  background-image: var(--bp-grid);
+  background-size: 16px 16px;
+}
+
+:root[data-style="blueprint"] :is([data-ui="section-title"], [data-ui="caption"], [data-ui="wordmark"], [data-ui="chip"], [data-ui="pill"], [data-ui="segmented"]) {
+  font-family: var(--font-mono);
+}
+
+/* A dimension line trailing off each section heading. */
+:root[data-style="blueprint"] [data-ui="section-title"] {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+:root[data-style="blueprint"] [data-ui="section-title"]::after {
+  content: "";
+  flex: 1;
+  height: 0;
+  border-top: 1px dashed oklch(1 0 0 / 0.4);
+}
+
+:root[data-style="blueprint"] [data-ui="icon-chip"] {
+  border: 1px solid oklch(1 0 0 / 0.55);
+  border-radius: 0;
+}
+
+:root[data-style="blueprint"] [data-surface] {
+  background-color: oklch(0.36 0.11 255 / 0.9);
+  background-image: var(--bp-grid);
+  background-size: 16px 16px;
+  border: 1px solid oklch(1 0 0 / 0.55);
+  border-radius: 0;
+  box-shadow: none;
+  font-family: var(--font-mono);
+}
+
+/* The tool panel keeps the default sans and a darker blue so form controls
+   and output stay readable over the grid. */
+:root[data-style="blueprint"] [data-surface="panel"] {
+  background-color: oklch(0.24 0.08 255 / 0.95);
+  font-family: inherit;
+}
+
+:root[data-style="blueprint"] [data-surface="card"] {
+  transition: background-color 150ms;
+}
+
+:root[data-style="blueprint"] [data-surface="card"]:hover {
+  background-color: oklch(0.42 0.12 255 / 0.92);
+}
+
+:root[data-style="blueprint"] [data-surface="card"][data-expanded] {
+  border-style: dashed;
+  border-width: 2px;
+  background-color: oklch(0.44 0.13 255 / 0.95);
+}
+
+:root[data-style="blueprint"] .hero-title {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+:root[data-style="blueprint"] .hero-accent {
+  background: none;
+  color: oklch(0.85 0.08 235);
+  border-bottom: 2px dashed currentColor;
+}
+
+/* ═══ Swiss ═══ black, white, one red */
+:root[data-style="swiss"] {
+  --swiss-red: oklch(0.63 0.24 27);
+  --foreground: oklch(0.99 0 0);
+  --muted-foreground: oklch(0.7 0 0);
+  --ring: oklch(0.63 0.24 27);
+  --ui-bar: oklch(0.06 0 0 / 0.92);
+  --ui-bar-border: oklch(1 0 0 / 0.9);
+  --ui-island: oklch(0.06 0 0);
+  --ui-island-fg: oklch(0.99 0 0);
+  --ui-island-shadow: inset 4px 0 0 0 var(--swiss-red), 0 0 0 1px oklch(1 0 0 / 0.25);
+  --ui-surface: oklch(0.06 0 0 / 0.94);
+  --ui-border: oklch(1 0 0 / 0.25);
+  --ui-radius: 0;
+  --ui-radius-inner: 0;
+  --ui-radius-lg: 0;
+  --ui-accent: var(--swiss-red);
+  --ui-accent-fg: oklch(1 0 0);
+  --ui-control: oklch(0.04 0 0 / 0.9);
+  --ui-control-border: oklch(1 0 0 / 0.3);
+  --ui-focus: var(--swiss-red);
+  --ui-well: oklch(0.03 0 0 / 0.92);
+  --ui-well-border: oklch(1 0 0 / 0.15);
+  --ui-popover: oklch(0.06 0 0 / 0.98);
+  --ui-popover-shadow: none;
+  --ui-heading: oklch(0.99 0 0);
+  --ui-caption: oklch(0.7 0 0);
+  --ui-chip: oklch(1 0 0 / 0.08);
+  --ui-chip-fg: oklch(0.99 0 0);
+  --ui-scroll: oklch(1 0 0 / 0.35);
+}
+
+:root[data-style="swiss"] [data-ui="island"] {
+  border-radius: 0 !important; /* motion sets borderRadius inline */
+}
+
+:root[data-style="swiss"] [data-ui="wordmark"] {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+/* A red square before the wordmark, the one ornament. */
+:root[data-style="swiss"] [data-ui="wordmark"]::before {
+  content: "";
+  width: 0.6rem;
+  height: 0.6rem;
+  background: var(--swiss-red);
+}
+
+:root[data-style="swiss"] [data-ui="section-title"] {
+  font-size: 1.125rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-transform: none;
+  color: oklch(0.99 0 0);
+  border-top: 3px solid oklch(0.99 0 0);
+  padding-top: 0.5rem;
+}
+
+:root[data-style="swiss"] [data-ui="caption"] {
+  color: var(--swiss-red);
+  font-weight: 700;
+}
+
+:root[data-style="swiss"] :is([data-slot="dialog-content"], [data-slot="select-content"]) {
+  border-top: 4px solid var(--swiss-red);
+}
+
+:root[data-style="swiss"] [data-ui="control"] {
+  border-width: 0 0 1px;
+}
+
+:root[data-style="swiss"] [data-ui="icon-chip"] {
+  border-radius: 0;
+}
+
+:root[data-style="swiss"] [data-surface] {
+  background-color: oklch(0.08 0 0 / 0.94);
+  border: 0;
+  border-left: 4px solid transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+:root[data-style="swiss"] [data-surface="input"] {
+  border: 0;
+  border-bottom: 2px solid oklch(0.99 0 0);
+}
+
+:root[data-style="swiss"] [data-surface="input"]:focus-visible {
+  border-bottom-color: var(--swiss-red);
+}
+
+:root[data-style="swiss"] [data-surface="card"] {
+  transition:
+    border-color 120ms,
+    background-color 120ms;
+}
+
+:root[data-style="swiss"] [data-surface="card"]:hover {
+  border-left-color: var(--swiss-red);
+}
+
+:root[data-style="swiss"] [data-surface="card"][data-expanded] {
+  background-color: var(--swiss-red);
+  border-left-color: var(--swiss-red);
+  --muted-foreground: oklch(1 0 0 / 0.8);
+}
+
+:root[data-style="swiss"] [data-surface="card"][data-expanded] [data-ui="icon-chip"] {
+  background-color: oklch(1 0 0);
+  color: var(--swiss-red);
+}
+
+:root[data-style="swiss"] [data-surface="panel"] {
+  border-left-color: var(--swiss-red);
+}
+
+:root[data-style="swiss"] .hero-title {
+  font-size: clamp(2.5rem, 6vw, 4.5rem);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+}
+
+:root[data-style="swiss"] .hero-accent {
+  background: none;
+  color: var(--swiss-red);
+}
+
+/* ═══ Vapor ═══ purple, pink edges, cyan offsets */
+:root[data-style="vapor"] {
+  --vp-pink: oklch(0.78 0.18 340);
+  --vp-cyan: oklch(0.85 0.13 200);
+  --foreground: oklch(0.97 0.02 330);
+  --muted-foreground: oklch(0.8 0.06 310);
+  --ring: var(--vp-pink);
+  --ui-bar: linear-gradient(90deg, oklch(0.25 0.12 300 / 0.8), oklch(0.25 0.12 330 / 0.8));
+  --ui-bar-border: var(--vp-pink);
+  --ui-island: oklch(0.22 0.12 300);
+  --ui-island-fg: oklch(0.97 0.02 330);
+  --ui-island-shadow: 0 0 0 1px var(--vp-pink), 3px 3px 0 0 var(--vp-cyan);
+  --ui-surface: oklch(0.22 0.1 300 / 0.9);
+  --ui-border: var(--vp-pink);
+  --ui-radius: 0.25rem;
+  --ui-radius-inner: 0.125rem;
+  --ui-radius-lg: 0.25rem;
+  --ui-accent: linear-gradient(90deg, var(--vp-pink), var(--vp-cyan));
+  --ui-accent-fg: oklch(0.2 0.08 300);
+  --ui-control: oklch(0.18 0.09 300 / 0.9);
+  --ui-control-border: oklch(0.78 0.18 340 / 0.5);
+  --ui-focus: var(--vp-cyan);
+  --ui-well: oklch(0.15 0.08 300 / 0.92);
+  --ui-well-border: oklch(0.85 0.13 200 / 0.4);
+  --ui-popover: oklch(0.22 0.11 300 / 0.98);
+  --ui-popover-shadow: 6px 6px 0 0 var(--vp-cyan);
+  --ui-heading: var(--vp-cyan);
+  --ui-caption: oklch(0.82 0.1 340);
+  --ui-chip: oklch(0.78 0.18 340 / 0.2);
+  --ui-chip-fg: oklch(0.9 0.08 340);
+  --ui-scroll: oklch(0.78 0.18 340 / 0.55);
+}
+
+/* --ui-bar is a gradient here, so it needs the background shorthand. */
+:root[data-style="vapor"] [data-ui="navbar"] {
+  background: var(--ui-bar);
+  box-shadow: 0 2px 0 0 oklch(0.85 0.13 200 / 0.5);
+}
+
+:root[data-style="vapor"] [data-ui="wordmark"] {
+  font-style: italic;
+  text-shadow: 2px 2px 0 var(--vp-pink);
+}
+
+:root[data-style="vapor"] [data-ui="section-title"] {
+  font-style: italic;
+  text-shadow: 2px 2px 0 oklch(0.78 0.18 340 / 0.6);
+}
+
+:root[data-style="vapor"] [data-ui="segmented"],
+:root[data-style="vapor"] [data-ui="pill"][aria-checked="true"],
+:root[data-style="vapor"] [data-ui="chip"] {
+  box-shadow: 3px 3px 0 0 var(--vp-cyan);
+}
+
+:root[data-style="vapor"] [data-surface] {
+  background-color: oklch(0.24 0.1 300 / 0.88);
+  border: 1px solid var(--vp-pink);
+  border-radius: 0.25rem;
+  box-shadow: 4px 4px 0 0 var(--vp-cyan);
+}
+
+:root[data-style="vapor"] [data-surface="input"]:focus-visible {
+  border-color: var(--vp-cyan);
+  box-shadow: 4px 4px 0 0 var(--vp-pink);
+}
+
+:root[data-style="vapor"] [data-surface="card"] {
+  transition: transform 120ms, box-shadow 120ms;
+}
+
+:root[data-style="vapor"] [data-surface="card"]:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 0 var(--vp-cyan);
+}
+
+:root[data-style="vapor"] [data-surface="card"][data-expanded] {
+  background-color: oklch(0.32 0.14 320 / 0.92);
+  box-shadow: 4px 4px 0 0 oklch(0.88 0.15 95);
+}
+
+:root[data-style="vapor"] .hero-title {
+  font-style: italic;
+  letter-spacing: 0.02em;
+}
+
+:root[data-style="vapor"] .hero-accent {
+  background-image: linear-gradient(180deg, oklch(0.95 0.03 250) 0%, oklch(0.8 0.12 200) 45%, oklch(0.7 0.2 340) 55%, oklch(0.9 0.08 330) 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-style="vapor"] [data-surface="card"]:hover {
+    transform: none;
+  }
+}
+
+/* ═══ Glitch ═══ black, sharp, red/cyan channel split */
+:root[data-style="glitch"] {
+  --gl-red: oklch(0.65 0.25 25);
+  --gl-cyan: oklch(0.85 0.15 200);
+  --gl-split: 2px 0 0 0 var(--gl-red), -2px 0 0 0 var(--gl-cyan);
+  --ring: var(--gl-cyan);
+  --ui-bar: oklch(0.05 0 0 / 0.9);
+  --ui-bar-border: oklch(1 0 0 / 0.15);
+  --ui-island: oklch(0.04 0 0);
+  --ui-island-fg: oklch(0.98 0 0);
+  --ui-island-shadow: 0 0 0 1px oklch(1 0 0 / 0.3), var(--gl-split);
+  --ui-surface: oklch(0.08 0 0 / 0.92);
+  --ui-border: oklch(1 0 0 / 0.2);
+  --ui-radius: 0;
+  --ui-radius-inner: 0;
+  --ui-radius-lg: 0;
+  --ui-accent: oklch(0.98 0 0);
+  --ui-accent-fg: oklch(0.05 0 0);
+  --ui-control: oklch(0.05 0 0 / 0.9);
+  --ui-control-border: oklch(1 0 0 / 0.2);
+  --ui-focus: var(--gl-cyan);
+  --ui-well: oklch(0.03 0 0 / 0.92);
+  --ui-well-border: oklch(1 0 0 / 0.15);
+  --ui-popover: oklch(0.06 0 0 / 0.98);
+  --ui-popover-shadow: 3px 0 0 0 oklch(0.65 0.25 25 / 0.7), -3px 0 0 0 oklch(0.85 0.15 200 / 0.7);
+  --ui-heading: oklch(0.98 0 0);
+  --ui-caption: oklch(0.65 0 0);
+  --ui-chip: oklch(1 0 0 / 0.07);
+  --ui-chip-fg: oklch(0.98 0 0);
+  --ui-scroll: oklch(1 0 0 / 0.3);
+}
+
+/* Two thin channel-coloured rules under the bar. */
+:root[data-style="glitch"] [data-ui="navbar"] {
+  box-shadow:
+    0 1px 0 0 oklch(0.65 0.25 25 / 0.6),
+    0 2px 0 0 oklch(0.85 0.15 200 / 0.6);
+}
+
+:root[data-style="glitch"] [data-ui="island"] {
+  border-radius: 0 !important; /* motion sets borderRadius inline */
+}
+
+:root[data-style="glitch"] :is([data-ui="section-title"], [data-ui="wordmark"]:hover) {
+  text-shadow:
+    1.5px 0 var(--gl-red),
+    -1.5px 0 var(--gl-cyan);
+}
+
+:root[data-style="glitch"] :is([data-ui="indicator"], [data-ui="pill"][aria-checked="true"], [data-ui="segment"][aria-checked="true"]) {
+  box-shadow: var(--gl-split);
+}
+
+:root[data-style="glitch"] [data-ui="control"]:focus-visible {
+  box-shadow: var(--gl-split);
+}
+
+:root[data-style="glitch"] [data-surface] {
+  background-color: oklch(0.12 0 0 / 0.92);
+  border: 1px solid oklch(1 0 0 / 0.15);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+:root[data-style="glitch"] [data-surface="input"]:focus-visible {
+  border-color: oklch(1 0 0 / 0.6);
+  box-shadow: var(--gl-split);
+}
+
+:root[data-style="glitch"] [data-surface="card"]:hover {
+  border-color: oklch(1 0 0 / 0.5);
+  text-shadow:
+    2px 0 oklch(0.65 0.25 25 / 0.8),
+    -2px 0 oklch(0.85 0.15 200 / 0.8);
+  animation: glitch-jitter 300ms steps(2) 1;
+}
+
+:root[data-style="glitch"] [data-surface="card"][data-expanded] {
+  border-color: oklch(1 0 0 / 0.8);
+  box-shadow:
+    3px 0 0 0 oklch(0.65 0.25 25 / 0.7),
+    -3px 0 0 0 oklch(0.85 0.15 200 / 0.7);
+}
+
+:root[data-style="glitch"] .hero-accent {
+  background: none;
+  color: inherit;
+  text-shadow:
+    3px 0 oklch(0.65 0.25 25 / 0.8),
+    -3px 0 oklch(0.85 0.15 200 / 0.8);
+  animation: glitch-jitter 2.5s steps(1) infinite;
+  display: inline-block;
+}
+
+@keyframes glitch-jitter {
+  0%, 100% { transform: translate(0); }
+  92% { transform: translate(-2px, 1px); }
+  94% { transform: translate(2px, -1px); clip-path: inset(20% 0 40% 0); }
+  96% { transform: translate(-1px, 0); clip-path: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-style="glitch"] [data-surface="card"]:hover,
+  :root[data-style="glitch"] .hero-accent {
+    animation: none;
+  }
+}
+
+/* ═══ Sticky ═══ notes on a dark board, marker and tape */
+:root[data-style="sticky"] {
+  --note: oklch(0.93 0.12 100);
+  --note-ink: oklch(0.22 0.03 80);
+  --hand: "Segoe Print", "Bradley Hand", "Marker Felt", cursive;
+  --ring: var(--note);
+  --ui-bar: oklch(0.17 0.015 250 / 0.85);
+  --ui-bar-border: oklch(0.93 0.12 100 / 0.3);
+  --ui-island: var(--note);
+  --ui-island-fg: var(--note-ink);
+  --ui-island-shadow: 0 8px 14px -8px oklch(0 0 0 / 0.8);
+  --ui-surface: oklch(0.18 0.015 250 / 0.9);
+  --ui-border: oklch(0.93 0.12 100 / 0.25);
+  --ui-radius: 0.375rem;
+  --ui-radius-inner: 0.25rem;
+  --ui-radius-lg: 0.25rem;
+  --ui-accent: var(--note);
+  --ui-accent-fg: var(--note-ink);
+  --ui-control: oklch(0.15 0.015 250 / 0.9);
+  --ui-control-border: oklch(0.93 0.12 100 / 0.25);
+  --ui-focus: var(--note);
+  --ui-well: oklch(0.12 0.012 250 / 0.92);
+  --ui-well-border: oklch(0.93 0.12 100 / 0.18);
+  --ui-popover: oklch(0.2 0.015 250 / 0.98);
+  --ui-popover-shadow: 0 16px 30px -14px oklch(0 0 0 / 0.85);
+  --ui-heading: oklch(0.95 0.03 95);
+  --ui-caption: oklch(0.85 0.08 100);
+  --ui-chip: oklch(0.22 0.03 80 / 0.12);
+  --ui-chip-fg: var(--note-ink);
+  --ui-scroll: oklch(0.93 0.12 100 / 0.45);
+}
+
+/* The island is a note too: slightly askew, straightens when it speaks. */
+:root[data-style="sticky"] [data-ui="island"] {
+  border-radius: 0.125rem 0.125rem 0.75rem 0.125rem !important; /* motion sets borderRadius inline */
+  rotate: -1deg;
+}
+
+/* Status colours read badly on yellow; the health dot keeps its own. */
+:root[data-style="sticky"] [data-ui="island"] .font-mono {
+  font-family: var(--hand);
+  letter-spacing: 0.05em;
+}
+
+:root[data-style="sticky"] :is([data-ui="wordmark"], [data-ui="section-title"], [data-ui="caption"]) {
+  font-family: var(--hand);
+}
+
+/* Highlighter swipe behind each section heading. */
+:root[data-style="sticky"] [data-ui="section-title"] {
+  display: inline-block;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 1.05rem;
+  padding: 0 0.35rem;
+  background: linear-gradient(transparent 55%, color-mix(in oklab, var(--paper, var(--note)) 45%, transparent) 55%);
+}
+
+/* One note colour per section, shared by its heading, cards and open panel. */
+:root[data-style="sticky"] [data-section="crypto"] { --paper: oklch(0.9 0.08 350); }
+:root[data-style="sticky"] [data-section="networking"] { --paper: oklch(0.91 0.07 230); }
+:root[data-style="sticky"] [data-section="data-format"] { --paper: oklch(0.92 0.09 150); }
+:root[data-style="sticky"] [data-section="text"] { --paper: oklch(0.93 0.12 100); }
+:root[data-style="sticky"] [data-section="system"] { --paper: oklch(0.9 0.09 60); }
+
+:root[data-style="sticky"] :is([data-ui="pill"][aria-checked="true"], [data-ui="segment"][aria-checked="true"]) {
+  rotate: -1.5deg;
+}
+
+/* A strip of tape across the top of dialogs. */
+:root[data-style="sticky"] [data-slot="dialog-content"]::before {
+  content: "";
+  position: absolute;
+  top: -0.6rem;
+  left: 50%;
+  width: 6rem;
+  height: 1.3rem;
+  translate: -50% 0;
+  rotate: -2deg;
+  background: oklch(0.95 0.02 90 / 0.35);
+  box-shadow: 0 1px 2px oklch(0 0 0 / 0.3);
+}
+
+:root[data-style="sticky"] [data-slot="dialog-content"] {
+  overflow: visible;
+}
+
+:root[data-style="sticky"] [data-surface="card"] {
+  --foreground: var(--note-ink);
+  --muted-foreground: oklch(0.38 0.04 80);
+  color: var(--foreground);
+  background-color: var(--paper, var(--note));
+  background-image: linear-gradient(180deg, oklch(0 0 0 / 0.06), transparent 18%);
+  border: 0;
+  border-radius: 0.125rem 0.125rem 0.75rem 0.125rem;
+  box-shadow: 0 10px 16px -10px oklch(0 0 0 / 0.7);
+  font-family: var(--hand);
+  transform: rotate(-1deg);
+  transition: transform 150ms;
+}
+
+:root[data-style="sticky"] [data-surface="card"]:nth-child(3n) {
+  transform: rotate(1.2deg);
+}
+
+:root[data-style="sticky"] [data-surface="card"]:nth-child(3n + 1) {
+  transform: rotate(0.6deg);
+}
+
+:root[data-style="sticky"] [data-surface="card"]:nth-child(4n) {
+  transform: rotate(-1.6deg);
+}
+
+:root[data-style="sticky"] [data-surface="card"]:hover,
+:root[data-style="sticky"] [data-surface="card"][data-expanded] {
+  transform: rotate(0) scale(1.03);
+  z-index: 3;
+}
+
+:root[data-style="sticky"] [data-surface="card"] [data-ui="path"] {
+  font-family: var(--font-mono);
+}
+
+:root[data-style="sticky"] [data-surface="input"] {
+  background-color: oklch(0.2 0.015 250 / 0.92);
+  border: 1px solid oklch(0.93 0.12 100 / 0.25);
+  border-radius: 0.25rem;
+  box-shadow: 0 12px 24px -14px oklch(0 0 0 / 0.8);
+}
+
+/* The open tool is a big note in its section's colour, slightly paler than
+   the cards so long forms are easy on the eye. Text flips to ink, and the
+   controls inside get a palette that reads on paper. */
+:root[data-style="sticky"] [data-surface="panel"] {
+  --sheet: color-mix(in oklab, var(--paper, var(--note)) 82%, white);
+  --foreground: var(--note-ink);
+  --muted-foreground: oklch(0.4 0.04 80);
+  --border: oklch(0.22 0.03 80 / 0.2);
+  --ring: var(--note-ink);
+  --ui-surface: oklch(0.22 0.03 80 / 0.08);
+  --ui-border: oklch(0.22 0.03 80 / 0.2);
+  --ui-accent: var(--note-ink);
+  --ui-accent-fg: var(--sheet);
+  --ui-control: oklch(1 0 0 / 0.55);
+  --ui-control-border: oklch(0.22 0.03 80 / 0.25);
+  --ui-focus: var(--note-ink);
+  --ui-well: oklch(0.24 0.015 250 / 0.94);
+  --ui-well-border: transparent;
+  color: var(--foreground);
+  background-color: var(--sheet);
+  /* Faint ruled lines, like a notepad. */
+  background-image: repeating-linear-gradient(
+    180deg,
+    transparent 0 1.6rem,
+    oklch(0.22 0.03 80 / 0.06) 1.6rem calc(1.6rem + 1px)
+  );
+  border: 0;
+  border-radius: 0.125rem 0.125rem 1rem 0.125rem;
+  box-shadow: 0 16px 28px -16px oklch(0 0 0 / 0.85);
+}
+
+/* Code and output stay dark ink-on-paper inverted, so syntax colours hold. */
+:root[data-style="sticky"] [data-surface="panel"] [data-ui="well"] {
+  --foreground: oklch(0.95 0.02 90);
+  --muted-foreground: oklch(0.78 0.03 90);
+  color: var(--foreground);
+}
+
+:root[data-style="sticky"] [data-surface="panel"] h3 {
+  font-family: var(--hand);
+  font-size: 1.1rem;
+}
+
+:root[data-style="sticky"] [data-surface="panel"] ::selection {
+  background-color: var(--note-ink);
+  color: var(--sheet);
+}
+
+:root[data-style="sticky"] .hero-title {
+  font-family: var(--hand);
+}
+
+:root[data-style="sticky"] .hero-accent {
+  background: var(--note);
+  color: var(--note-ink);
+  padding: 0 0.25em;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-style="sticky"] [data-surface="card"] {
+    transition: none;
+  }
+}
+
+/* ── Fix-ups that depend on the per-style blocks above ── */
+
+/* Gradients cannot be a ::selection colour; use their first stop. */
+:root[data-style="tinted"] ::selection {
+  background-color: oklch(0.8 0.12 230);
+}
+
+:root[data-style="vapor"] ::selection {
+  background-color: var(--vp-pink);
+}
+
+/* Tinted chips follow each card's own hue. A --ui-* variable cannot do this:
+   it would resolve --hue once, on :root. */
+:root[data-style="tinted"] [data-ui="icon-chip"] {
+  background-color: oklch(0.75 0.14 var(--hue, 265) / 0.2);
+  color: oklch(0.88 0.1 var(--hue, 265));
+}
+
+/* Sticky's chip ink is for yellow notes; the dark panel needs a note chip. */
+:root[data-style="sticky"] [data-surface="panel"] [data-ui="icon-chip"] {
+  background-color: var(--note-ink);
+  color: var(--sheet);
+}
+
+/*
+  ─── Backgrounds ───────────────────────────────────────────────────────────
+  Each style replaces the ambient mesh (body::before in @layer base) with its
+  own; a few also use body::after for a second fixed layer. Glass keeps the
+  mesh untouched. Both layers are fixed, behind content, and ignore the
+  pointer, same as the original.
+*/
+:root:not([data-style="glass"]) body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  display: none;
+}
+
+/* Fractal-noise grain with its own transparency (the colour matrix turns the
+   noise into alpha), so it can sit over any colour: dark specks for cork,
+   light ones for static. */
+:root {
+  --noise-dark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1.6 0 0 0 -0.55'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --noise-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0.5 0 0 0 -0.18'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Spotlight: a stage light from above, a dot grid lit only where it falls. */
+:root[data-style="spotlight"] body {
+  background-color: oklch(0.1 0.01 280);
+}
+
+:root[data-style="spotlight"] body::before {
+  background-image:
+    radial-gradient(ellipse 55% 60% at 50% -12%, oklch(0.62 0.2 285 / 0.42) 0%, transparent 70%),
+    radial-gradient(ellipse 35% 30% at 50% 0%, oklch(0.85 0.08 285 / 0.18) 0%, transparent 70%),
+    radial-gradient(40% 35% at 90% 105%, oklch(0.6 0.2 330 / 0.14) 0%, transparent 70%);
+}
+
+:root[data-style="spotlight"] body::after {
+  display: block;
+  background-image: radial-gradient(oklch(1 0 0 / 0.14) 1px, transparent 1.5px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(ellipse 60% 55% at 50% 0%, #000 0%, transparent 75%);
+}
+
+/* Clay: a soft dusk, lighter than the rest, big pastel blobs. */
+:root[data-style="clay"] body {
+  background-color: oklch(0.23 0.03 285);
+}
+
+:root[data-style="clay"] body::before {
+  background-image:
+    radial-gradient(55% 50% at 10% 5%, oklch(0.6 0.12 300 / 0.45) 0%, transparent 70%),
+    radial-gradient(50% 45% at 95% 25%, oklch(0.65 0.1 20 / 0.3) 0%, transparent 70%),
+    radial-gradient(60% 55% at 75% 100%, oklch(0.62 0.09 200 / 0.3) 0%, transparent 70%),
+    radial-gradient(45% 40% at 5% 95%, oklch(0.7 0.1 90 / 0.18) 0%, transparent 70%);
+}
+
+/* Terminal: a CRT — green bloom in the middle, scanlines, dark corners. */
+:root[data-style="terminal"] body {
+  background-color: oklch(0.07 0.015 150);
+}
+
+:root[data-style="terminal"] body::before {
+  background-image:
+    radial-gradient(ellipse 70% 60% at 50% 45%, oklch(0.6 0.17 145 / 0.16) 0%, transparent 70%),
+    radial-gradient(ellipse 100% 100% at 50% 50%, transparent 55%, oklch(0 0 0 / 0.75) 100%);
+}
+
+:root[data-style="terminal"] body::after {
+  display: block;
+  background-image: repeating-linear-gradient(
+    180deg,
+    oklch(0.86 0.2 145 / 0.04) 0 1px,
+    transparent 1px 3px
+  );
+}
+
+/* Tinted: one soft glow per section hue, around the edges. */
+:root[data-style="tinted"] body {
+  background-color: oklch(0.13 0.01 265);
+}
+
+:root[data-style="tinted"] body::before {
+  background-image:
+    radial-gradient(45% 40% at 5% 5%, oklch(0.6 0.18 300 / 0.3) 0%, transparent 70%),
+    radial-gradient(45% 40% at 95% 8%, oklch(0.6 0.15 230 / 0.3) 0%, transparent 70%),
+    radial-gradient(45% 40% at 98% 70%, oklch(0.65 0.14 165 / 0.25) 0%, transparent 70%),
+    radial-gradient(45% 40% at 50% 105%, oklch(0.7 0.15 75 / 0.22) 0%, transparent 70%),
+    radial-gradient(45% 40% at 2% 75%, oklch(0.62 0.17 25 / 0.26) 0%, transparent 70%);
+}
+
+/* Blueprint: the whole page is drafting paper, minor and major grid. */
+:root[data-style="blueprint"] body {
+  background-color: oklch(0.25 0.09 255);
+}
+
+:root[data-style="blueprint"] body::before {
+  background-image:
+    linear-gradient(oklch(1 0 0 / 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(1 0 0 / 0.14) 1px, transparent 1px),
+    linear-gradient(oklch(1 0 0 / 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, oklch(1 0 0 / 0.05) 1px, transparent 1px),
+    radial-gradient(ellipse 100% 100% at 50% 40%, transparent 50%, oklch(0.15 0.06 255 / 0.7) 100%);
+  background-size: 96px 96px, 96px 96px, 16px 16px, 16px 16px, 100% 100%;
+}
+
+/* Swiss: black, a faint 12-column grid, one large red disc. */
+:root[data-style="swiss"] body {
+  background-color: oklch(0.07 0 0);
+}
+
+:root[data-style="swiss"] body::before {
+  background-image:
+    radial-gradient(circle at 96% 14%, oklch(0.58 0.22 27) 0 min(26vw, 22rem), transparent calc(min(26vw, 22rem) + 1px)),
+    repeating-linear-gradient(90deg, oklch(1 0 0 / 0.045) 0 1px, transparent 1px calc(100% / 12));
+}
+
+/* Vapor: purple-to-magenta sky, a banded sun, a neon grid floor. */
+:root[data-style="vapor"] body {
+  background-color: oklch(0.16 0.08 300);
+}
+
+:root[data-style="vapor"] body::before {
+  background-image:
+    /* Bands cut across the lower half of the sun, in the horizon colour. */
+    repeating-linear-gradient(180deg, transparent 0 14px, oklch(0.3 0.15 330) 14px 19px),
+    radial-gradient(circle at 50% 58%, oklch(0.85 0.17 80) 0, oklch(0.72 0.22 20) min(14vw, 11rem), transparent calc(min(14vw, 11rem) + 1px)),
+    linear-gradient(180deg, oklch(0.14 0.07 290) 0%, oklch(0.24 0.14 310) 40%, oklch(0.36 0.18 340) 62%, oklch(0.12 0.06 300) 62.2%);
+  background-size: 100% calc(min(14vw, 11rem) * 0.9), 100% 100%, 100% 100%;
+  background-position: 50% calc(58% + min(14vw, 11rem) * 0.45), 0 0, 0 0;
+  background-repeat: no-repeat;
+}
+
+:root[data-style="vapor"] body::after {
+  display: block;
+  inset: auto -50% 0;
+  height: 38%;
+  background-image:
+    linear-gradient(oklch(0.85 0.13 200 / 0.7) 2px, transparent 2px),
+    linear-gradient(90deg, oklch(0.78 0.18 340 / 0.7) 2px, transparent 2px);
+  background-size: 64px 64px;
+  transform: perspective(320px) rotateX(58deg);
+  transform-origin: 50% 100%;
+  mask-image: linear-gradient(0deg, #000 30%, transparent 100%);
+  animation: vapor-floor 3s linear infinite;
+}
+
+@keyframes vapor-floor {
+  to {
+    background-position: 0 64px, 0 0;
+  }
+}
+
+/* Glitch: static, a few torn colour bands, and a scan bar rolling down. */
+:root[data-style="glitch"] body {
+  background-color: oklch(0.06 0 0);
+}
+
+:root[data-style="glitch"] body::before {
+  background-image:
+    linear-gradient(180deg,
+      transparent 0 18%,
+      oklch(0.65 0.25 25 / 0.12) 18% 18.6%,
+      transparent 18.6% 19%,
+      oklch(0.85 0.15 200 / 0.12) 19% 19.4%,
+      transparent 19.4% 63%,
+      oklch(0.85 0.15 200 / 0.1) 63% 64.5%,
+      transparent 64.5% 65%,
+      oklch(0.65 0.25 25 / 0.1) 65% 65.3%,
+      transparent 65.3% 86%,
+      oklch(1 0 0 / 0.05) 86% 86.4%,
+      transparent 86.4%),
+    var(--noise-light);
+  background-size: 100% 100%, 220px 220px;
+}
+
+:root[data-style="glitch"] body::after {
+  display: block;
+  inset: 0;
+  background-image: linear-gradient(180deg, transparent, oklch(0.85 0.15 200 / 0.06) 45%, oklch(0.65 0.25 25 / 0.06) 55%, transparent);
+  background-size: 100% 18vh;
+  background-repeat: no-repeat;
+  animation: glitch-scan 7s linear infinite;
+}
+
+@keyframes glitch-scan {
+  from {
+    background-position: 0 -20vh;
+  }
+  to {
+    background-position: 0 120vh;
+  }
+}
+
+/* Sticky: a dark slate felt board, fine grain and a few lint flecks. */
+:root[data-style="sticky"] body {
+  background-color: oklch(0.21 0.015 250);
+}
+
+:root[data-style="sticky"] body::before {
+  background-image:
+    radial-gradient(ellipse 100% 100% at 50% 45%, transparent 45%, oklch(0.1 0.01 250 / 0.7) 100%),
+    var(--noise-dark);
+  background-size: 100% 100%, 220px 220px;
+}
+
+:root[data-style="sticky"] body::after {
+  display: block;
+  background-image:
+    radial-gradient(oklch(0.6 0.01 250 / 0.22) 1px, transparent 1.5px),
+    radial-gradient(oklch(0.1 0.01 250 / 0.35) 1px, transparent 1.6px);
+  background-size: 13px 11px, 17px 19px;
+  background-position: 0 0, 6px 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-style="vapor"] body::after,
+  :root[data-style="glitch"] body::after {
+    animation: none;
+  }
+}
+
+/*
+  ─── Copy buttons ──────────────────────────────────────────────────────────
+  data-ui="copy" is a labelled copy button (Copy / Copy all / Copy as curl);
+  data-ui="copy-icon" is the bare icon that appears on a hovered output row.
+  Both follow the style's control palette, lighting up in its accent.
+*/
+:root:not([data-style="glass"]) [data-ui="copy"] {
+  background: var(--ui-control);
+  border: 1px solid var(--ui-control-border);
+  border-radius: var(--ui-radius-inner);
+  color: var(--foreground);
+  backdrop-filter: none;
+}
+
+:root:not([data-style="glass"]) [data-ui="copy"]:hover {
+  background: var(--ui-accent);
+  border-color: transparent;
+  color: var(--ui-accent-fg);
+}
+
+:root:not([data-style="glass"]) [data-ui="copy-icon"] {
+  border-radius: var(--ui-radius-inner);
+}
+
+:root:not([data-style="glass"]) [data-ui="copy-icon"]:hover {
+  color: var(--ui-focus);
+}
+
+:root[data-style="clay"] [data-ui="copy"] {
+  border-radius: 9999px;
+  border-color: transparent;
+  box-shadow: var(--clay-raised);
+}
+
+:root[data-style="terminal"] [data-ui="copy"]::before {
+  content: "[";
+}
+
+:root[data-style="terminal"] [data-ui="copy"]::after {
+  content: "]";
+}
+
+:root[data-style="blueprint"] [data-ui="copy"] {
+  font-family: var(--font-mono);
+  border-style: dashed;
+}
+
+:root[data-style="blueprint"] [data-ui="copy"]:hover {
+  border: 1px solid var(--ui-accent);
+}
+
+:root[data-style="swiss"] [data-ui="copy"] {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+:root[data-style="vapor"] [data-ui="copy"] {
+  border-color: var(--vp-pink);
+  box-shadow: 2px 2px 0 0 var(--vp-cyan);
+}
+
+:root[data-style="vapor"] [data-ui="copy"]:hover {
+  box-shadow: 3px 3px 0 0 var(--vp-pink);
+}
+
+:root[data-style="glitch"] [data-ui="copy"]:hover,
+:root[data-style="glitch"] [data-ui="copy-icon"]:hover {
+  box-shadow: var(--gl-split);
+}
+
+:root[data-style="sticky"] [data-ui="copy"] {
+  font-family: var(--hand);
+}
+
+:root[data-style="sticky"] [data-ui="copy"]:hover {
+  rotate: -2deg;
+}
+
+/* A copy button floating on a dark code well inside Sticky's paper panel
+   takes the note colour, so it doesn't vanish into the well. */
+:root[data-style="sticky"] [data-surface="panel"] [data-ui="copy"] {
+  background: var(--paper, var(--note));
+  color: var(--note-ink);
+  border-color: oklch(0.22 0.03 80 / 0.3);
 }

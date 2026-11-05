@@ -40,6 +40,7 @@ export function CodeBlock({
 
   const block = (
     <pre
+      data-ui="well"
       className={cn(
         "overflow-x-auto rounded-lg border border-white/10 bg-black/15 p-3 font-mono text-xs leading-relaxed backdrop-blur-sm dark:bg-black/25",
         // Keep long lines from running under the button.

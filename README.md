@@ -47,7 +47,10 @@ answer. Plain text in, plain text out, rate limited per IP — the model
 The browser side is the same tools as a filterable card grid, grouped by
 category or by action. Open a card and it expands in place with two tabs:
 **Browser** for the interactive version, **API** for a ready-to-paste snippet in
-curl, Go, JavaScript, PowerShell, Python, Ruby or Rust.
+curl, Go, JavaScript, PowerShell, Python, Ruby or Rust. The palette icon in the
+navbar switches the whole site between ten looks, from the original liquid
+glass to Swiss, Blueprint, Terminal and Vapor; [`docs/styles.md`](docs/styles.md)
+has what each is based on.
 
 And an agent can call them over MCP. Every tool except the IP echo is an MCP
 tool at `tools.truvibe.dev/mcp`:
@@ -112,6 +115,8 @@ pnpm lint
 |---|---|
 | [`docs/tools.md`](docs/tools.md) | What each tool does, and the edges worth knowing |
 | [`docs/api.md`](docs/api.md) | The API: formats, errors, rate limits, every endpoint |
+| [`docs/mcp.md`](docs/mcp.md) | The MCP server: every tool, callable by an agent |
+| [`docs/styles.md`](docs/styles.md) | The ten site styles, what they are based on, and adding one |
 | [`docs/architecture.md`](docs/architecture.md) | How the codebase fits together |
 | [`docs/self-hosting.md`](docs/self-hosting.md) | Running your own copy |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Adding a tool, and the house style |
@@ -136,7 +141,11 @@ thing receiving the request. Those four call this same public API, so the page
 shows byte-for-byte what a `curl` user sees.
 
 SSH keypairs are generated in the browser with WebCrypto, so the private key
-never crosses the network. See [`docs/architecture.md`](docs/architecture.md)
+never crosses the network.
+
+The site styles are CSS only. There is one set of markup, and a `data-style`
+attribute on `<html>`, set before first paint, picks which rules apply. See
+[`docs/styles.md`](docs/styles.md). See [`docs/architecture.md`](docs/architecture.md)
 for the rest.
 
 ## Licence
