@@ -47,6 +47,15 @@ export type ToolHandler = (ctx: HandlerContext) => ToolResult | Promise<ToolResu
 /** Throw from a handler to return a 400 with a plain-text reason. */
 export class BadRequestError extends Error {}
 
+/**
+ * Far below the general body limit because the YAML parser is the one thing
+ * here whose memory and time both climb steeply with input size: a megabyte of
+ * the wrong shape exhausts the heap, which takes every request down with it.
+ * Applied here so the API and MCP get it and the browser panel, working on the
+ * visitor's own machine, does not.
+ */
+export const MAX_YAML_LENGTH = 64 * 1024;
+
 // ---------------------------------------------------------------- parsing
 
 function intParam(params: URLSearchParams, name: string, fallback: number): number {
@@ -307,13 +316,19 @@ export const HANDLERS: Record<string, ToolHandler> = {
     }),
 
   "yaml-json": (ctx) =>
-    run(() =>
-      convertYamlJson({
-        input: requireBody(ctx, "Try: curl --data-binary @config.yaml <url>"),
+    run(() => {
+      const input = requireBody(ctx, "Try: curl --data-binary @config.yaml <url>");
+      if (input.length > MAX_YAML_LENGTH) {
+        throw new BadRequestError(
+          `input must be ${MAX_YAML_LENGTH / 1024} KiB or smaller; the page at /convert/yaml-json has no limit`,
+        );
+      }
+      return convertYamlJson({
+        input,
         to: enumParam<YamlJsonDirection>(ctx.params, "to", ["auto", "json", "yaml"], "auto"),
         indent: intParam(ctx.params, "indent", 2),
-      }),
-    ),
+      });
+    }),
 
   "case-converter": ({ params }) =>
     run(() => {

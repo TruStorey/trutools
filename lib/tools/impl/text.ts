@@ -28,6 +28,12 @@ export const TEXT_DEFAULTS: TextOptions = {
   dropEmpty: true,
 };
 
+/**
+ * Built once. localeCompare with options constructs a collator per comparison,
+ * which is what made sorting a few megabytes take half a minute.
+ */
+const NUMERIC_ORDER = new Intl.Collator("en", { numeric: true });
+
 /** Lets the separator field carry \n and \t, which cannot be typed into it. */
 function unescape(separator: string): string {
   return separator
@@ -81,7 +87,7 @@ export function transformText(options: TextOptions): ToolResult {
         kind: "lines",
         lines: [...lines]
           .map((line) => line.trim())
-          .sort((a, b) => a.localeCompare(b, "en", { numeric: true })),
+          .sort(NUMERIC_ORDER.compare),
       };
 
     case "reverse":

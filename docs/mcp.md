@@ -70,6 +70,11 @@ Each POST to `/mcp` counts once against the same per-IP
 [rate limit](api.md) as the HTTP API. A `tools/call` is one request, and so is
 the `initialize` before it.
 
+Send one JSON-RPC message per POST: a batch is refused with `400`, so that every
+call is counted. The whole message can be up to 1 MiB, and any argument other
+than `body` up to 16 KiB. The [size limits](api.md#size-limits) on `body` are the
+same as over HTTP.
+
 ## Trying it
 
 ```console

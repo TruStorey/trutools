@@ -26,6 +26,13 @@ const nextConfig: NextConfig = {
   // Dockerfile runner stage ships to Coolify.
   output: "standalone",
 
+  experimental: {
+    // Above MAX_BODY_BYTES in lib/api/body.ts, never below it: past this limit
+    // the proxy hands on a truncated body without error, and the cap there is
+    // what turns that into a 413 rather than a result computed on half the input.
+    proxyClientMaxBodySize: "2mb",
+  },
+
   // Spread, so an unset variable leaves the key absent rather than handing Next
   // an empty list to interpret.
   ...(allowedDevOrigins.length > 0 ? { allowedDevOrigins } : {}),

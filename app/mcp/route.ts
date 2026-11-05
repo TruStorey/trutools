@@ -1,3 +1,4 @@
+import { bodyTooLargeMessage, readBody } from "@/lib/api/body";
 import { rateLimitKey } from "@/lib/api/client-ip";
 import { rateLimit, type RateLimitResult } from "@/lib/api/ratelimit";
 import { serveMcp } from "@/lib/mcp/server";
@@ -30,9 +31,14 @@ function withHeaders(response: Response, rate?: RateLimitResult): Response {
 }
 
 /** A JSON-RPC error with no id, for failures before the transport sees the message. */
-function rpcError(status: number, message: string, extra: Record<string, string> = {}) {
+function rpcError(
+  status: number,
+  message: string,
+  extra: Record<string, string> = {},
+  code = -32000,
+) {
   return withHeaders(
-    new Response(JSON.stringify({ jsonrpc: "2.0", error: { code: -32000, message }, id: null }), {
+    new Response(JSON.stringify({ jsonrpc: "2.0", error: { code, message }, id: null }), {
       status,
       headers: { "Content-Type": "application/json", ...extra },
     }),
@@ -42,8 +48,8 @@ function rpcError(status: number, message: string, extra: Record<string, string>
 /**
  * Stateless Streamable HTTP, served by serveMcp().
  *
- * One POST is one rate-limit hit, on the same budget as the HTTP API — an
- * agent calling lookup_dns is a curl user with extra steps.
+ * One POST is one message and one rate-limit hit, on the same budget as the
+ * HTTP API — an agent calling lookup_dns is a curl user with extra steps.
  */
 export async function POST(request: Request) {
   const rate = await rateLimit(rateLimitKey(request.headers));
@@ -57,8 +63,28 @@ export async function POST(request: Request) {
     );
   }
 
+  const raw = await readBody(request);
+  if (raw === null) return withHeaders(rpcError(413, bodyTooLargeMessage()), rate);
+
+  let message: unknown;
   try {
-    return withHeaders(await serveMcp(request), rate);
+    message = JSON.parse(raw);
+  } catch {
+    return withHeaders(rpcError(400, "Parse error: Invalid JSON", {}, -32700), rate);
+  }
+
+  // JSON-RPC batches are refused, not counted: the limit above is per POST, so
+  // a batch would be up to a hundred tool calls for the price of one. MCP itself
+  // dropped them in the 2025-06-18 revision, so nothing current sends one.
+  if (Array.isArray(message)) {
+    return withHeaders(
+      rpcError(400, "Invalid Request: batches are not supported. Send one message per POST.", {}, -32600),
+      rate,
+    );
+  }
+
+  try {
+    return withHeaders(await serveMcp(request, message), rate);
   } catch (error) {
     console.error("[trutools] mcp request failed:", error);
     return rpcError(500, "Internal Server Error");

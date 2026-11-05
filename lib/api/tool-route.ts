@@ -2,6 +2,7 @@ import { resolveFormat } from "@/lib/tools/format";
 import { getToolByPath, type Tool } from "@/lib/tools/registry";
 import { SITE_URL } from "@/lib/site";
 
+import { bodyTooLargeMessage, readBody } from "./body";
 import { rateLimitKey } from "./client-ip";
 import { BadRequestError, HANDLERS } from "./handlers";
 import { rateLimit } from "./ratelimit";
@@ -92,7 +93,10 @@ export async function handleToolRequest(
     );
   }
 
-  const requestBody = request.method === "POST" ? await request.text() : null;
+  const requestBody = request.method === "POST" ? await readBody(request) : null;
+  if (request.method === "POST" && requestBody === null) {
+    return failure(bodyTooLargeMessage(), 413, format, rate);
+  }
 
   try {
     const params = promoteBareParam(url.searchParams, tool);

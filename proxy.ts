@@ -1,5 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { bodyTooLargeMessage, declaresTooLarge } from "@/lib/api/body";
+import { failure } from "@/lib/api/respond";
+import { resolveFormat } from "@/lib/tools/format";
 import { isVerb, TOOLS, toolPath } from "@/lib/tools/registry";
 
 const TOOL_PATHS = new Set(TOOLS.map(toolPath));
@@ -48,6 +51,11 @@ export function proxy(request: NextRequest) {
   // plain-text answer.
   if (!TOOL_PATHS.has(path) && !(underVerb && !wantsHtml(request))) {
     return NextResponse.next();
+  }
+
+  if (declaresTooLarge(request.headers)) {
+    const format = resolveFormat(request.nextUrl.searchParams, request.headers);
+    return failure(bodyTooLargeMessage(), 413, format);
   }
 
   // Clone keeps the query string; a rewrite keeps the method and body, so

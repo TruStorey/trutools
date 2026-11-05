@@ -40,7 +40,8 @@ export function renderText(result: ToolResult): string {
       // Pad every column to its widest cell, header included, so the table
       // lines up in a terminal.
       const widths = result.columns.map((column, index) =>
-        Math.max(column.length, ...result.rows.map((row) => (row[index] ?? "").length)),
+        // A reduce, not Math.max(...rows): a long enough result overflows the stack.
+        result.rows.reduce((widest, row) => Math.max(widest, (row[index] ?? "").length), column.length),
       );
 
       const line = (cells: string[]) =>
