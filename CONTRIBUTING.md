@@ -158,6 +158,16 @@ For anything with interesting edges, a throwaway `pnpm dlx tsx` script that
 round-trips random inputs is worth more than a handful of hand-picked
 assertions.
 
+The MCP surface is the exception, because `tools/list` promises that errors
+explain what its short definitions leave out. Check that with:
+
+```bash
+pnpm dlx tsx --test lib/mcp/server.test.ts      # a good and a bad call per tool
+pnpm dlx tsx scripts/mcp-tool-sizes.ts          # definition sizes vs the baseline
+```
+
+A new tool needs an entry in `lib/mcp/definitions.ts` and a case in that test.
+
 ## House style
 
 The code is commented more than most, and the comments are nearly all

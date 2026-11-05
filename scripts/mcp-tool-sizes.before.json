@@ -1,0 +1,137 @@
+{
+  "generate_password": {
+    "schema": 795,
+    "description": 95,
+    "total": 1077
+  },
+  "generate_uuid": {
+    "schema": 453,
+    "description": 98,
+    "total": 730
+  },
+  "generate_token": {
+    "schema": 490,
+    "description": 93,
+    "total": 764
+  },
+  "generate_hash": {
+    "schema": 309,
+    "description": 148,
+    "total": 638
+  },
+  "decode_jwt": {
+    "schema": 207,
+    "description": 95,
+    "total": 475
+  },
+  "inspect_ssh_key": {
+    "schema": 187,
+    "description": 105,
+    "total": 476
+  },
+  "generate_ssh_key": {
+    "schema": 410,
+    "description": 113,
+    "total": 712
+  },
+  "inspect_cert": {
+    "schema": 187,
+    "description": 98,
+    "total": 466
+  },
+  "inspect_subnet": {
+    "schema": 224,
+    "description": 100,
+    "total": 506
+  },
+  "calc_subnet_split": {
+    "schema": 665,
+    "description": 108,
+    "total": 957
+  },
+  "calc_subnet_plan": {
+    "schema": 425,
+    "description": 95,
+    "total": 702
+  },
+  "lookup_dns": {
+    "schema": 377,
+    "description": 97,
+    "total": 645
+  },
+  "lookup_mail": {
+    "schema": 247,
+    "description": 98,
+    "total": 517
+  },
+  "calc_bandwidth": {
+    "schema": 662,
+    "description": 105,
+    "total": 958
+  },
+  "convert_base64": {
+    "schema": 441,
+    "description": 93,
+    "total": 722
+  },
+  "convert_bytes": {
+    "schema": 427,
+    "description": 88,
+    "total": 695
+  },
+  "convert_yaml_json": {
+    "schema": 421,
+    "description": 91,
+    "total": 702
+  },
+  "convert_duration": {
+    "schema": 236,
+    "description": 100,
+    "total": 522
+  },
+  "convert_timestamp": {
+    "schema": 331,
+    "description": 91,
+    "total": 610
+  },
+  "format_json": {
+    "schema": 408,
+    "description": 117,
+    "total": 701
+  },
+  "convert_case": {
+    "schema": 359,
+    "description": 100,
+    "total": 637
+  },
+  "generate_lorem": {
+    "schema": 420,
+    "description": 54,
+    "total": 651
+  },
+  "transform_text": {
+    "schema": 543,
+    "description": 110,
+    "total": 828
+  },
+  "calc_disk_space": {
+    "schema": 438,
+    "description": 83,
+    "total": 709
+  },
+  "convert_permissions": {
+    "schema": 288,
+    "description": 97,
+    "total": 572
+  },
+  "lint_systemd": {
+    "schema": 181,
+    "description": 111,
+    "total": 475
+  },
+  "explain_cron": {
+    "schema": 441,
+    "description": 112,
+    "total": 731
+  }
+}
