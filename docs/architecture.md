@@ -155,6 +155,12 @@ builds a `URLSearchParams` from the arguments and calls the same
 messages are not duplicated, and an agent cannot get a different answer from
 curl. Results carry both `renderText` output and the `?format=json` shape.
 
+What `tools/list` advertises is separate from what calls are checked against,
+because every definition costs tokens on every model request.
+`lib/mcp/definitions.ts` holds short descriptions and plain JSON Schema, and
+replaces the listing the SDK would generate. The Zod shape in `server.ts` still
+validates each call. `scripts/mcp-tool-sizes.ts` prints the sizes.
+
 It is **stateless** Streamable HTTP (`app/mcp/route.ts`). Every POST gets a
 fresh server and transport and JSON rather than SSE, so there is no session to
 pin to one replica behind the proxy. One POST is one hit on the shared rate
