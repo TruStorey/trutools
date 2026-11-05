@@ -1,14 +1,15 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
-import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { ListToolsRequestSchema, type CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 
 import { BadRequestError, HANDLERS } from "@/lib/api/handlers";
 import { formatResult } from "@/lib/tools/format";
-import { TOOLS, type Tool } from "@/lib/tools/registry";
+import { TOOLS, type ApiParam, type Tool } from "@/lib/tools/registry";
 import { renderText } from "@/lib/tools/result";
 import { SITE_URL } from "@/lib/site";
 
+import { mcpDefinition } from "./definitions";
 import { isMcpTool, mcpToolName } from "./names";
 
 /**
@@ -23,35 +24,53 @@ export function mcpTools(): Tool[] {
   return TOOLS.filter((tool) => isMcpTool(tool) && HANDLERS[tool.id]);
 }
 
+type Args = Record<string, string | undefined>;
+
+/** The registry's text for a parameter, minus what only makes sense to curl. */
+function paramHelp(tool: Tool, param: ApiParam): string {
+  return tool.bodyInput && param.name === BODY_PARAM
+    ? param.description.replace(/,? (POSTed )?as the raw request body/, "")
+    : param.description;
+}
+
 /**
+ * Validates calls, and is never advertised: see lib/mcp/definitions.ts for that.
+ *
  * Models send `32` and `true` as often as `"32"` and `"true"`, so any scalar
  * is accepted and stringified. From there the handlers parse it exactly as
  * they parse `?length=32`, so MCP gets the same validation and error messages
- * curl does.
+ * curl does. The full help text is here because a model that got this wrong
+ * cannot read the slimmer definition any harder.
  */
-const scalar = z.union([z.string(), z.number(), z.boolean()]).transform(String);
-
-type Args = Record<string, string | undefined>;
-
 function inputShape(tool: Tool) {
   return Object.fromEntries(
     tool.api.params.map((param) => {
-      // "The JSON document, POSTed as the raw request body." describes curl,
-      // not MCP, where it is just another argument.
-      const text =
-        tool.bodyInput && param.name === BODY_PARAM
-          ? param.description.replace(/,? (POSTed )?as the raw request body/, "")
-          : param.description;
-      const field = scalar.describe(text);
+      const help = paramHelp(tool, param);
+      const field = z
+        .union([z.string(), z.number(), z.boolean()], {
+          error: (issue) =>
+            issue.input === undefined
+              ? `${param.name} is required. ${help}`
+              : `${param.name} must be a string, number or boolean. ${help}`,
+        })
+        .transform(String);
       return [param.name, param.required ? field : field.optional()];
     }),
   );
 }
 
-function description(tool: Tool): string {
-  const parts = [tool.description];
-  if (tool.api.note) parts.push(tool.api.note);
-  return parts.join("\n\n");
+/** Title and annotations never reach the model, but clients act on them. */
+function listEntry(tool: Tool) {
+  return {
+    name: mcpToolName(tool),
+    title: tool.name,
+    ...mcpDefinition(tool),
+    annotations: {
+      readOnlyHint: true,
+      // DNS and mail lookups reach the outside world; the rest are pure.
+      openWorldHint: Boolean(tool.serverOnly),
+    },
+  };
 }
 
 function errorResult(message: string): CallToolResult {
@@ -72,7 +91,7 @@ export function buildMcpServer(request: Request): McpServer {
       instructions:
         "Developer and sysadmin utilities: generators, decoders, DNS and mail lookups, " +
         "subnet maths, format converters and linters. Every tool is deterministic except " +
-        "the generators. All arguments are strings, exactly as the HTTP API's query parameters.",
+        "the generators.",
     },
   );
 
@@ -81,16 +100,7 @@ export function buildMcpServer(request: Request): McpServer {
 
     server.registerTool(
       mcpToolName(tool),
-      {
-        title: tool.name,
-        description: description(tool),
-        inputSchema: inputShape(tool),
-        annotations: {
-          readOnlyHint: true,
-          // DNS and mail lookups reach the outside world; the rest are pure.
-          openWorldHint: Boolean(tool.serverOnly),
-        },
-      },
+      { inputSchema: inputShape(tool) },
       async (args: Args): Promise<CallToolResult> => {
         const params = new URLSearchParams();
         let body: string | null = null;
@@ -99,6 +109,12 @@ export function buildMcpServer(request: Request): McpServer {
           if (value === undefined) continue;
           if (tool.bodyInput && name === BODY_PARAM) body = value;
           else params.set(name, value);
+        }
+
+        // requireBody() would answer this with a curl command.
+        if (tool.bodyInput && !body?.trim()) {
+          const param = tool.api.params.find(({ name }) => name === BODY_PARAM);
+          return errorResult(`body is required. ${param ? paramHelp(tool, param) : ""}`.trim());
         }
 
         try {
@@ -115,6 +131,12 @@ export function buildMcpServer(request: Request): McpServer {
       },
     );
   }
+
+  // Registered last, replacing the handler the SDK installs, because the SDK
+  // generates its listing from the Zod shape. Calls still go through that shape.
+  server.server.setRequestHandler(ListToolsRequestSchema, () => ({
+    tools: mcpTools().map(listEntry),
+  }));
 
   return server;
 }

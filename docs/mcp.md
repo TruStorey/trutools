@@ -44,6 +44,10 @@ defaults and validation. Tools that take a request body over HTTP take it as a
 stringified and parsed exactly as `?length=32` would be, so an error reads the
 same as the one curl gets.
 
+`tools/list` is written to be cheap, because a client sends it to the model on
+every request. It carries short descriptions and plain types, and leaves ranges
+to the error messages. The [API reference](api.md) has the full text.
+
 `/lookup/ip` is left out. It reports the address a request came from. A local
 client like Claude Code would get your address, but a hosted connector such as
 claude.ai or ChatGPT calls from the provider's servers. The model would then
@@ -56,7 +60,9 @@ Each call returns two things:
 - **`content`**: the plain-text rendering, byte-for-byte what `curl` prints.
 - **`structuredContent`**: the `?format=json` body, `{ tool, result, note? }`.
 
-Bad input comes back as `isError: true` with the same message a 400 would carry.
+Bad input comes back as `isError: true` with the same message a 400 would
+carry. A missing or non-scalar argument is caught first, and that error gives
+the argument's full description.
 
 ## Limits
 
