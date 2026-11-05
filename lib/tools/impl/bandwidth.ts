@@ -52,7 +52,9 @@ const SIZE_UNITS: Record<string, number> = {
 export const RATE_UNIT_NAMES = ["bps", "kbps", "Mbps", "Gbps", "Tbps", "MB/s", "MiB/s"];
 
 function lookup(table: Record<string, number>, unit: string, what: string): number {
-  const factor = table[unit.trim().toLowerCase()];
+  const key = unit.trim().toLowerCase();
+  // hasOwn, because "constructor" is a key of every plain object.
+  const factor = Object.hasOwn(table, key) ? table[key] : undefined;
   if (factor === undefined) {
     throw new ToolInputError(
       `unknown ${what} unit "${unit}" — try ${Object.keys(table).slice(0, 6).join(", ")}`,

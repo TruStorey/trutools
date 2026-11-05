@@ -45,7 +45,9 @@ const LABELS: Record<CaseStyle, string> = {
 export function toWords(input: string): string[] {
   return input
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-    .replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
+    // One capital, not a run: [A-Z]+ reaches the same boundaries, but retries
+    // from every letter of a long capital run, which is quadratic on "AAAA...".
+    .replace(/([A-Z])([A-Z][a-z])/g, "$1 $2")
     .replace(/[_\-./\\]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()

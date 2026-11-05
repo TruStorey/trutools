@@ -141,7 +141,8 @@ export function lintUnitFile(input: string): ToolResult {
       return;
     }
 
-    const expected = SECTION_OF[key];
+    // hasOwn, because "constructor=" would otherwise find Object.prototype's.
+    const expected = Object.hasOwn(SECTION_OF, key) ? SECTION_OF[key] : undefined;
     if (expected && expected !== section) {
       findings.push({
         line: number,

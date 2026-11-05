@@ -19,6 +19,14 @@ import { isMcpTool, mcpToolName } from "./names";
  */
 const BODY_PARAM = "body";
 
+/**
+ * Longest argument accepted, other than a body. On the HTTP API these all ride
+ * in the URL, which Node caps at 16 KiB of headers, so this keeps a tool from
+ * being handed far more over MCP than it can ever get from curl. A document
+ * goes in `body`, which is bounded by the size of the request instead.
+ */
+export const MAX_ARGUMENT_LENGTH = 16 * 1024;
+
 /** Every tool the MCP server exposes: an MCP tool that is wired up. */
 export function mcpTools(): Tool[] {
   return TOOLS.filter((tool) => isMcpTool(tool) && HANDLERS[tool.id]);
@@ -53,7 +61,12 @@ function inputShape(tool: Tool) {
               ? `${param.name} is required. ${help}`
               : `${param.name} must be a string, number or boolean. ${help}`,
         })
-        .transform(String);
+        .transform(String)
+        .refine(
+          (value) =>
+            (tool.bodyInput && param.name === BODY_PARAM) || value.length <= MAX_ARGUMENT_LENGTH,
+          { error: `${param.name} must be ${MAX_ARGUMENT_LENGTH} characters or fewer.` },
+        );
       return [param.name, param.required ? field : field.optional()];
     }),
   );
@@ -148,8 +161,11 @@ export function buildMcpServer(request: Request): McpServer {
  *
  * Shared by the /mcp route and its healthcheck, so the check exercises the
  * same path a client does.
+ *
+ * `parsedBody` is for a caller that has already read the request, as the route
+ * has to in order to enforce its limits. Left undefined, the transport reads it.
  */
-export async function serveMcp(request: Request): Promise<Response> {
+export async function serveMcp(request: Request, parsedBody?: unknown): Promise<Response> {
   const server = buildMcpServer(request);
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
@@ -158,7 +174,7 @@ export async function serveMcp(request: Request): Promise<Response> {
 
   try {
     await server.connect(transport);
-    return await transport.handleRequest(request);
+    return await transport.handleRequest(request, { parsedBody });
   } finally {
     // JSON mode has already buffered the whole response by now.
     await server.close();

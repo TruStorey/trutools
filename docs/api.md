@@ -99,6 +99,7 @@ switch parsers when something goes wrong.
 |---|---|
 | `400` | Your input. The message says what was wrong with it |
 | `404` | No tool by that name. Points you at `/api/v1` |
+| `413` | Request body over 1 MiB |
 | `429` | Rate limited. Carries `Retry-After` |
 | `500` | Our fault. The detail is in the server log, not the response |
 | `501` | A tool that is listed but not wired up yet |
@@ -119,6 +120,13 @@ content-type: text/plain; charset=utf-8
 
 Note that the **rate limit is applied before dispatch**, so unknown endpoints
 are limited too. Probing for endpoints costs the same as using them.
+
+## Size limits
+
+A request body can be up to **1 MiB**; anything larger gets a `413`. The YAML
+converter takes up to **64 KiB**, and past that answers `400`, because parsing
+gets steeply more expensive with size. Neither limit applies to the pages on the
+site, which run these tools in your own browser.
 
 ## Rate limits
 

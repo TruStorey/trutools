@@ -74,8 +74,11 @@ function parseField(raw: string, spec: FieldSpec): CronField {
     if (step < 1) throw new ToolInputError(`step in ${spec.name} must be at least 1`);
 
     const resolve = (token: string): number => {
-      const alias = spec.aliases?.[token.toLowerCase()];
-      if (alias !== undefined) return alias;
+      // hasOwn, not a bare lookup. "constructor" and "__proto__" are keys of
+      // every plain object, and a range of the two compares as strings, so
+      // the loop below would never reach its end.
+      const name = token.toLowerCase();
+      if (spec.aliases && Object.hasOwn(spec.aliases, name)) return spec.aliases[name];
       if (!/^\d+$/.test(token)) {
         throw new ToolInputError(`"${token}" is not valid in the ${spec.name} field`);
       }
@@ -132,7 +135,7 @@ export function parseCron(input: string): ParsedCron {
     throw new ToolInputError("@reboot has no schedule — it runs once when the machine starts");
   }
 
-  const expression = MACROS[trimmed] ?? trimmed;
+  const expression = Object.hasOwn(MACROS, trimmed) ? MACROS[trimmed] : trimmed;
   const parts = expression.split(/\s+/);
 
   if (parts.length === 6) {
@@ -240,8 +243,7 @@ function ordinal(value: number): string {
 // ---------------------------------------------------------------- next runs
 
 /** Matches the day fields, applying the OR rule when both are restricted. */
-function dayMatches(parsed: ParsedCron, date: Date, timeZone: string): boolean {
-  const parts = zonedParts(date, timeZone);
+function dayMatches(parsed: ParsedCron, parts: ZonedParts): boolean {
   const [, , dom, month, dow] = parsed.fields;
 
   if (!month.values.includes(parts.month)) return false;
@@ -257,9 +259,9 @@ function dayMatches(parsed: ParsedCron, date: Date, timeZone: string): boolean {
 
 type ZonedParts = { year: number; month: number; day: number; hour: number; minute: number; weekday: number };
 
-/** Reads the wall-clock fields a schedule is expressed in, in the given zone. */
-function zonedParts(date: Date, timeZone: string): ZonedParts {
-  const formatter = new Intl.DateTimeFormat("en-GB", {
+/** Built once per walk: constructing one is far dearer than using one. */
+function partsFormatter(timeZone: string): Intl.DateTimeFormat {
+  return new Intl.DateTimeFormat("en-GB", {
     timeZone,
     year: "numeric",
     month: "2-digit",
@@ -269,7 +271,10 @@ function zonedParts(date: Date, timeZone: string): ZonedParts {
     weekday: "short",
     hour12: false,
   });
+}
 
+/** Reads the wall-clock fields a schedule is expressed in, in the given zone. */
+function zonedParts(date: Date, formatter: Intl.DateTimeFormat): ZonedParts {
   const parts: Record<string, string> = {};
   for (const part of formatter.formatToParts(date)) parts[part.type] = part.value;
 
@@ -289,6 +294,14 @@ function zonedParts(date: Date, timeZone: string): ZonedParts {
 const MINUTE_MS = 60_000;
 const MAX_DAYS_AHEAD = 5 * 366;
 
+/**
+ * How far to step through an hour the schedule cannot match. Not the whole hour:
+ * Pacific/Chatham falls back at 03:45, so 02:45 happens twice and a jump from
+ * 03:00 to 04:00 would step over the repeat. Offset changes land on a quarter
+ * hour in every zone, and stopping at each one keeps the walk from crossing them.
+ */
+const HOUR_SKIP_MINUTES = 15;
+
 export function nextRuns(
   parsed: ParsedCron,
   count: number,
@@ -297,23 +310,30 @@ export function nextRuns(
 ): Date[] {
   const [minute, hour] = parsed.fields;
   const runs: Date[] = [];
+  const formatter = partsFormatter(timeZone);
 
   // Start at the next whole minute; cron has no sub-minute resolution.
   const cursor = new Date(Math.floor(from.getTime() / MINUTE_MS) * MINUTE_MS + MINUTE_MS);
   const limit = new Date(cursor.getTime() + MAX_DAYS_AHEAD * 86_400_000);
 
-  // Walk minute by minute but skip whole days that cannot match, which is what
-  // keeps a rare schedule like "0 0 29 2 *" from costing millions of steps.
+  // Walk minute by minute, but skip whole days and hours that cannot match,
+  // which is what keeps "0 0 29 2 *" or fifty daily runs from costing tens of
+  // thousands of steps.
   while (cursor < limit && runs.length < count) {
-    if (!dayMatches(parsed, cursor, timeZone)) {
-      const parts = zonedParts(cursor, timeZone);
+    const parts = zonedParts(cursor, formatter);
+
+    if (!dayMatches(parsed, parts)) {
       // Jump to just before the next midnight in the target zone.
       cursor.setTime(cursor.getTime() + (24 * 60 - (parts.hour * 60 + parts.minute)) * MINUTE_MS);
       continue;
     }
 
-    const parts = zonedParts(cursor, timeZone);
-    if (hour.values.includes(parts.hour) && minute.values.includes(parts.minute)) {
+    if (!hour.values.includes(parts.hour)) {
+      cursor.setTime(cursor.getTime() + (HOUR_SKIP_MINUTES - (parts.minute % HOUR_SKIP_MINUTES)) * MINUTE_MS);
+      continue;
+    }
+
+    if (minute.values.includes(parts.minute)) {
       runs.push(new Date(cursor));
     }
 
